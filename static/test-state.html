@@ -58,6 +58,7 @@
         // Import state modules
         import uiState from './modules/state/uiState.js';
         import sensorState from './modules/state/sensorState.js';
+        import satelliteState from './modules/state/satelliteState.js';
         import eventBus from './modules/events/eventBus.js';
 
         const resultsDiv = document.getElementById('test-results');
@@ -593,6 +594,206 @@
             sensorState.getAllSensors().every(s => s.selected === true),
             'Reset restores all sensors as selected',
             'Sensor Reset'
+        );
+
+        // ============================================
+        // SATELLITE STATE MODULE TESTS
+        // ============================================
+        console.log('Testing Satellite State module...');
+
+        // Test 1: Module imports correctly
+        assertTrue(
+            typeof satelliteState === 'object',
+            'Satellite State imports as object',
+            'Satellite Module Import'
+        );
+
+        // Test 2: Default satellites loaded
+        const initialSatellites = satelliteState.getAllSatellites();
+        assertEquals(
+            initialSatellites.length,
+            18,
+            '18 default satellites loaded',
+            'Satellite Initial State'
+        );
+
+        assertTrue(
+            initialSatellites.every(s => s.selected === false && s.watchlisted === false),
+            'All default satellites start unselected and unwatchlisted',
+            'Satellite Initial State'
+        );
+
+        // Test 3: Get satellite by ID
+        const iss = satelliteState.getSatelliteById(6);
+        assertTrue(
+            iss && iss.name === 'ISS',
+            'Can get satellite by ID',
+            'Satellite Retrieval',
+            `Got: ${iss ? iss.name : 'null'}`
+        );
+
+        // Test 4: Add satellite with TLE validation
+        const validTLE1 = '1 25544U 98067A   08264.51782528 -.00002182  00000-0 -11606-4 0  2927';
+        const validTLE2 = '2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537';
+
+        const satAddResult = satelliteState.addSatellite({
+            name: 'Test Satellite',
+            tle1: validTLE1,
+            tle2: validTLE2
+        });
+
+        assertTrue(
+            satAddResult.success && satAddResult.satellite.id === 19,
+            'Can add new satellite with validation',
+            'Satellite CRUD'
+        );
+
+        assertEquals(
+            satelliteState.getSatelliteCount(),
+            19,
+            'Satellite count increased to 19',
+            'Satellite CRUD'
+        );
+
+        // Test 5: Add invalid satellite (should fail)
+        const invalidSatResult = satelliteState.addSatellite({
+            name: '',
+            tle1: 'invalid',
+            tle2: 'invalid'
+        });
+
+        assertTrue(
+            !invalidSatResult.success && Object.keys(invalidSatResult.errors).length > 0,
+            'Invalid satellite rejected with errors',
+            'Satellite Validation',
+            `Errors: ${Object.keys(invalidSatResult.errors).join(', ')}`
+        );
+
+        // Test 6: Update satellite
+        const satUpdateResult = satelliteState.updateSatellite(19, {
+            name: 'Updated Satellite'
+        });
+
+        assertTrue(
+            satUpdateResult.success && satUpdateResult.satellite.name === 'Updated Satellite',
+            'Can update satellite',
+            'Satellite CRUD'
+        );
+
+        // Test 7: Selection toggle
+        const satNewSelection = satelliteState.toggleSatelliteSelection(6);
+        assertEquals(
+            satNewSelection,
+            true,
+            'Can toggle satellite selection (false → true)',
+            'Satellite Selection'
+        );
+
+        satelliteState.toggleSatelliteSelection(6);
+        assertEquals(
+            satelliteState.getSatelliteById(6).selected,
+            false,
+            'Can toggle satellite selection (true → false)',
+            'Satellite Selection'
+        );
+
+        // Test 8: Watchlist toggle
+        const watchlistState = satelliteState.toggleSatelliteWatchlist(6);
+        assertEquals(
+            watchlistState,
+            true,
+            'Can toggle watchlist (false → true)',
+            'Satellite Watchlist'
+        );
+
+        satelliteState.toggleSatelliteWatchlist(6);
+        assertEquals(
+            satelliteState.getSatelliteById(6).watchlisted,
+            false,
+            'Can toggle watchlist (true → false)',
+            'Satellite Watchlist'
+        );
+
+        // Test 9: Select all / deselect all
+        satelliteState.selectAll();
+        assertEquals(
+            satelliteState.getSelectedCount(),
+            19,
+            'selectAll() selects all satellites',
+            'Satellite Selection'
+        );
+
+        satelliteState.deselectAll();
+        assertEquals(
+            satelliteState.getSelectedCount(),
+            0,
+            'deselectAll() deselects all satellites',
+            'Satellite Selection'
+        );
+
+        // Test 10: Get watchlisted satellites
+        satelliteState.toggleSatelliteWatchlist(6); // ISS
+        satelliteState.toggleSatelliteWatchlist(1); // AO-07
+        const watchlisted = satelliteState.getWatchlistedSatellites();
+        assertEquals(
+            watchlisted.length,
+            2,
+            'Get watchlisted satellites',
+            'Satellite Watchlist'
+        );
+
+        // Test 11: Delete satellite
+        const satDeleteCount = satelliteState.deleteSatellites([19]);
+        assertEquals(
+            satDeleteCount,
+            1,
+            'Can delete satellite',
+            'Satellite CRUD'
+        );
+
+        assertEquals(
+            satelliteState.getSatelliteCount(),
+            18,
+            'Satellite count back to 18 after delete',
+            'Satellite CRUD'
+        );
+
+        // Test 12: Event emissions
+        let satAddedEvent = null;
+        eventBus.once('satellite:added', (data) => {
+            satAddedEvent = data;
+        });
+
+        satelliteState.addSatellite({
+            name: 'Event Test Sat',
+            tle1: validTLE1,
+            tle2: validTLE2
+        });
+
+        assertTrue(
+            satAddedEvent && satAddedEvent.name === 'Event Test Sat',
+            'satellite:added event emitted with correct data',
+            'Satellite Events'
+        );
+
+        // Test 13: Immutability
+        const satellites1 = satelliteState.getAllSatellites();
+        satellites1.push({ id: 999, name: 'Hacked' });
+
+        const satellites2 = satelliteState.getAllSatellites();
+        assertTrue(
+            satellites2.length !== satellites1.length,
+            'Cannot mutate satellite array directly',
+            'Satellite Immutability'
+        );
+
+        // Test 14: Reset to defaults
+        satelliteState.resetToDefaults();
+        assertEquals(
+            satelliteState.getSatelliteCount(),
+            18,
+            'Reset restores 18 default satellites',
+            'Satellite Reset'
         );
 
         // ============================================
