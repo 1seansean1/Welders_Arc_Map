@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Bus Test Suite</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #f5f5f5;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 { color: #9dd4ff; }
+        h2 { color: #00ff66; margin-top: 30px; }
+        .test-section {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .test-result {
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        .pass {
+            background: #004400;
+            border-left: 4px solid #00ff66;
+        }
+        .fail {
+            background: #440000;
+            border-left: 4px solid #ff4444;
+        }
+        .summary {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+            font-size: 18px;
+        }
+        .pass-count { color: #00ff66; }
+        .fail-count { color: #ff4444; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Event Bus Test Suite</h1>
+    <p>Testing Phase 2 Event Bus module...</p>
+
+    <div id="test-results"></div>
+    <div id="summary" class="summary"></div>
+
+    <script type="module">
+        // Import event bus
+        import eventBus from './modules/events/eventBus.js';
+
+        const resultsDiv = document.getElementById('test-results');
+        const summaryDiv = document.getElementById('summary');
+        let passCount = 0;
+        let failCount = 0;
+
+        function addTestResult(category, testName, passed, message = '') {
+            if (!document.getElementById(category)) {
+                const section = document.createElement('div');
+                section.className = 'test-section';
+                section.innerHTML = `<h2>${category}</h2><div id="${category}-results"></div>`;
+                resultsDiv.appendChild(section);
+            }
+
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${passed ? 'pass' : 'fail'}`;
+            resultDiv.textContent = `${passed ? '✅' : '❌'} ${testName}${message ? ': ' + message : ''}`;
+            document.getElementById(category + '-results').appendChild(resultDiv);
+
+            if (passed) passCount++;
+            else failCount++;
+        }
+
+        function assertEquals(actual, expected, testName, category) {
+            const passed = actual === expected;
+            const message = passed ? '' : `Expected ${expected}, got ${actual}`;
+            addTestResult(category, testName, passed, message);
+            return passed;
+        }
+
+        function assertTrue(condition, testName, category, message = '') {
+            addTestResult(category, testName, condition, message);
+            return condition;
+        }
+
+        // ============================================
+        // EVENT BUS BASIC TESTS
+        // ============================================
+        console.log('Testing Event Bus module...');
+
+        // Test 1: Module imports correctly
+        assertTrue(
+            typeof eventBus === 'object',
+            'Event Bus imports as object',
+            'Module Import'
+        );
+
+        // Test 2: Has required methods
+        assertTrue(
+            typeof eventBus.on === 'function',
+            'Event Bus has on() method',
+            'API Surface'
+        );
+
+        assertTrue(
+            typeof eventBus.off === 'function',
+            'Event Bus has off() method',
+            'API Surface'
+        );
+
+        assertTrue(
+            typeof eventBus.emit === 'function',
+            'Event Bus has emit() method',
+            'API Surface'
+        );
+
+        assertTrue(
+            typeof eventBus.once === 'function',
+            'Event Bus has once() method',
+            'API Surface'
+        );
+
+        // ============================================
+        // SUBSCRIPTION TESTS
+        // ============================================
+        console.log('Testing subscriptions...');
+
+        let callCount = 0;
+        const testHandler = (data) => {
+            callCount++;
+        };
+
+        // Test 3: Can subscribe to events
+        const handler = eventBus.on('test:event', testHandler);
+        assertEquals(
+            eventBus.listenerCount('test:event'),
+            1,
+            'Subscription adds listener',
+            'Subscriptions'
+        );
+
+        // Test 4: Can emit events
+        eventBus.emit('test:event');
+        assertEquals(
+            callCount,
+            1,
+            'Emitting calls listener once',
+            'Event Emission'
+        );
+
+        // Test 5: Multiple emissions
+        eventBus.emit('test:event');
+        eventBus.emit('test:event');
+        assertEquals(
+            callCount,
+            3,
+            'Multiple emissions call listener multiple times',
+            'Event Emission'
+        );
+
+        // Test 6: Can unsubscribe
+        eventBus.off('test:event', testHandler);
+        assertEquals(
+            eventBus.listenerCount('test:event'),
+            0,
+            'Unsubscription removes listener',
+            'Subscriptions'
+        );
+
+        // Test 7: No calls after unsubscribe
+        callCount = 0;
+        eventBus.emit('test:event');
+        assertEquals(
+            callCount,
+            0,
+            'Unsubscribed listener not called',
+            'Subscriptions'
+        );
+
+        // ============================================
+        // DATA PAYLOAD TESTS
+        // ============================================
+        console.log('Testing data payloads...');
+
+        let receivedData = null;
+        eventBus.on('test:data', (data) => {
+            receivedData = data;
+        });
+
+        // Test 8: String payload
+        eventBus.emit('test:data', 'test string');
+        assertEquals(
+            receivedData,
+            'test string',
+            'String payload received correctly',
+            'Data Payloads'
+        );
+
+        // Test 9: Number payload
+        eventBus.emit('test:data', 42);
+        assertEquals(
+            receivedData,
+            42,
+            'Number payload received correctly',
+            'Data Payloads'
+        );
+
+        // Test 10: Object payload
+        const testObj = { id: 1, name: 'Test' };
+        eventBus.emit('test:data', testObj);
+        assertTrue(
+            receivedData === testObj && receivedData.id === 1,
+            'Object payload received correctly',
+            'Data Payloads'
+        );
+
+        // Test 11: Null payload
+        eventBus.emit('test:data', null);
+        assertEquals(
+            receivedData,
+            null,
+            'Null payload received correctly',
+            'Data Payloads'
+        );
+
+        // Clean up
+        eventBus.clear('test:data');
+
+        // ============================================
+        // MULTIPLE LISTENERS TESTS
+        // ============================================
+        console.log('Testing multiple listeners...');
+
+        let call1 = 0, call2 = 0, call3 = 0;
+        const handler1 = () => call1++;
+        const handler2 = () => call2++;
+        const handler3 = () => call3++;
+
+        eventBus.on('test:multi', handler1);
+        eventBus.on('test:multi', handler2);
+        eventBus.on('test:multi', handler3);
+
+        // Test 12: Listener count
+        assertEquals(
+            eventBus.listenerCount('test:multi'),
+            3,
+            'Multiple listeners registered',
+            'Multiple Listeners'
+        );
+
+        // Test 13: All listeners called
+        eventBus.emit('test:multi');
+        assertTrue(
+            call1 === 1 && call2 === 1 && call3 === 1,
+            'All listeners called on emit',
+            'Multiple Listeners'
+        );
+
+        // Test 14: Remove one listener
+        eventBus.off('test:multi', handler2);
+        call1 = call2 = call3 = 0;
+        eventBus.emit('test:multi');
+        assertTrue(
+            call1 === 1 && call2 === 0 && call3 === 1,
+            'Removed listener not called',
+            'Multiple Listeners',
+            `Calls: ${call1}, ${call2}, ${call3}`
+        );
+
+        // Clean up
+        eventBus.clear('test:multi');
+
+        // ============================================
+        // ONCE() TESTS
+        // ============================================
+        console.log('Testing once() method...');
+
+        let onceCount = 0;
+        eventBus.once('test:once', () => {
+            onceCount++;
+        });
+
+        // Test 15: Once listener called first time
+        eventBus.emit('test:once');
+        assertEquals(
+            onceCount,
+            1,
+            'once() listener called on first emit',
+            'Once Listeners'
+        );
+
+        // Test 16: Once listener not called second time
+        eventBus.emit('test:once');
+        assertEquals(
+            onceCount,
+            1,
+            'once() listener not called on second emit',
+            'Once Listeners'
+        );
+
+        // Test 17: Once listener auto-removed
+        assertEquals(
+            eventBus.listenerCount('test:once'),
+            0,
+            'once() listener auto-removed after call',
+            'Once Listeners'
+        );
+
+        // ============================================
+        // ERROR HANDLING TESTS
+        // ============================================
+        console.log('Testing error handling...');
+
+        let errorHandlerCalled = false;
+        let normalHandlerCalled = false;
+
+        const errorHandler = () => {
+            errorHandlerCalled = true;
+            throw new Error('Test error');
+        };
+
+        const normalHandler = () => {
+            normalHandlerCalled = true;
+        };
+
+        eventBus.on('test:error', errorHandler);
+        eventBus.on('test:error', normalHandler);
+
+        // Test 18: Error doesn't stop other listeners
+        eventBus.emit('test:error');
+        assertTrue(
+            errorHandlerCalled && normalHandlerCalled,
+            'Error in listener does not stop other listeners',
+            'Error Handling'
+        );
+
+        // Clean up
+        eventBus.clear('test:error');
+
+        // ============================================
+        // UTILITY METHOD TESTS
+        // ============================================
+        console.log('Testing utility methods...');
+
+        eventBus.on('event1', () => {});
+        eventBus.on('event2', () => {});
+        eventBus.on('event2', () => {});
+        eventBus.on('event3', () => {});
+
+        // Test 19: eventNames()
+        const names = eventBus.eventNames();
+        assertTrue(
+            names.includes('event1') && names.includes('event2') && names.includes('event3'),
+            'eventNames() returns all registered events',
+            'Utility Methods',
+            `Got: ${names.join(', ')}`
+        );
+
+        // Test 20: getStats()
+        const stats = eventBus.getStats();
+        assertTrue(
+            stats.totalEvents === 3 && stats.totalListeners === 4,
+            'getStats() returns correct statistics',
+            'Utility Methods',
+            `Events: ${stats.totalEvents}, Listeners: ${stats.totalListeners}`
+        );
+
+        // Test 21: clear() specific event
+        eventBus.clear('event1');
+        assertEquals(
+            eventBus.listenerCount('event1'),
+            0,
+            'clear(eventName) removes specific event',
+            'Utility Methods'
+        );
+
+        assertTrue(
+            eventBus.listenerCount('event2') === 2,
+            'clear(eventName) does not affect other events',
+            'Utility Methods'
+        );
+
+        // Test 22: clear() all events
+        eventBus.clear();
+        assertEquals(
+            eventBus.eventNames().length,
+            0,
+            'clear() removes all events',
+            'Utility Methods'
+        );
+
+        // ============================================
+        // REAL-WORLD SCENARIO TESTS
+        // ============================================
+        console.log('Testing real-world scenarios...');
+
+        // Test 23: Sensor added scenario
+        let sensorAddedToMap = false;
+        let sensorAddedToUI = false;
+        let sensorLogged = false;
+
+        eventBus.on('sensor:added', (data) => {
+            sensorAddedToMap = true;
+        });
+
+        eventBus.on('sensor:added', (data) => {
+            sensorAddedToUI = true;
+        });
+
+        eventBus.on('sensor:added', (data) => {
+            sensorLogged = true;
+        });
+
+        eventBus.emit('sensor:added', {
+            id: 1,
+            name: 'Test Sensor',
+            lat: 47.6,
+            lon: -122.3
+        });
+
+        assertTrue(
+            sensorAddedToMap && sensorAddedToUI && sensorLogged,
+            'Sensor addition propagates to all modules',
+            'Real-world Scenarios'
+        );
+
+        eventBus.clear('sensor:added');
+
+        // Test 24: Time simulation scenario
+        let satellitePositionUpdates = 0;
+        let mapUpdates = 0;
+
+        eventBus.on('time:changed', (data) => {
+            // Simulate satellite position calculation
+            eventBus.emit('satellite:position:updated', {
+                id: 1,
+                lat: 45,
+                lon: -120,
+                alt: 400
+            });
+        });
+
+        eventBus.on('satellite:position:updated', () => {
+            satellitePositionUpdates++;
+            mapUpdates++;
+        });
+
+        eventBus.emit('time:changed', { date: new Date() });
+
+        assertTrue(
+            satellitePositionUpdates === 1 && mapUpdates === 1,
+            'Time change triggers satellite position update',
+            'Real-world Scenarios'
+        );
+
+        eventBus.clear();
+
+        // ============================================
+        // SUMMARY
+        // ============================================
+        const total = passCount + failCount;
+        const passPercent = ((passCount / total) * 100).toFixed(1);
+
+        summaryDiv.innerHTML = `
+            <h2>Test Summary</h2>
+            <p>
+                Total Tests: ${total}<br>
+                <span class="pass-count">✅ Passed: ${passCount}</span><br>
+                <span class="fail-count">❌ Failed: ${failCount}</span><br>
+                Success Rate: ${passPercent}%
+            </p>
+            ${failCount === 0 ?
+                '<p style="color: #00ff66; font-size: 24px;">🎉 All tests passed!</p>' :
+                '<p style="color: #ff4444; font-size: 24px;">⚠️ Some tests failed. Check results above.</p>'
+            }
+        `;
+
+        // Log summary to console
+        console.log('\n' + '='.repeat(50));
+        console.log('EVENT BUS TEST SUMMARY');
+        console.log('='.repeat(50));
+        console.log(`Total Tests: ${total}`);
+        console.log(`Passed: ${passCount}`);
+        console.log(`Failed: ${failCount}`);
+        console.log(`Success Rate: ${passPercent}%`);
+        console.log('='.repeat(50));
+
+        if (failCount === 0) {
+            console.log('✅ Event Bus module working correctly!');
+        } else {
+            console.error('❌ Some tests failed. Review results above.');
+        }
+    </script>
+</body>
+</html>
