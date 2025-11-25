@@ -31,6 +31,7 @@ import timeState from './modules/state/timeState.js';
 
 // Data modules
 import { calculateGroundTrack } from './modules/data/propagation.js';
+import websocketManager from './modules/data/websocket.js';
 
 // ============================================
 // STATE MANAGEMENT
@@ -2754,23 +2755,17 @@ async function fetchSatellites() {
     }
 }
 
-/**
- * WebSocket connection for real-time updates
- *
- * MOBILE: Lower update frequency on mobile
- */
-function connectWebSocket() {
-    // TODO: Implement WebSocket connection
-    // const ws = new WebSocket('ws://localhost:8000/ws/realtime');
-    logger.info('WebSocket connection: Not yet implemented', logger.CATEGORY.DATA);
-}
-
 // Export for use in other modules (if needed)
 window.SatelliteApp = {
-    state,
+    // State modules (read-only access)
+    uiState,
+    sensorState,
+    satelliteState,
+    timeState,
+    // Functions
     togglePanel,
     fetchSatellites,
-    connectWebSocket,
+    websocketManager,
     // Debug helpers
     updateDeckOverlay,
     testSensors: () => {
