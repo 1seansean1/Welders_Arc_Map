@@ -333,6 +333,9 @@
         // ============================================
         console.log('Testing state immutability...');
 
+        // Reset to ensure predictable initial state (panelExpanded=false, activeSection='time')
+        uiState.reset();
+
         const state1 = uiState.getUIState();
         state1.panelExpanded = true; // Try to mutate
         state1.activeSection = 'hacked'; // Try to mutate

@@ -344,8 +344,15 @@ class SatelliteState {
         const satellite = this._state.satellites[satelliteIndex];
         const updatedSatellite = { ...satellite, ...updates };
 
+        // Convert property names for validation (tleLine1 -> tle1, tleLine2 -> tle2)
+        const validationData = {
+            name: updatedSatellite.name,
+            tle1: updatedSatellite.tleLine1,
+            tle2: updatedSatellite.tleLine2
+        };
+
         // Validate updated satellite
-        const validation = validateSatellite(updatedSatellite);
+        const validation = validateSatellite(validationData);
         if (!validation.valid) {
             logger.log('Satellite validation failed', logger.CATEGORY.ERROR, validation.errors);
             return { success: false, satellite: null, errors: validation.errors };
