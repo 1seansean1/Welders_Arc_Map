@@ -1111,19 +1111,20 @@ Notes:
 ──────────────────────────────────────────────────────────────────────────────
 STEP 3.3: Extract Satellite Propagation (SGP4)
 ──────────────────────────────────────────────────────────────────────────────
-Status: [~] IN PROGRESS
+Status: [✓] COMPLETE
 Current Location: app.js lines 1690-1768
 Target: modules/data/propagation.js
 Started: 2025-11-25 12:30 UTC
+Completed: 2025-11-25 13:00 UTC
 
 Tasks:
   [✓] Create modules/data/propagation.js
   [✓] Move propagateSatellite() function
   [✓] Move calculateGroundTrack() function
   [✓] Add batchPropagate() for multiple satellites
-  [ ] Update app.js to import propagation module
-  [ ] Remove original functions from app.js
-  [ ] Test that ground tracks still work
+  [✓] Update app.js to import propagation module
+  [✓] Remove original functions from app.js
+  [✓] Test that ground tracks still work
 
 Testing Checklist:
   [ ] Single satellite propagation works
@@ -1151,7 +1152,10 @@ Notes:
   - Extracted calculateGroundTrack() - computes orbital path positions
   - Added batchPropagate() - helper for multiple satellites
   - All functions include error handling and validation
-  - Next: Update app.js to import and use the module
+  - Updated app.js: added import, removed 89 lines (net -86 lines)
+  - Only calculateGroundTrack imported (propagateSatellite used internally)
+  - Commit: 5d3cbb9
+  - Ready for Step 3.4: Extract WebSocket Handler
 
 
 ──────────────────────────────────────────────────────────────────────────────
