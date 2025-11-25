@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.bak
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Node modules (if we add bundling later)
+node_modules/
+package-lock.json
+
+# Environment variables
+.env
+.env.local

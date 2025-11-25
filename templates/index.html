@@ -1748,6 +1748,66 @@
         </div>
     </div>
 
-    <script src="/static/app.js?v=45"></script>
+    <!-- ES6 Module Loading -->
+    <script type="module" src="/static/app.js?v=46"></script>
+
+    <!-- Fallback for browsers without ES6 module support -->
+    <script nomodule>
+        alert('⚠️ Your browser does not support ES6 modules.\n\nPlease upgrade to:\n• Chrome 61+\n• Firefox 60+\n• Safari 10.1+\n• Edge 16+');
+        console.error('ES6 modules not supported. Please upgrade your browser.');
+    </script>
+
+    <!-- Module load error handler -->
+    <script type="module">
+        // Global error handler for module loading failures
+        window.addEventListener('error', (e) => {
+            if (e.message && e.message.includes('module')) {
+                console.error('❌ Module loading failed:', e);
+                console.error('Error details:', {
+                    message: e.message,
+                    filename: e.filename,
+                    lineno: e.lineno,
+                    colno: e.colno
+                });
+
+                // Show user-friendly error message
+                const errorDiv = document.createElement('div');
+                errorDiv.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: #ff4444;
+                    color: white;
+                    padding: 20px;
+                    border-radius: 8px;
+                    font-family: system-ui, sans-serif;
+                    font-size: 14px;
+                    max-width: 400px;
+                    z-index: 10000;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+                `;
+                errorDiv.innerHTML = `
+                    <strong>❌ Module Loading Failed</strong><br><br>
+                    The application failed to load properly.<br><br>
+                    <strong>Possible causes:</strong><br>
+                    • Network connection issue<br>
+                    • Backend server not running<br>
+                    • File not found<br><br>
+                    <strong>To fix:</strong><br>
+                    1. Check that backend is running<br>
+                    2. Refresh the page (Ctrl+R)<br>
+                    3. Check browser console for details
+                `;
+                document.body.appendChild(errorDiv);
+            }
+        });
+
+        // Check if critical modules loaded
+        window.addEventListener('load', () => {
+            // Module loading successful
+            console.log('✅ ES6 modules loaded successfully');
+        });
+    </script>
 </body>
 </html>
