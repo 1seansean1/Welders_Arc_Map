@@ -20,6 +20,7 @@
 
 import logger from './modules/utils/logger.js';
 import { formatDateTimeLocal, addDays, addHours, getUTCNow } from './modules/utils/time.js';
+import { calculateFOVCircle, degreesToRadians, radiansToDegrees, EARTH_RADIUS_KM } from './modules/utils/geometry.js';
 
 // ============================================
 // GLOBAL STATE
@@ -1368,45 +1369,6 @@ function toggleSatelliteSelection(satelliteId) {
 // ============================================
 // SENSOR VISUALIZATION & FOV CALCULATIONS
 // ============================================
-
-/**
- * Calculate FOV circle polygon
- * Computes ground coordinates for sensor field of view at given altitude
- *
- * PARAMETERS:
- * - sensorLat: Sensor latitude (degrees)
- * - sensorLon: Sensor longitude (degrees)
- * - fovAltitude: Reference altitude for FOV calculation (km)
- * - numPoints: Number of polygon vertices (default 64)
- *
- * RETURNS: Array of [lon, lat] coordinates forming a circle
- *
- * PERFORMANCE: O(n) where n = numPoints
- */
-function calculateFOVCircle(sensorLat, sensorLon, fovAltitude, numPoints = 64) {
-    const EARTH_RADIUS = 6371; // km
-
-    // Calculate horizon distance using spherical geometry
-    // d = sqrt(2 * R * H + H^2) where H is satellite altitude
-    const horizonDistance = Math.sqrt(2 * EARTH_RADIUS * fovAltitude + fovAltitude * fovAltitude);
-
-    // Convert to angular radius (degrees)
-    const angularRadius = (horizonDistance / EARTH_RADIUS) * (180 / Math.PI);
-
-    // Generate circle points
-    const points = [];
-    for (let i = 0; i <= numPoints; i++) {
-        const angle = (i / numPoints) * 2 * Math.PI;
-
-        // Calculate point at distance and bearing from sensor
-        const lat = sensorLat + angularRadius * Math.cos(angle);
-        const lon = sensorLon + (angularRadius * Math.sin(angle)) / Math.cos(sensorLat * Math.PI / 180);
-
-        points.push([lon, lat]);
-    }
-
-    return points;
-}
 
 // ============================================
 // SATELLITE PROPAGATION (SGP4)
