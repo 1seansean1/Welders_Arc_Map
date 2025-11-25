@@ -29,6 +29,9 @@ import sensorState from './modules/state/sensorState.js';
 import satelliteState from './modules/state/satelliteState.js';
 import timeState from './modules/state/timeState.js';
 
+// Data modules
+import { calculateGroundTrack } from './modules/data/propagation.js';
+
 // ============================================
 // STATE MANAGEMENT
 // ============================================
@@ -1183,95 +1186,6 @@ function toggleSatelliteSelection(satelliteId) {
 // ============================================
 // SENSOR VISUALIZATION & FOV CALCULATIONS
 // ============================================
-
-// ============================================
-// SATELLITE PROPAGATION (SGP4)
-// ============================================
-
-/**
- * Propagate satellite position using SGP4
- * Converts TLE data to geographic coordinates at a specific time
- *
- * @param {string} tleLine1 - TLE line 1 (69 characters)
- * @param {string} tleLine2 - TLE line 2 (69 characters)
- * @param {Date} date - Time to propagate to
- * @returns {Object|null} - {lat, lon, alt} or null if propagation fails
- *
- * PERFORMANCE: <1ms per satellite
- * LIBRARY: satellite.js (SGP4 implementation)
- */
-function propagateSatellite(tleLine1, tleLine2, date) {
-    try {
-        // Initialize satellite record from TLE
-        const satrec = satellite.twoline2satrec(tleLine1, tleLine2);
-
-        // Propagate to specific time
-        const positionAndVelocity = satellite.propagate(satrec, date);
-
-        // Check for propagation errors
-        if (positionAndVelocity.error) {
-            logger.warning('SGP4 propagation error', logger.CATEGORY.SATELLITE, {
-                error: positionAndVelocity.error
-            });
-            return null;
-        }
-
-        // Get position in ECI coordinates (Earth-Centered Inertial)
-        const positionEci = positionAndVelocity.position;
-
-        if (!positionEci) {
-            return null;
-        }
-
-        // Convert to GMST (Greenwich Mean Sidereal Time) for geodetic conversion
-        const gmst = satellite.gstime(date);
-
-        // Convert ECI to geodetic coordinates (lat/lon/alt)
-        const positionGd = satellite.eciToGeodetic(positionEci, gmst);
-
-        // Convert radians to degrees and altitude to kilometers
-        return {
-            lat: satellite.degreesLat(positionGd.latitude),
-            lon: satellite.degreesLong(positionGd.longitude),
-            alt: positionGd.height // kilometers
-        };
-    } catch (error) {
-        logger.error('Failed to propagate satellite', logger.CATEGORY.SATELLITE, {
-            error: error.message
-        });
-        return null;
-    }
-}
-
-/**
- * Calculate ground track for a satellite
- * Returns array of positions along the orbital path
- *
- * @param {string} tleLine1 - TLE line 1
- * @param {string} tleLine2 - TLE line 2
- * @param {Date} startTime - Start time for ground track
- * @param {number} durationMinutes - How many minutes of orbit to calculate
- * @param {number} stepSeconds - Time step between points (default: 60 seconds)
- * @returns {Array} - Array of [lon, lat] positions
- *
- * PERFORMANCE: O(n) where n = number of points
- * TYPICAL: 90 points for 90-minute orbit with 60-second steps
- */
-function calculateGroundTrack(tleLine1, tleLine2, startTime, durationMinutes = 90, stepSeconds = 60) {
-    const track = [];
-    const steps = Math.floor((durationMinutes * 60) / stepSeconds);
-
-    for (let i = 0; i <= steps; i++) {
-        const time = new Date(startTime.getTime() + i * stepSeconds * 1000);
-        const position = propagateSatellite(tleLine1, tleLine2, time);
-
-        if (position) {
-            track.push([position.lon, position.lat]);
-        }
-    }
-
-    return track;
-}
 
 /**
  * Update Deck.gl overlay with sensors, FOV, and satellite ground tracks
