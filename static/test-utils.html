@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Utility Modules Test Suite</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #f5f5f5;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 { color: #9dd4ff; }
+        h2 { color: #00ff66; margin-top: 30px; }
+        .test-section {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .test-result {
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        .pass {
+            background: #004400;
+            border-left: 4px solid #00ff66;
+        }
+        .fail {
+            background: #440000;
+            border-left: 4px solid #ff4444;
+        }
+        .summary {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+            font-size: 18px;
+        }
+        .pass-count { color: #00ff66; }
+        .fail-count { color: #ff4444; }
+        code {
+            background: #2a2a2a;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #ffeb3b;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Utility Modules Test Suite</h1>
+    <p>Testing all Phase 1 utility modules...</p>
+
+    <div id="test-results"></div>
+    <div id="summary" class="summary"></div>
+
+    <script type="module">
+        // Import all utility modules
+        import logger from './modules/utils/logger.js';
+        import {
+            formatDateTimeLocal,
+            addDays,
+            addHours,
+            formatLogTime,
+            hoursDifference,
+            daysDifference,
+            formatDuration
+        } from './modules/utils/time.js';
+        import {
+            calculateFOVCircle,
+            degreesToRadians,
+            radiansToDegrees,
+            greatCircleDistance,
+            calculateBearing,
+            isValidCoordinate,
+            EARTH_RADIUS_KM
+        } from './modules/utils/geometry.js';
+        import {
+            validateLatitude,
+            validateLongitude,
+            validateAltitude,
+            validateName,
+            validateTLE,
+            sanitizeHTML,
+            validateSensor,
+            validateSatellite
+        } from './modules/utils/validation.js';
+
+        const resultsDiv = document.getElementById('test-results');
+        const summaryDiv = document.getElementById('summary');
+        let passCount = 0;
+        let failCount = 0;
+
+        function addTestResult(category, testName, passed, message = '') {
+            if (!document.getElementById(category)) {
+                const section = document.createElement('div');
+                section.className = 'test-section';
+                section.innerHTML = `<h2>${category}</h2><div id="${category}-results"></div>`;
+                resultsDiv.appendChild(section);
+            }
+
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${passed ? 'pass' : 'fail'}`;
+            resultDiv.textContent = `${passed ? '✅' : '❌'} ${testName}${message ? ': ' + message : ''}`;
+            document.getElementById(category + '-results').appendChild(resultDiv);
+
+            if (passed) passCount++;
+            else failCount++;
+        }
+
+        function assertEquals(actual, expected, testName, category) {
+            const passed = actual === expected;
+            const message = passed ? '' : `Expected ${expected}, got ${actual}`;
+            addTestResult(category, testName, passed, message);
+            return passed;
+        }
+
+        function assertTrue(condition, testName, category, message = '') {
+            addTestResult(category, testName, condition, message);
+            return condition;
+        }
+
+        // ============================================
+        // LOGGER MODULE TESTS
+        // ============================================
+        console.log('Testing logger module...');
+
+        assertTrue(
+            typeof logger === 'object',
+            'Logger module imports as object',
+            'Logger Module'
+        );
+
+        assertTrue(
+            typeof logger.log === 'function',
+            'Logger has log method',
+            'Logger Module'
+        );
+
+        assertTrue(
+            typeof logger.CATEGORY === 'object',
+            'Logger has CATEGORY constants',
+            'Logger Module'
+        );
+
+        assertEquals(
+            logger.CATEGORY.MAP,
+            'MAP',
+            'CATEGORY.MAP equals "MAP"',
+            'Logger Module'
+        );
+
+        // ============================================
+        // TIME MODULE TESTS
+        // ============================================
+        console.log('Testing time module...');
+
+        // Test formatDateTimeLocal
+        const testDate = new Date('2025-11-25T14:30:00');
+        const formatted = formatDateTimeLocal(testDate);
+        assertEquals(
+            formatted,
+            '2025-11-25T14:30',
+            'formatDateTimeLocal formats correctly',
+            'Time Module'
+        );
+
+        // Test addDays
+        const today = new Date('2025-11-25T12:00:00');
+        const tomorrow = addDays(today, 1);
+        assertEquals(
+            tomorrow.getDate(),
+            26,
+            'addDays adds 1 day correctly',
+            'Time Module'
+        );
+
+        // Test addHours
+        const hourLater = addHours(today, 1);
+        assertEquals(
+            hourLater.getHours(),
+            13,
+            'addHours adds 1 hour correctly',
+            'Time Module'
+        );
+
+        // Test formatLogTime
+        const logTime = formatLogTime(new Date('2025-11-25T14:30:15.123'));
+        assertTrue(
+            logTime.includes('14:30:15'),
+            'formatLogTime includes HH:MM:SS',
+            'Time Module'
+        );
+
+        // Test hoursDifference
+        const start = new Date('2025-11-25T10:00:00');
+        const end = new Date('2025-11-25T13:00:00');
+        assertEquals(
+            hoursDifference(start, end),
+            3,
+            'hoursDifference calculates 3 hours',
+            'Time Module'
+        );
+
+        // Test daysDifference
+        const day1 = new Date('2025-11-25T00:00:00');
+        const day2 = new Date('2025-11-28T00:00:00');
+        assertEquals(
+            daysDifference(day1, day2),
+            3,
+            'daysDifference calculates 3 days',
+            'Time Module'
+        );
+
+        // Test formatDuration
+        const duration = formatDuration(3665000); // 1h 1m 5s
+        assertTrue(
+            duration.includes('1h') && duration.includes('1m'),
+            'formatDuration formats 1h 1m correctly',
+            'Time Module',
+            `Got: ${duration}`
+        );
+
+        // ============================================
+        // GEOMETRY MODULE TESTS
+        // ============================================
+        console.log('Testing geometry module...');
+
+        // Test EARTH_RADIUS_KM constant
+        assertEquals(
+            EARTH_RADIUS_KM,
+            6371,
+            'EARTH_RADIUS_KM is 6371',
+            'Geometry Module'
+        );
+
+        // Test degreesToRadians
+        const radians = degreesToRadians(180);
+        assertTrue(
+            Math.abs(radians - Math.PI) < 0.0001,
+            'degreesToRadians(180) ≈ π',
+            'Geometry Module'
+        );
+
+        // Test radiansToDegrees
+        const degrees = radiansToDegrees(Math.PI);
+        assertTrue(
+            Math.abs(degrees - 180) < 0.0001,
+            'radiansToDegrees(π) ≈ 180',
+            'Geometry Module'
+        );
+
+        // Test isValidCoordinate
+        assertTrue(
+            isValidCoordinate(47.6, -122.3),
+            'Valid coordinates accepted (47.6, -122.3)',
+            'Geometry Module'
+        );
+
+        assertTrue(
+            !isValidCoordinate(91, 0),
+            'Invalid latitude rejected (91)',
+            'Geometry Module'
+        );
+
+        assertTrue(
+            !isValidCoordinate(0, 181),
+            'Invalid longitude rejected (181)',
+            'Geometry Module'
+        );
+
+        // Test calculateBearing
+        const bearing = calculateBearing(0, 0, 0, 90);
+        assertTrue(
+            Math.abs(bearing - 90) < 0.1,
+            'Bearing from (0,0) to (0,90) ≈ 90°',
+            'Geometry Module'
+        );
+
+        // Test greatCircleDistance
+        const distance = greatCircleDistance(0, 0, 0, 1);
+        assertTrue(
+            distance > 110 && distance < 112,
+            'Distance of 1° longitude ≈ 111km',
+            'Geometry Module',
+            `Got: ${distance.toFixed(2)}km`
+        );
+
+        // Test calculateFOVCircle
+        const fovCircle = calculateFOVCircle(47.6, -122.3, 500, 8);
+        assertEquals(
+            fovCircle.length,
+            9,
+            'FOV circle with 8 points has 9 coords (closed)',
+            'Geometry Module'
+        );
+
+        assertTrue(
+            Array.isArray(fovCircle[0]) && fovCircle[0].length === 2,
+            'FOV circle points are [lon, lat] arrays',
+            'Geometry Module'
+        );
+
+        // ============================================
+        // VALIDATION MODULE TESTS
+        // ============================================
+        console.log('Testing validation module...');
+
+        // Test validateLatitude
+        let result = validateLatitude(47.6);
+        assertTrue(
+            result.valid && result.value === 47.6,
+            'Valid latitude accepted (47.6)',
+            'Validation Module'
+        );
+
+        result = validateLatitude(91);
+        assertTrue(
+            !result.valid,
+            'Invalid latitude rejected (91)',
+            'Validation Module',
+            result.error
+        );
+
+        // Test validateLongitude
+        result = validateLongitude(-122.3);
+        assertTrue(
+            result.valid && result.value === -122.3,
+            'Valid longitude accepted (-122.3)',
+            'Validation Module'
+        );
+
+        result = validateLongitude(181);
+        assertTrue(
+            !result.valid,
+            'Invalid longitude rejected (181)',
+            'Validation Module',
+            result.error
+        );
+
+        // Test validateAltitude
+        result = validateAltitude(100);
+        assertTrue(
+            result.valid && result.value === 100,
+            'Valid altitude accepted (100m)',
+            'Validation Module'
+        );
+
+        result = validateAltitude(10000);
+        assertTrue(
+            !result.valid,
+            'Invalid altitude rejected (10000m)',
+            'Validation Module',
+            result.error
+        );
+
+        // Test validateName with XSS protection
+        result = validateName('Sensor 1');
+        assertTrue(
+            result.valid && result.value === 'Sensor 1',
+            'Valid name accepted',
+            'Validation Module'
+        );
+
+        result = validateName('<script>alert("XSS")</script>');
+        assertTrue(
+            !result.valid,
+            'XSS attempt blocked (<script> tag)',
+            'Validation Module',
+            result.error
+        );
+
+        result = validateName('');
+        assertTrue(
+            !result.valid,
+            'Empty name rejected',
+            'Validation Module',
+            result.error
+        );
+
+        // Test sanitizeHTML
+        const sanitized = sanitizeHTML('<script>alert("XSS")</script>Hello');
+        assertTrue(
+            !sanitized.includes('<') && sanitized.includes('Hello'),
+            'HTML tags removed by sanitizeHTML',
+            'Validation Module',
+            `Result: ${sanitized}`
+        );
+
+        // Test validateTLE
+        const validTLE1 = '1 25544U 98067A   08264.51782528 -.00002182  00000-0 -11606-4 0  2927';
+        const validTLE2 = '2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537';
+        result = validateTLE(validTLE1, validTLE2);
+        assertTrue(
+            result.valid,
+            'Valid TLE accepted',
+            'Validation Module'
+        );
+
+        result = validateTLE('invalid', 'invalid');
+        assertTrue(
+            !result.valid,
+            'Invalid TLE rejected',
+            'Validation Module',
+            result.error
+        );
+
+        // Test validateSensor (composite)
+        const sensor = {
+            name: 'Test Sensor',
+            lat: 47.6,
+            lon: -122.3,
+            alt: 100,
+            fovAltitude: 500
+        };
+        result = validateSensor(sensor);
+        assertTrue(
+            result.valid,
+            'Valid sensor object accepted',
+            'Validation Module'
+        );
+
+        const invalidSensor = {
+            name: '',
+            lat: 91,
+            lon: -122.3,
+            alt: 100,
+            fovAltitude: 500
+        };
+        result = validateSensor(invalidSensor);
+        assertTrue(
+            !result.valid && Object.keys(result.errors).length === 2,
+            'Invalid sensor rejected with 2 errors',
+            'Validation Module',
+            `Errors: ${Object.keys(result.errors).join(', ')}`
+        );
+
+        // Test validateSatellite (composite)
+        const satellite = {
+            name: 'Test Satellite',
+            tle1: validTLE1,
+            tle2: validTLE2
+        };
+        result = validateSatellite(satellite);
+        assertTrue(
+            result.valid,
+            'Valid satellite object accepted',
+            'Validation Module'
+        );
+
+        // ============================================
+        // SUMMARY
+        // ============================================
+        const total = passCount + failCount;
+        const passPercent = ((passCount / total) * 100).toFixed(1);
+
+        summaryDiv.innerHTML = `
+            <h2>Test Summary</h2>
+            <p>
+                Total Tests: ${total}<br>
+                <span class="pass-count">✅ Passed: ${passCount}</span><br>
+                <span class="fail-count">❌ Failed: ${failCount}</span><br>
+                Success Rate: ${passPercent}%
+            </p>
+            ${failCount === 0 ?
+                '<p style="color: #00ff66; font-size: 24px;">🎉 All tests passed!</p>' :
+                '<p style="color: #ff4444; font-size: 24px;">⚠️ Some tests failed. Check results above.</p>'
+            }
+        `;
+
+        // Log summary to console
+        console.log('\n' + '='.repeat(50));
+        console.log('TEST SUMMARY');
+        console.log('='.repeat(50));
+        console.log(`Total Tests: ${total}`);
+        console.log(`Passed: ${passCount}`);
+        console.log(`Failed: ${failCount}`);
+        console.log(`Success Rate: ${passPercent}%`);
+        console.log('='.repeat(50));
+
+        if (failCount === 0) {
+            console.log('✅ All utility modules working correctly!');
+        } else {
+            console.error('❌ Some tests failed. Review results above.');
+        }
+    </script>
+</body>
+</html>
