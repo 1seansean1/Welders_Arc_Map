@@ -22,37 +22,21 @@ import logger from './modules/utils/logger.js';
 import { formatDateTimeLocal, addDays, addHours, getUTCNow } from './modules/utils/time.js';
 import { calculateFOVCircle, degreesToRadians, radiansToDegrees, EARTH_RADIUS_KM } from './modules/utils/geometry.js';
 
-// ============================================
-// GLOBAL STATE
-// ============================================
+// State modules
+import eventBus from './modules/events/eventBus.js';
+import uiState from './modules/state/uiState.js';
+import sensorState from './modules/state/sensorState.js';
+import satelliteState from './modules/state/satelliteState.js';
+import timeState from './modules/state/timeState.js';
 
-const state = {
-    panelExpanded: false,
-    activeSection: 'time',
-    currentTime: new Date(),
-    startTime: null,
-    stopTime: null,
-    lookbackHours: 24, // Default lookback duration
-    isMobile: window.innerWidth < 768,
-    // Pending changes tracking
-    hasPendingChanges: false,
-    committedStartTime: null,
-    committedStopTime: null,
-    // Sensor data
-    sensors: [],
-    nextSensorId: 13, // Start after default 12 sensors
-    editingRow: null, // Row being edited (null = not editing)
-    editBuffer: null,  // Temporary storage for edits
-    activeRowId: null,  // Currently highlighted row (blue background, only one at a time)
-    // Sort state
-    currentSortColumn: null,  // null = default order, or column name ('name', 'lat', 'lon', 'alt')
-    currentSortDirection: null,  // null = default, 'asc' = ascending, 'desc' = descending
-    // Satellite data
-    satellites: [],
-    nextSatelliteId: 1,
-    selectedSatellites: [],  // IDs of selected satellites
-    watchlistSatellites: []  // IDs of starred satellites
-};
+// ============================================
+// STATE MANAGEMENT
+// ============================================
+// State is now managed through dedicated modules:
+// - uiState: Panel expansion, active section, mobile detection
+// - sensorState: Sensor CRUD, selection, sorting
+// - satelliteState: Satellite CRUD, selection, watchlist
+// - timeState: Current time, time ranges, pending changes
 
 // ============================================
 // CONTROL PANEL LOGIC
@@ -68,9 +52,10 @@ const mapContainer = document.getElementById('map-container');
  * MOBILE: Uses CSS transform for 60fps animation
  */
 function togglePanel(forceState = null) {
-    state.panelExpanded = forceState !== null ? forceState : !state.panelExpanded;
+    const newState = forceState !== null ? forceState : !uiState.isPanelExpanded();
+    uiState.setPanelExpanded(newState);
 
-    if (state.panelExpanded) {
+    if (uiState.isPanelExpanded()) {
         panel.classList.add('expanded');
     } else {
         panel.classList.remove('expanded');
@@ -80,7 +65,7 @@ function togglePanel(forceState = null) {
     }
 
     // Update collapse button title (icons toggle via CSS)
-    collapseBtn.title = state.panelExpanded ? 'Collapse panel' : 'Expand panel';
+    collapseBtn.title = uiState.isPanelExpanded() ? 'Collapse panel' : 'Expand panel';
 }
 
 /**
@@ -89,7 +74,7 @@ function togglePanel(forceState = null) {
  */
 panel.addEventListener('click', (e) => {
     // Only expand if panel is collapsed and not clicking a button
-    if (!state.panelExpanded && !e.target.closest('button')) {
+    if (!uiState.isPanelExpanded() && !e.target.closest('button')) {
         togglePanel(true);
     }
 });
@@ -122,7 +107,7 @@ function handleClickOutside(e) {
     }
 
     // Check if click is outside the panel
-    if (!panel.contains(e.target) && state.panelExpanded && !state.isMobile) {
+    if (!panel.contains(e.target) && uiState.isPanelExpanded() && !uiState.isMobile()) {
         togglePanel(false);
     }
 }
@@ -144,7 +129,7 @@ if ('ontouchstart' in window) {
             return;
         }
 
-        if (!panel.contains(e.target) && state.panelExpanded && !state.isMobile) {
+        if (!panel.contains(e.target) && uiState.isPanelExpanded() && !uiState.isMobile()) {
             togglePanel(false);
         }
     }, { passive: true });
@@ -162,7 +147,7 @@ navButtons.forEach(btn => {
         e.stopPropagation(); // Prevent any parent handlers
 
         const section = btn.dataset.section;
-        const wasExpanded = state.panelExpanded;
+        const wasExpanded = uiState.isPanelExpanded();
 
         // If panel is collapsed, expand it
         if (!wasExpanded) {
@@ -170,7 +155,7 @@ navButtons.forEach(btn => {
         }
 
         // If clicking the already-active section while panel was expanded, collapse the panel
-        if (section === state.activeSection && wasExpanded) {
+        if (section === uiState.getActiveSection() && wasExpanded) {
             togglePanel(false);
             return;
         }
@@ -182,7 +167,7 @@ navButtons.forEach(btn => {
         // Switch content
         switchContent(section);
 
-        state.activeSection = section;
+        uiState.setActiveSection(section);
     });
 
     // MOBILE: Add hover effect on touch
@@ -217,217 +202,27 @@ function switchContent(section) {
 // SENSOR CONTROLS
 // ============================================
 
-/**
- * Default sensor data - 12 major world cities
- * Each sensor represents a ground station for satellite tracking
- *
- * MOBILE: Compact table design fits within control panel
- * PERFORMANCE: O(1) lookups by ID
- */
-const defaultSensors = [
-    { id: 1, name: 'Tokyo', lat: 35.7, lon: 139.7, alt: 40, selected: true, fovAltitude: 500, iconType: 'donut' },
-    { id: 2, name: 'New York', lat: 40.7, lon: -74.0, alt: 10, selected: true, fovAltitude: 500, iconType: 'donut' },
-    { id: 3, name: 'London', lat: 51.5, lon: -0.1, alt: 11, selected: true, fovAltitude: 500, iconType: 'donut' },
-    { id: 4, name: 'Paris', lat: 48.9, lon: 2.4, alt: 35, selected: true, fovAltitude: 500, iconType: 'donut' },
-    { id: 5, name: 'Beijing', lat: 39.9, lon: 116.4, alt: 43, selected: true, fovAltitude: 500, iconType: 'donut' },
-    { id: 6, name: 'Sydney', lat: -33.9, lon: 151.2, alt: 58, selected: true, fovAltitude: 500, iconType: 'donut' },
-    { id: 7, name: 'Dubai', lat: 25.3, lon: 55.3, alt: 5, selected: true, fovAltitude: 500, iconType: 'donut' },
-    { id: 8, name: 'Mumbai', lat: 19.1, lon: 72.9, alt: 14, selected: true, fovAltitude: 500, iconType: 'donut' },
-    { id: 9, name: 'São Paulo', lat: -23.5, lon: -46.6, alt: 760, selected: true, fovAltitude: 500, iconType: 'donut' },
-    { id: 10, name: 'Moscow', lat: 55.8, lon: 37.6, alt: 156, selected: true, fovAltitude: 500, iconType: 'donut' },
-    { id: 11, name: 'Cairo', lat: 30.0, lon: 31.2, alt: 23, selected: true, fovAltitude: 500, iconType: 'donut' },
-    { id: 12, name: 'Singapore', lat: 1.3, lon: 103.8, alt: 15, selected: true, fovAltitude: 500, iconType: 'donut' }
-];
+// Default sensor data is now managed in sensorState module
 
-/**
- * Default satellites with TLE data
- * 18 satellites: Amateur radio, ISS, Starlink, GPS, GLONASS
- */
-const defaultSatellites = [
-    {
-        id: 1,
-        name: 'AO-07',
-        noradId: 7530,
-        tleLine1: '1 07530U 74089B   25328.63325197 -.00000040  00000-0  41462-4 0  9995',
-        tleLine2: '2 07530 101.9973 334.7103 0012252 160.6151 316.0496 12.53693653334888',
-        selected: false,
-        watchlisted: false
-    },
-    {
-        id: 2,
-        name: 'UO-11',
-        noradId: 14781,
-        tleLine1: '1 14781U 84021B   25328.66253352  .00001879  00000-0  20018-3 0  9997',
-        tleLine2: '2 14781  97.7788 291.9758 0008716 131.8357 228.3606 14.90050575226665',
-        selected: false,
-        watchlisted: false
-    },
-    {
-        id: 3,
-        name: 'AO-27',
-        noradId: 22825,
-        tleLine1: '1 22825U 93061C   25328.67770117  .00000155  00000-0  76280-4 0  9992',
-        tleLine2: '2 22825  98.7168  30.9001 0008029 347.9707  12.1282 14.30867005677751',
-        selected: false,
-        watchlisted: false
-    },
-    {
-        id: 4,
-        name: 'FO-29',
-        noradId: 24278,
-        tleLine1: '1 24278U 96046B   25328.65866373 -.00000024  00000-0  14798-4 0  9992',
-        tleLine2: '2 24278  98.5474 200.2186 0348829 266.9954  89.1225 13.53261232445509',
-        selected: false,
-        watchlisted: false
-    },
-    {
-        id: 5,
-        name: 'GO-32',
-        noradId: 25397,
-        tleLine1: '1 25397U 98043D   25328.51312778  .00000102  00000-0  64392-4 0  9995',
-        tleLine2: '2 25397  98.9906 311.3060 0002394  85.3934 274.7517 14.24369423422192',
-        selected: false,
-        watchlisted: false
-    },
-    {
-        id: 6,
-        name: 'ISS',
-        noradId: 25544,
-        tleLine1: '1 25544U 98067A   25328.54472231  .00014120  00000-0  26353-3 0  9998',
-        tleLine2: '2 25544  51.6316 232.5414 0003895 163.7073 196.4042 15.49046550540034',
-        selected: false,
-        watchlisted: false
-    },
-    {
-        id: 7,
-        name: 'STARLINK-1008',
-        noradId: 44714,
-        tleLine1: '1 44714U 19074B   25328.94319468 -.00000606  00000+0 -21797-4 0  9998',
-        tleLine2: '2 44714  53.0556 296.8401 0001385  98.0066 262.1081 15.06385986332966',
-        selected: false,
-        watchlisted: false
-    },
-    {
-        id: 8,
-        name: 'STARLINK-1011',
-        noradId: 44717,
-        tleLine1: '1 44717U 19074E   25328.95352045  .00631300  20175-3  93240-3 0  9999',
-        tleLine2: '2 44717  53.0444 263.8732 0002501 109.2764 250.8538 16.04408418333425',
-        selected: false,
-        watchlisted: false
-    },
-    {
-        id: 9,
-        name: 'STARLINK-1012',
-        noradId: 44718,
-        tleLine1: '1 44718U 19074F   25328.92107844  .00002207  00000+0  16702-3 0  9999',
-        tleLine2: '2 44718  53.0550 296.9433 0001550  81.2238 278.8927 15.06392614332957',
-        selected: false,
-        watchlisted: false
-    },
-    {
-        id: 10,
-        name: 'STARLINK-1017',
-        noradId: 44723,
-        tleLine1: '1 44723U 19074L   25328.61120294  .00048318  00000+0  24266-2 0  9991',
-        tleLine2: '2 44723  53.0523 293.3290 0005002  34.1557 325.9757 15.16828388332983',
-        selected: false,
-        watchlisted: false
-    },
-    {
-        id: 11,
-        name: 'STARLINK-1019',
-        noradId: 44724,
-        tleLine1: '1 44724U 19074M   25328.93994605  .00173374  00000+0  26843-2 0  9996',
-        tleLine2: '2 44724  53.0539 291.4658 0002130  93.4344 266.6909 15.52955184333031',
-        selected: false,
-        watchlisted: false
-    },
-    {
-        id: 12,
-        name: 'GPS BIIR-2 (PRN 13)',
-        noradId: 24876,
-        tleLine1: '1 24876U 97035A   25328.28519723  .00000044  00000+0  00000+0 0  9994',
-        tleLine2: '2 24876  55.8862 106.5908 0096588  57.0386 303.8639  2.00563532207846',
-        selected: false,
-        watchlisted: false
-    },
-    {
-        id: 13,
-        name: 'GPS BIIR-4 (PRN 20)',
-        noradId: 26360,
-        tleLine1: '1 26360U 00025A   25328.89436072 -.00000069  00000+0  00000+0 0  9997',
-        tleLine2: '2 26360  55.0347  27.5601 0038683 240.2350 292.1594  2.00569260187174',
-        selected: false,
-        watchlisted: false
-    },
-    {
-        id: 14,
-        name: 'GPS BIIR-5 (PRN 22)',
-        noradId: 26407,
-        tleLine1: '1 26407U 00040A   25328.88736902  .00000025  00000+0  00000+0 0  9991',
-        tleLine2: '2 26407  54.8953 223.2790 0126997 301.4772  65.4421  2.00567703185857',
-        selected: false,
-        watchlisted: false
-    },
-    {
-        id: 15,
-        name: 'COSMOS 2361',
-        noradId: 25590,
-        tleLine1: '1 25590U 98076A   25328.62868021  .00000071  00000+0  60348-4 0  9996',
-        tleLine2: '2 25590  82.9349 357.4824 0030455 318.0128 189.5315 13.73214848348627',
-        selected: false,
-        watchlisted: false
-    },
-    {
-        id: 16,
-        name: 'COSMOS 2378',
-        noradId: 26818,
-        tleLine1: '1 26818U 01023A   25328.92282861  .00000066  00000+0  53741-4 0  9994',
-        tleLine2: '2 26818  82.9289  12.9356 0031638 255.9971 278.2569 13.74139809226789',
-        selected: false,
-        watchlisted: false
-    },
-    {
-        id: 17,
-        name: 'COSMOS 2389',
-        noradId: 27436,
-        tleLine1: '1 27436U 02026A   25329.00848685  .00000036  00000+0  20795-4 0  9997',
-        tleLine2: '2 27436  82.9490 320.1133 0047713 108.7796 271.3848 13.75151921179059',
-        selected: false,
-        watchlisted: false
-    },
-    {
-        id: 18,
-        name: 'COSMOS 2398',
-        noradId: 27818,
-        tleLine1: '1 27818U 03023A   25328.99204600  .00000054  00000+0  42227-4 0  9993',
-        tleLine2: '2 27818  82.9465 285.7785 0031730 159.6538 268.5026 13.72383294125734',
-        selected: false,
-        watchlisted: false
-    }
-];
+// Default satellite data is now managed in satelliteState module
 
 /**
  * Initialize sensor data
- * Loads default sensors into state
+ * sensorState already contains default sensors, just render the UI
  */
 function initializeSensors() {
-    state.sensors = JSON.parse(JSON.stringify(defaultSensors)); // Deep copy
     renderSensorTable();
     initializeSensorTableHeaders();
-    logger.success('Sensors initialized', logger.CATEGORY.SENSOR, { count: state.sensors.length });
+    logger.success('Sensors initialized', logger.CATEGORY.SENSOR, { count: sensorState.getSensorCount() });
 }
 
 /**
  * Initialize satellite data
- * Loads default satellites into state
+ * satelliteState already contains default satellites, just render the UI
  */
 function initializeSatellites() {
-    state.satellites = JSON.parse(JSON.stringify(defaultSatellites)); // Deep copy
-    state.nextSatelliteId = state.satellites.length + 1;
     renderSatelliteTable();
-    logger.success('Satellites initialized', logger.CATEGORY.SATELLITE, { count: state.satellites.length });
+    logger.success('Satellites initialized', logger.CATEGORY.SATELLITE, { count: satelliteState.getSatelliteCount() });
 }
 
 /**
@@ -487,7 +282,7 @@ function renderSensorTable() {
     // Update column header indicators
     updateColumnHeaderIndicators();
 
-    logger.diagnostic('Sensor table rendered', logger.CATEGORY.SENSOR, { count: state.sensors.length });
+    logger.diagnostic('Sensor table rendered', logger.CATEGORY.SENSOR, { count: sensorState.getSensorCount() });
 }
 
 /**
@@ -520,8 +315,9 @@ function updateColumnHeaderIndicators() {
             let text = labelMap[columnName];
 
             // Add sort indicator if this column is sorted
-            if (state.currentSortColumn === columnName) {
-                text += state.currentSortDirection === 'asc' ? ' ▲' : ' ▼';
+            const sortState = sensorState.getSortState();
+            if (sortState.column === columnName) {
+                text += sortState.direction === 'asc' ? ' ▲' : ' ▼';
             }
 
             header.textContent = text;
@@ -534,16 +330,18 @@ function updateColumnHeaderIndicators() {
  * Returns a copy of the sensors array, sorted if needed
  */
 function getSortedSensors() {
+    const sortState = sensorState.getSortState();
+
     // If no sort is active, return original order
-    if (!state.currentSortColumn || !state.currentSortDirection) {
-        return [...state.sensors];
+    if (!sortState.column || !sortState.direction) {
+        return sensorState.getAllSensors();
     }
 
     // Create a copy for sorting
-    const sorted = [...state.sensors];
+    const sorted = sensorState.getAllSensors();
 
-    const column = state.currentSortColumn;
-    const direction = state.currentSortDirection;
+    const column = sortState.column;
+    const direction = sortState.direction;
 
     sorted.sort((a, b) => {
         let valA, valB;
@@ -590,27 +388,28 @@ function handleColumnHeaderClick(columnName) {
         return;
     }
 
+    const sortState = sensorState.getSortState();
+
     // Cycle through sort states
-    if (state.currentSortColumn === columnName) {
-        if (state.currentSortDirection === 'asc') {
+    if (sortState.column === columnName) {
+        if (sortState.direction === 'asc') {
             // asc → desc
-            state.currentSortDirection = 'desc';
-        } else if (state.currentSortDirection === 'desc') {
+            sensorState.setSortState(columnName, 'desc');
+        } else if (sortState.direction === 'desc') {
             // desc → default (no sort)
-            state.currentSortColumn = null;
-            state.currentSortDirection = null;
+            sensorState.setSortState(null, null);
         }
     } else {
         // New column → start with ascending
-        state.currentSortColumn = columnName;
-        state.currentSortDirection = 'asc';
+        sensorState.setSortState(columnName, 'asc');
     }
 
     // Re-render table with new sort
     renderSensorTable();
+    const newSortState = sensorState.getSortState();
     logger.diagnostic('Sensor table sorted', logger.CATEGORY.SENSOR, {
         column: columnName,
-        direction: state.currentSortDirection || 'default'
+        direction: newSortState.direction || 'default'
     });
 }
 
@@ -620,16 +419,17 @@ function handleColumnHeaderClick(columnName) {
  */
 function toggleSelectAll() {
     // Check if all are currently selected
-    const allSelected = state.sensors.every(s => s.selected);
+    const sensors = sensorState.getAllSensors();
+    const allSelected = sensors.every(s => s.selected);
 
     if (allSelected) {
         // Deselect all
-        state.sensors.forEach(s => s.selected = false);
+        sensorState.deselectAll();
         logger.diagnostic('All sensors deselected', logger.CATEGORY.SENSOR);
     } else {
         // Select all
-        state.sensors.forEach(s => s.selected = true);
-        logger.diagnostic('All sensors selected', logger.CATEGORY.SENSOR, { count: state.sensors.length });
+        sensorState.selectAll();
+        logger.diagnostic('All sensors selected', logger.CATEGORY.SENSOR, { count: sensorState.getSensorCount() });
     }
 
     // Re-render table and update map
@@ -651,7 +451,8 @@ function createSensorRow(sensor, index) {
     tr.dataset.index = index;
 
     // Apply blue highlight if this is the active row
-    if (state.activeRowId === sensor.id) {
+    const editingState = sensorState.getEditingState();
+    if (editingState.activeRowId === sensor.id) {
         tr.classList.add('selected');
     }
 
@@ -661,7 +462,7 @@ function createSensorRow(sensor, index) {
         if (e.target.type === 'checkbox') return;
 
         // Set this row as the active row
-        state.activeRowId = sensor.id;
+        sensorState.setActiveRow(sensor.id);
 
         // Remove blue highlight from all rows
         const allRows = document.querySelectorAll('.sensor-table tbody tr');
@@ -679,7 +480,7 @@ function createSensorRow(sensor, index) {
         if (e.target.type === 'checkbox') return;
 
         // Set this row as active
-        state.activeRowId = sensor.id;
+        sensorState.setActiveRow(sensor.id);
 
         // Open edit modal for this sensor
         editSensor();
@@ -694,11 +495,11 @@ function createSensorRow(sensor, index) {
     checkbox.checked = sensor.selected;
     checkbox.addEventListener('change', (e) => {
         e.stopPropagation(); // Prevent row click
-        sensor.selected = e.target.checked;
+        const newState = sensorState.toggleSensorSelection(sensor.id);
         // NOTE: Do NOT modify tr.classList here - blue highlight is controlled by activeRowId only
         logger.diagnostic('Sensor checkbox toggled', logger.CATEGORY.SENSOR, {
             name: sensor.name,
-            selected: sensor.selected
+            selected: newState
         });
 
         // Update map visualization when selection changes
@@ -911,31 +712,31 @@ function addSensor() {
     const startTime = Date.now();
 
     showEditorModal(null, (data) => {
-        const newSensor = {
-            id: state.nextSensorId++,
+        const result = sensorState.addSensor({
             name: data.name,
             lat: data.lat,
             lon: data.lon,
             alt: data.alt,
-            fovAltitude: data.fovAltitude,
-            iconType: 'donut',
-            selected: false
-        };
+            fovAltitude: data.fovAltitude
+        });
 
-        state.sensors.unshift(newSensor); // Add at beginning
-        renderSensorTable();
-        updateDeckOverlay(); // Update map visualization
+        if (result.success) {
+            renderSensorTable();
+            updateDeckOverlay(); // Update map visualization
 
-        logger.success(
-            `Sensor "${newSensor.name}" added`,
-            logger.CATEGORY.SENSOR,
-            {
-                id: newSensor.id,
-                lat: newSensor.lat.toFixed(2),
-                lon: newSensor.lon.toFixed(2),
-                duration: `${Date.now() - startTime}ms`
-            }
-        );
+            logger.success(
+                `Sensor "${result.sensor.name}" added`,
+                logger.CATEGORY.SENSOR,
+                {
+                    id: result.sensor.id,
+                    lat: result.sensor.lat.toFixed(2),
+                    lon: result.sensor.lon.toFixed(2),
+                    duration: `${Date.now() - startTime}ms`
+                }
+            );
+        } else {
+            logger.error('Failed to add sensor', logger.CATEGORY.SENSOR, result.errors);
+        }
     });
 }
 
@@ -945,7 +746,8 @@ function addSensor() {
  */
 function editSensor() {
     // Find the active (blue highlighted) sensor
-    const activeSensor = state.sensors.find(s => s.id === state.activeRowId);
+    const editingState = sensorState.getEditingState();
+    const activeSensor = sensorState.getSensorById(editingState.activeRowId);
 
     if (!activeSensor) {
         logger.warning('No sensor selected for edit', logger.CATEGORY.SENSOR);
@@ -955,30 +757,36 @@ function editSensor() {
     const original = { ...activeSensor };
 
     showEditorModal(activeSensor, (data) => {
-        activeSensor.name = data.name;
-        activeSensor.lat = data.lat;
-        activeSensor.lon = data.lon;
-        activeSensor.alt = data.alt;
-        activeSensor.fovAltitude = data.fovAltitude;
+        const result = sensorState.updateSensor(activeSensor.id, {
+            name: data.name,
+            lat: data.lat,
+            lon: data.lon,
+            alt: data.alt,
+            fovAltitude: data.fovAltitude
+        });
 
-        renderSensorTable();
-        updateDeckOverlay(); // Update map visualization
+        if (result.success) {
+            renderSensorTable();
+            updateDeckOverlay(); // Update map visualization
 
-        // Track what changed
-        const changes = [];
-        if (original.name !== data.name) changes.push(`name: ${original.name}→${data.name}`);
-        if (original.lat !== data.lat) changes.push(`lat: ${original.lat.toFixed(2)}→${data.lat.toFixed(2)}`);
-        if (original.lon !== data.lon) changes.push(`lon: ${original.lon.toFixed(2)}→${data.lon.toFixed(2)}`);
-        if (original.alt !== data.alt) changes.push(`alt: ${original.alt}→${data.alt}`);
+            // Track what changed
+            const changes = [];
+            if (original.name !== data.name) changes.push(`name: ${original.name}→${data.name}`);
+            if (original.lat !== data.lat) changes.push(`lat: ${original.lat.toFixed(2)}→${data.lat.toFixed(2)}`);
+            if (original.lon !== data.lon) changes.push(`lon: ${original.lon.toFixed(2)}→${data.lon.toFixed(2)}`);
+            if (original.alt !== data.alt) changes.push(`alt: ${original.alt}→${data.alt}`);
 
-        logger.success(
-            `Sensor "${data.name}" updated`,
-            logger.CATEGORY.SENSOR,
-            {
-                id: activeSensor.id,
-                changes: changes.length > 0 ? changes.join('; ') : 'none'
-            }
-        );
+            logger.success(
+                `Sensor "${data.name}" updated`,
+                logger.CATEGORY.SENSOR,
+                {
+                    id: activeSensor.id,
+                    changes: changes.length > 0 ? changes.join('; ') : 'none'
+                }
+            );
+        } else {
+            logger.error('Failed to update sensor', logger.CATEGORY.SENSOR, result.errors);
+        }
     });
 }
 
@@ -987,7 +795,7 @@ function editSensor() {
  * Shows custom confirmation modal, then deletes if confirmed
  */
 function deleteSensor() {
-    const selectedSensors = state.sensors.filter(s => s.selected);
+    const selectedSensors = sensorState.getSelectedSensors();
 
     if (selectedSensors.length === 0) {
         logger.warning('No sensors selected for deletion', logger.CATEGORY.SENSOR);
@@ -998,9 +806,10 @@ function deleteSensor() {
     showConfirmModal(selectedSensors, () => {
         const count = selectedSensors.length;
         const names = selectedSensors.map(s => s.name).join(', ');
+        const ids = selectedSensors.map(s => s.id);
 
         // Remove selected sensors
-        state.sensors = state.sensors.filter(s => !s.selected);
+        sensorState.deleteSensors(ids);
 
         // Re-render table
         renderSensorTable();
@@ -1227,29 +1036,29 @@ function addSatellite() {
     const startTime = Date.now();
 
     showSatelliteEditorModal(null, (data) => {
-        const newSatellite = {
-            id: state.nextSatelliteId++,
+        const result = satelliteState.addSatellite({
             name: data.name,
             noradId: data.noradId,
             tleLine1: data.tleLine1,
-            tleLine2: data.tleLine2,
-            selected: false,
-            watchlisted: false
-        };
+            tleLine2: data.tleLine2
+        });
 
-        state.satellites.unshift(newSatellite); // Add at beginning
-        renderSatelliteTable();
-        updateDeckOverlay(); // Update map visualization
+        if (result.success) {
+            renderSatelliteTable();
+            updateDeckOverlay(); // Update map visualization
 
-        logger.success(
-            `Satellite "${newSatellite.name}" added`,
-            logger.CATEGORY.SATELLITE,
-            {
-                id: newSatellite.id,
-                noradId: newSatellite.noradId,
-                duration: `${Date.now() - startTime}ms`
-            }
-        );
+            logger.success(
+                `Satellite "${result.satellite.name}" added`,
+                logger.CATEGORY.SATELLITE,
+                {
+                    id: result.satellite.id,
+                    noradId: result.satellite.noradId,
+                    duration: `${Date.now() - startTime}ms`
+                }
+            );
+        } else {
+            logger.error('Failed to add satellite', logger.CATEGORY.SATELLITE, result.errors);
+        }
     });
 }
 
@@ -1257,23 +1066,29 @@ function addSatellite() {
  * Edit satellite
  */
 function editSatellite(satelliteId) {
-    const satellite = state.satellites.find(s => s.id === satelliteId);
+    const satellite = satelliteState.getSatelliteById(satelliteId);
     if (!satellite) return;
 
     showSatelliteEditorModal(satellite, (data) => {
-        satellite.name = data.name;
-        satellite.noradId = data.noradId;
-        satellite.tleLine1 = data.tleLine1;
-        satellite.tleLine2 = data.tleLine2;
+        const result = satelliteState.updateSatellite(satelliteId, {
+            name: data.name,
+            noradId: data.noradId,
+            tleLine1: data.tleLine1,
+            tleLine2: data.tleLine2
+        });
 
-        renderSatelliteTable();
-        updateDeckOverlay();
+        if (result.success) {
+            renderSatelliteTable();
+            updateDeckOverlay();
 
-        logger.success(
-            `Satellite "${satellite.name}" updated`,
-            logger.CATEGORY.SATELLITE,
-            { id: satellite.id, noradId: satellite.noradId }
-        );
+            logger.success(
+                `Satellite "${result.satellite.name}" updated`,
+                logger.CATEGORY.SATELLITE,
+                { id: result.satellite.id, noradId: result.satellite.noradId }
+            );
+        } else {
+            logger.error('Failed to update satellite', logger.CATEGORY.SATELLITE, result.errors);
+        }
     });
 }
 
@@ -1281,7 +1096,7 @@ function editSatellite(satelliteId) {
  * Delete selected satellites
  */
 function deleteSatellites() {
-    const selectedSatellites = state.satellites.filter(s => s.selected);
+    const selectedSatellites = satelliteState.getSelectedSatellites();
 
     if (selectedSatellites.length === 0) {
         logger.warning('No satellites selected for deletion', logger.CATEGORY.SATELLITE);
@@ -1291,9 +1106,10 @@ function deleteSatellites() {
     showSatelliteConfirmModal(selectedSatellites, () => {
         const count = selectedSatellites.length;
         const names = selectedSatellites.map(s => s.name).join(', ');
+        const ids = selectedSatellites.map(s => s.id);
 
         // Remove selected satellites
-        state.satellites = state.satellites.filter(s => !s.selected);
+        satelliteState.deleteSatellites(ids);
 
         // Re-render table
         renderSatelliteTable();
@@ -1313,14 +1129,14 @@ function deleteSatellites() {
  * Toggle satellite watchlist status
  */
 function toggleSatelliteWatchlist(satelliteId) {
-    const satellite = state.satellites.find(s => s.id === satelliteId);
+    const satellite = satelliteState.getSatelliteById(satelliteId);
     if (!satellite) return;
 
-    satellite.watchlisted = !satellite.watchlisted;
+    const newState = satelliteState.toggleSatelliteWatchlist(satelliteId);
     renderSatelliteTable();
 
     logger.diagnostic(
-        `Satellite "${satellite.name}" ${satellite.watchlisted ? 'added to' : 'removed from'} watchlist`,
+        `Satellite "${satellite.name}" ${newState ? 'added to' : 'removed from'} watchlist`,
         logger.CATEGORY.SATELLITE
     );
 }
@@ -1332,7 +1148,8 @@ function renderSatelliteTable() {
     const tbody = document.querySelector('#satellite-table tbody');
     if (!tbody) return;
 
-    tbody.innerHTML = state.satellites.map(sat => `
+    const satellites = satelliteState.getAllSatellites();
+    tbody.innerHTML = satellites.map(sat => `
         <tr>
             <td style="text-align: center; padding: 4px;">
                 <input type="checkbox"
@@ -1356,10 +1173,7 @@ function renderSatelliteTable() {
  * Toggle satellite selection
  */
 function toggleSatelliteSelection(satelliteId) {
-    const satellite = state.satellites.find(s => s.id === satelliteId);
-    if (!satellite) return;
-
-    satellite.selected = !satellite.selected;
+    satelliteState.toggleSatelliteSelection(satelliteId);
     renderSatelliteTable();
 
     // Update map to show/hide ground track
@@ -1472,7 +1286,7 @@ function updateDeckOverlay() {
     }
 
     // Filter to only SELECTED sensors (checkbox = visibility control)
-    const sensorsToRender = state.sensors.filter(s => s.selected);
+    const sensorsToRender = sensorState.getSelectedSensors();
 
     // Prepare sensor icon data (donut circles)
     const sensorIconData = sensorsToRender.map(sensor => ({
@@ -1566,7 +1380,7 @@ function updateDeckOverlay() {
     });
 
     // Calculate ground tracks for selected satellites
-    const satellitesToRender = state.satellites.filter(s => s.selected);
+    const satellitesToRender = satelliteState.getSelectedSatellites();
     const currentTime = new Date();
 
     // Prepare ground track data
@@ -1666,13 +1480,13 @@ let calendarJustClosed = false;
  */
 function initializeTimeControls() {
     const now = new Date();
-    const startDefault = new Date(now.getTime() - (state.lookbackHours * 60 * 60 * 1000));
+    const lookbackHours = 24; // Default lookback
+    const startDefault = new Date(now.getTime() - (lookbackHours * 60 * 60 * 1000));
 
-    state.currentTime = now;
-    state.startTime = startDefault;
-    state.stopTime = now;
-    state.committedStartTime = startDefault;
-    state.committedStopTime = now;
+    timeState.setCurrentTime(now);
+    timeState.setStartTime(startDefault);
+    timeState.setStopTime(now);
+    timeState.applyTimeChanges(); // Commit the initial values
 
     startTimeInput.value = formatDateTimeLocal(startDefault);
     stopTimeInput.value = formatDateTimeLocal(now);
@@ -1695,7 +1509,7 @@ function initializeFlatpickr() {
         allowInput: true,  // Allow manual typing
         onChange: (selectedDates) => {
             if (selectedDates.length > 0) {
-                state.startTime = selectedDates[0];
+                timeState.setStartTime(selectedDates[0]);
                 setPendingState();
             }
         },
@@ -1714,7 +1528,7 @@ function initializeFlatpickr() {
         allowInput: true,  // Allow manual typing
         onChange: (selectedDates) => {
             if (selectedDates.length > 0) {
-                state.stopTime = selectedDates[0];
+                timeState.setStopTime(selectedDates[0]);
                 setPendingState();
             }
         },
@@ -1731,7 +1545,7 @@ function initializeFlatpickr() {
  * Set pending state and show orange borders
  */
 function setPendingState() {
-    state.hasPendingChanges = true;
+    // Note: timeState tracks pending changes internally
 
     // Add orange borders to time inputs only
     startTimeInput.classList.add('pending');
@@ -1747,7 +1561,7 @@ function setPendingState() {
  * Clear pending state and remove orange borders
  */
 function clearPendingState() {
-    state.hasPendingChanges = false;
+    // Note: timeState tracks pending changes internally
 
     // Remove orange borders from time inputs
     startTimeInput.classList.remove('pending');
@@ -1761,20 +1575,21 @@ function clearPendingState() {
  * Apply pending time changes
  */
 function applyTimeChanges() {
-    // Commit the changes
-    state.committedStartTime = state.startTime;
-    state.committedStopTime = state.stopTime;
+    // Commit the changes through timeState
+    timeState.applyTimeChanges();
 
     clearPendingState();
 
-    const duration = (state.committedStopTime - state.committedStartTime) / (1000 * 60 * 60); // hours
+    const startTime = timeState.getCommittedStartTime();
+    const stopTime = timeState.getCommittedStopTime();
+    const duration = (stopTime - startTime) / (1000 * 60 * 60); // hours
 
     logger.info(
         'Time range applied',
         logger.CATEGORY.DATA,
         {
-            start: state.committedStartTime.toISOString().slice(0, 16),
-            stop: state.committedStopTime.toISOString().slice(0, 16),
+            start: startTime.toISOString().slice(0, 16),
+            stop: stopTime.toISOString().slice(0, 16),
             duration: `${duration.toFixed(1)}h`
         }
     );
@@ -1784,16 +1599,19 @@ function applyTimeChanges() {
  * Cancel pending time changes and revert to committed values
  */
 function cancelTimeChanges() {
-    // Revert to committed values
-    state.startTime = state.committedStartTime;
-    state.stopTime = state.committedStopTime;
+    // Revert through timeState
+    timeState.cancelTimeChanges();
+
+    // Get committed values to update UI
+    const committedStart = timeState.getCommittedStartTime();
+    const committedStop = timeState.getCommittedStopTime();
 
     // Update Flatpickr instances (also updates input values)
     if (startPicker) {
-        startPicker.setDate(state.committedStartTime, false);  // false = don't trigger onChange
+        startPicker.setDate(committedStart, false);  // false = don't trigger onChange
     }
     if (stopPicker) {
-        stopPicker.setDate(state.committedStopTime, false);  // false = don't trigger onChange
+        stopPicker.setDate(committedStop, false);  // false = don't trigger onChange
     }
 
     clearPendingState();
@@ -1802,7 +1620,7 @@ function cancelTimeChanges() {
         'Time changes cancelled',
         logger.CATEGORY.DATA,
         {
-            reverted: state.committedStartTime.toISOString().slice(0, 16)
+            reverted: committedStart.toISOString().slice(0, 16)
         }
     );
 }
@@ -1846,8 +1664,8 @@ timeArrowBtns.forEach(btn => {
         const delta = parseInt(btn.dataset.delta); // -1 or 1
         const picker = target === 'start' ? startPicker : stopPicker;
 
-        // Get current date from state
-        const currentDate = new Date(target === 'start' ? state.startTime : state.stopTime);
+        // Get current date from timeState
+        const currentDate = new Date(target === 'start' ? timeState.getStartTime() : timeState.getStopTime());
 
         // Add/subtract 1 day (86400000 ms)
         currentDate.setDate(currentDate.getDate() + delta);
@@ -1870,12 +1688,12 @@ timeArrowBtns.forEach(btn => {
  * Updates state when user manually changes time
  */
 startTimeInput.addEventListener('change', (e) => {
-    state.startTime = new Date(e.target.value);
+    timeState.setStartTime(new Date(e.target.value));
     setPendingState();
 });
 
 stopTimeInput.addEventListener('change', (e) => {
-    state.stopTime = new Date(e.target.value);
+    timeState.setStopTime(new Date(e.target.value));
     setPendingState();
 });
 
@@ -2112,7 +1930,7 @@ function initializeDeckGL(map) {
             layers: [
                 new deck.ScatterplotLayer({
                     id: 'test-satellites',
-                    data: state.satellites,
+                    data: satelliteState.getAllSatellites(),
                     coordinateSystem: deck.COORDINATE_SYSTEM.LNGLAT,  // CRITICAL: Explicit WGS84 → Web Mercator
                     wrapLongitude: true,  // CRITICAL: Render on all wrapped world copies
                     getPosition: d => [d.lon, d.lat],
@@ -2290,7 +2108,7 @@ function initializeDeckGL(map) {
         logger.success(
             'Deck.gl initialized',
             logger.CATEGORY.SATELLITE,
-            { satellites: state.satellites.length }
+            { satellites: satelliteState.getSatelliteCount() }
         );
 
         logger.diagnostic('Deck.gl configuration', logger.CATEGORY.SATELLITE, {
@@ -2849,28 +2667,8 @@ function initializeMapMaximize() {
 // ============================================
 // RESPONSIVE HANDLING
 // ============================================
-
-/**
- * Handle window resize
- * Updates mobile state and panel behavior
- *
- * MOBILE: Debounced for performance
- */
-let resizeTimeout;
-window.addEventListener('resize', () => {
-    clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(() => {
-        const wasMobile = state.isMobile;
-        state.isMobile = window.innerWidth < 768;
-
-        // If switching from desktop to mobile, collapse panel
-        if (!wasMobile && state.isMobile && state.panelExpanded) {
-            togglePanel(false);
-        }
-
-        logger.diagnostic('Window resized', logger.CATEGORY.PANEL, { mobile: state.isMobile });
-    }, 250);
-});
+// Mobile detection and panel auto-collapse is handled by uiState module
+// Listen to uiState events if additional resize logic is needed
 
 // ============================================
 // INITIALIZATION
@@ -2928,7 +2726,7 @@ function initializeSatelliteButtons() {
     if (editBtn) {
         editBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            const selectedSatellites = state.satellites.filter(s => s.selected);
+            const selectedSatellites = satelliteState.getSelectedSatellites();
             if (selectedSatellites.length === 1) {
                 editSatellite(selectedSatellites[0].id);
             } else if (selectedSatellites.length === 0) {
@@ -2958,7 +2756,7 @@ function init() {
     logger.init();
 
     logger.info('Initializing Satellite Visualization System');
-    logger.info(`Mobile device: ${state.isMobile}`);
+    logger.info(`Mobile device: ${uiState.isMobile()}`);
     logger.info(`Window size: ${window.innerWidth} × ${window.innerHeight}`);
 
     // Initialize time controls with default values
@@ -3006,7 +2804,7 @@ function init() {
     initializeMapMaximize();
 
     // On mobile, start with panel collapsed
-    if (state.isMobile) {
+    if (uiState.isMobile()) {
         togglePanel(false);
     }
 
@@ -3064,11 +2862,11 @@ window.SatelliteApp = {
     testSensors: () => {
         logger.info('Debug Info', logger.CATEGORY.SENSOR, {
             deckglReady: !!window.deckgl,
-            totalSensors: state.sensors.length,
-            selectedSensors: state.sensors.filter(s => s.selected).length
+            totalSensors: sensorState.getSensorCount(),
+            selectedSensors: sensorState.getSelectedCount()
         });
         logger.diagnostic('Sensor sample', logger.CATEGORY.SENSOR, {
-            sample: JSON.stringify(state.sensors.slice(0, 3))
+            sample: JSON.stringify(sensorState.getAllSensors().slice(0, 3))
         });
         if (window.deckgl) {
             logger.success('Deck.gl is ready', logger.CATEGORY.SATELLITE);
