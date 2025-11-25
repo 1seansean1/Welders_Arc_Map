@@ -49,6 +49,13 @@ import logger from '../utils/logger.js';
  */
 export function propagateSatellite(tleLine1, tleLine2, date) {
     try {
+        // Access satellite.js library from global scope
+        const satellite = window.satellite;
+        if (!satellite) {
+            logger.error('satellite.js library not loaded', logger.CATEGORY.SATELLITE);
+            return null;
+        }
+
         // Initialize satellite record from TLE
         const satrec = satellite.twoline2satrec(tleLine1, tleLine2);
 

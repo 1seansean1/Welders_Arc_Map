@@ -2755,6 +2755,11 @@ async function fetchSatellites() {
     }
 }
 
+// Export functions globally for HTML onclick handlers
+window.editSatellite = editSatellite;
+window.toggleSatelliteSelection = toggleSatelliteSelection;
+window.toggleSatelliteWatchlist = toggleSatelliteWatchlist;
+
 // Export for use in other modules (if needed)
 window.SatelliteApp = {
     // State modules (read-only access)
@@ -2766,6 +2771,9 @@ window.SatelliteApp = {
     togglePanel,
     fetchSatellites,
     websocketManager,
+    editSatellite,
+    toggleSatelliteSelection,
+    toggleSatelliteWatchlist,
     // Debug helpers
     updateDeckOverlay,
     testSensors: () => {
