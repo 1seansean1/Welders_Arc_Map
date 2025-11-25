@@ -707,26 +707,35 @@ Notes:
 ──────────────────────────────────────────────────────────────────────────────
 STEP 2.3: Create Sensor State Module
 ──────────────────────────────────────────────────────────────────────────────
-Status: [ ] NOT STARTED
-Current Location: app.js lines 21-46 (partial), 489-507 (defaults)
+Status: [✓] COMPLETE
+Current Location: app.js lines 21-46 (partial), 227-240 (defaults)
 Target: modules/state/sensorState.js
+Completion: 2025-11-25 10:45 UTC
 
 Tasks:
-  [ ] Create modules/state/sensorState.js
-  [ ] Move default sensors array (lines 489-507)
-  [ ] Extract sensor-related state
-  [ ] Implement CRUD functions: addSensor(), updateSensor(), deleteSensors()
-  [ ] Implement selection: toggleSensorSelection(), getSelectedSensors()
-  [ ] Implement sorting: setSortState(), getSortState()
-  [ ] Add event emissions
+  [✓] Create modules/state/sensorState.js (460 lines)
+  [✓] Move default sensors array (12 sensors from lines 227-240)
+  [✓] Extract sensor-related state (sensors, nextSensorId, editing, sort)
+  [✓] Implement CRUD functions: addSensor(), updateSensor(), deleteSensors()
+  [✓] Implement selection: toggleSensorSelection(), selectAll(), deselectAll()
+  [✓] Implement sorting: setSortState(), getSortState()
+  [✓] Add editing state: setEditingRow(), setActiveRow(), getEditBuffer()
+  [✓] Add utility functions: clearAll(), resetToDefaults(), getSelectedCount()
+  [✓] Add event emissions (sensor:added, updated, removed, selection:changed, etc.)
+  [✓] Integrate validation module
+  [✓] Create comprehensive test suite (13 tests)
 
 Testing Checklist:
-  [ ] Add sensor works and emits event
-  [ ] Update sensor works
-  [ ] Delete sensor works
-  [ ] Selection toggling works
-  [ ] Sort state maintained
-  [ ] Default 12 sensors load
+  [✓] Add sensor works and emits event
+  [✓] Update sensor works
+  [✓] Delete sensor works
+  [✓] Selection toggling works
+  [✓] selectAll/deselectAll works
+  [✓] Sort state maintained
+  [✓] Default 12 sensors load
+  [✓] Validation integrated
+  [✓] Events emitted correctly
+  [✓] State immutability verified
 
 Acceptance Criteria:
   ✓ All CRUD operations work
@@ -737,7 +746,72 @@ Rollback:
   rm static/modules/state/sensorState.js
   git checkout static/app.js
 
+Files Created:
+  - static/modules/state/sensorState.js (460 lines)
+    * SensorState class with singleton pattern
+    * Default sensors: 12 major cities (Tokyo, NY, London, Paris, Beijing, etc.)
+    * State: sensors array, nextSensorId, editing state, sort state
+    * CRUD operations:
+      - addSensor(data) - with validation
+      - updateSensor(id, updates) - with validation
+      - deleteSensors(ids) - batch delete
+      - getSensorById(id)
+      - getAllSensors() - returns copy
+    * Selection operations:
+      - toggleSensorSelection(id)
+      - selectAll()
+      - deselectAll()
+      - getSelectedSensors()
+      - getSelectedCount()
+    * Sorting operations:
+      - setSortState(column, direction)
+      - getSortState()
+    * Editing operations:
+      - setEditingRow(rowId, buffer)
+      - setActiveRow(rowId)
+      - getEditingState()
+      - getEditBuffer()
+    * Utility operations:
+      - clearAllSensors()
+      - resetToDefaults()
+      - getSensorCount()
+    * Event emissions:
+      - sensor:added
+      - sensor:updated
+      - sensor:removed
+      - sensor:selection:changed
+      - sensor:cleared
+      - sensor:sort:changed
+    * Validation integration (rejects invalid sensors)
+    * Immutable state access (returns copies)
+    * Global window.sensorState for debugging
+
+  - static/test-state.html (updated, +13 sensor tests)
+    * Module import verification
+    * Default sensors tests (12 sensors, all selected)
+    * Get sensor by ID tests
+    * Add sensor with validation tests
+    * Add invalid sensor rejection tests
+    * Update sensor tests
+    * Selection toggle tests (select/deselect)
+    * Select all / deselect all tests
+    * Delete sensor tests
+    * Sort state tests
+    * Event emission verification
+    * State immutability tests
+    * Reset to defaults tests
+    * Total: 43+ tests (UI State + Sensor State)
+
 Notes:
+  - Validation module integrated (rejects lat >90, empty names, etc.)
+  - All CRUD operations emit events for reactive updates
+  - Selection state tracked per-sensor
+  - Sort state maintained but actual sorting done by UI module
+  - Editing state supports row-level editing with buffer
+  - Deep copy used to prevent state mutations
+  - Default sensors start all selected
+  - nextSensorId = 13 (after default 12 sensors)
+  - NOTE: app.js integration deferred to Phase 4 (will replace lines 42-49, 227-240)
 
 
 ──────────────────────────────────────────────────────────────────────────────

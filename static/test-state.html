@@ -57,6 +57,7 @@
     <script type="module">
         // Import state modules
         import uiState from './modules/state/uiState.js';
+        import sensorState from './modules/state/sensorState.js';
         import eventBus from './modules/events/eventBus.js';
 
         const resultsDiv = document.getElementById('test-results');
@@ -401,6 +402,198 @@
 
         // Clean up - reset to defaults
         uiState.reset();
+
+        // ============================================
+        // SENSOR STATE MODULE TESTS
+        // ============================================
+        console.log('Testing Sensor State module...');
+
+        // Test 1: Module imports correctly
+        assertTrue(
+            typeof sensorState === 'object',
+            'Sensor State imports as object',
+            'Sensor Module Import'
+        );
+
+        // Test 2: Default sensors loaded
+        const initialSensors = sensorState.getAllSensors();
+        assertEquals(
+            initialSensors.length,
+            12,
+            '12 default sensors loaded',
+            'Sensor Initial State'
+        );
+
+        assertTrue(
+            initialSensors.every(s => s.selected === true),
+            'All default sensors start selected',
+            'Sensor Initial State'
+        );
+
+        // Test 3: Get sensor by ID
+        const tokyo = sensorState.getSensorById(1);
+        assertTrue(
+            tokyo && tokyo.name === 'Tokyo',
+            'Can get sensor by ID',
+            'Sensor Retrieval',
+            `Got: ${tokyo ? tokyo.name : 'null'}`
+        );
+
+        // Test 4: Add sensor with validation
+        const addResult = sensorState.addSensor({
+            name: 'Test Sensor',
+            lat: 47.6,
+            lon: -122.3,
+            alt: 100,
+            fovAltitude: 500
+        });
+
+        assertTrue(
+            addResult.success && addResult.sensor.id === 13,
+            'Can add new sensor with validation',
+            'Sensor CRUD'
+        );
+
+        assertEquals(
+            sensorState.getSensorCount(),
+            13,
+            'Sensor count increased to 13',
+            'Sensor CRUD'
+        );
+
+        // Test 5: Add invalid sensor (should fail validation)
+        const invalidResult = sensorState.addSensor({
+            name: '',
+            lat: 91,  // Invalid
+            lon: -122.3,
+            alt: 100,
+            fovAltitude: 500
+        });
+
+        assertTrue(
+            !invalidResult.success && Object.keys(invalidResult.errors).length > 0,
+            'Invalid sensor rejected with errors',
+            'Sensor Validation',
+            `Errors: ${Object.keys(invalidResult.errors).join(', ')}`
+        );
+
+        // Test 6: Update sensor
+        const updateResult = sensorState.updateSensor(13, {
+            name: 'Updated Test'
+        });
+
+        assertTrue(
+            updateResult.success && updateResult.sensor.name === 'Updated Test',
+            'Can update sensor',
+            'Sensor CRUD'
+        );
+
+        // Test 7: Selection toggle
+        const newSelection = sensorState.toggleSensorSelection(1);
+        assertEquals(
+            newSelection,
+            false,
+            'Can toggle sensor selection (true → false)',
+            'Sensor Selection'
+        );
+
+        sensorState.toggleSensorSelection(1);
+        assertEquals(
+            sensorState.getSensorById(1).selected,
+            true,
+            'Can toggle sensor selection (false → true)',
+            'Sensor Selection'
+        );
+
+        // Test 8: Get selected sensors
+        const selectedBefore = sensorState.getSelectedCount();
+        sensorState.deselectAll();
+        assertEquals(
+            sensorState.getSelectedCount(),
+            0,
+            'deselectAll() deselects all sensors',
+            'Sensor Selection'
+        );
+
+        sensorState.selectAll();
+        assertEquals(
+            sensorState.getSelectedCount(),
+            13,
+            'selectAll() selects all sensors',
+            'Sensor Selection'
+        );
+
+        // Test 9: Delete sensors
+        const deleteCount = sensorState.deleteSensors([13]);
+        assertEquals(
+            deleteCount,
+            1,
+            'Can delete sensor',
+            'Sensor CRUD'
+        );
+
+        assertEquals(
+            sensorState.getSensorCount(),
+            12,
+            'Sensor count back to 12 after delete',
+            'Sensor CRUD'
+        );
+
+        // Test 10: Sort state
+        sensorState.setSortState('name', 'asc');
+        const sortState = sensorState.getSortState();
+        assertTrue(
+            sortState.column === 'name' && sortState.direction === 'asc',
+            'Can set and get sort state',
+            'Sensor Sorting',
+            `Got: ${sortState.column} ${sortState.direction}`
+        );
+
+        // Test 11: Event emissions
+        let sensorAddedEvent = null;
+        eventBus.once('sensor:added', (data) => {
+            sensorAddedEvent = data;
+        });
+
+        sensorState.addSensor({
+            name: 'Event Test',
+            lat: 47.6,
+            lon: -122.3,
+            alt: 100,
+            fovAltitude: 500
+        });
+
+        assertTrue(
+            sensorAddedEvent && sensorAddedEvent.name === 'Event Test',
+            'sensor:added event emitted with correct data',
+            'Sensor Events'
+        );
+
+        // Test 12: Immutability
+        const sensors1 = sensorState.getAllSensors();
+        sensors1.push({ id: 999, name: 'Hacked' });
+
+        const sensors2 = sensorState.getAllSensors();
+        assertTrue(
+            sensors2.length !== sensors1.length,
+            'Cannot mutate sensor array directly',
+            'Sensor Immutability'
+        );
+
+        // Test 13: Reset to defaults
+        sensorState.resetToDefaults();
+        assertEquals(
+            sensorState.getSensorCount(),
+            12,
+            'Reset restores 12 default sensors',
+            'Sensor Reset'
+        );
+
+        assertTrue(
+            sensorState.getAllSensors().every(s => s.selected === true),
+            'Reset restores all sensors as selected',
+            'Sensor Reset'
+        );
 
         // ============================================
         // SUMMARY
