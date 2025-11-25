@@ -329,3 +329,357 @@ The debugging process was systematic but could have been faster by:
 **Status**: ✅ RESOLVED
 **Confidence**: 100% - Objects now locked to geographic positions at all zoom levels
 **Next Steps**: Monitor for any edge cases, document zoom offset requirement prominently
+
+---
+
+# Lessons Learned: Phase 3 Modularization Bugs
+## ES6 Module Integration Issues
+
+**Date**: 2025-11-25
+**Context**: Refactoring monolithic app.js into ES6 modules (Phase 3: Data Operations)
+**Issues**: Runtime errors after modularization, test failures
+**Status**: ✅ RESOLVED
+
+---
+
+## Problem Statement
+
+### Initial Symptoms After Phase 3 Completion
+- Application loaded successfully
+- Console showed multiple ReferenceErrors
+- Ground tracks did not display on map
+- 2 out of 85 tests failing
+- Validation errors in console logs
+
+### Specific Errors
+1. `Uncaught ReferenceError: toggleSatelliteSelection is not defined`
+2. `Uncaught ReferenceError: editSatellite is not defined`
+3. Ground tracks not rendering (silent failure)
+4. Test failures:
+   - "Can update satellite" ❌
+   - "Cannot mutate state directly (panelExpanded)" ❌
+
+---
+
+## Root Causes & Solutions
+
+### Issue #1: HTML Event Handler Function Visibility
+
+**Problem**: Functions called from HTML onclick/onchange handlers threw ReferenceError
+
+**Code Context**:
+```javascript
+// app.js (ES6 module)
+function editSatellite(satelliteId) { /* ... */ }
+function toggleSatelliteSelection(satelliteId) { /* ... */ }
+
+// HTML template (lines 1161, 1164-1165)
+<input onchange="toggleSatelliteSelection(${sat.id})">
+<td onclick="editSatellite(${sat.id})">${sat.name}</td>
+```
+
+**Why It Failed**:
+- ES6 modules have their own scope (not automatically global)
+- HTML event handlers look for functions in global (`window`) scope
+- Functions existed in module scope but were inaccessible to HTML
+
+**Solution** (app.js:2759-2761):
+```javascript
+// Explicitly export functions to global scope
+window.editSatellite = editSatellite;
+window.toggleSatelliteSelection = toggleSatelliteSelection;
+window.toggleSatelliteWatchlist = toggleSatelliteWatchlist;
+```
+
+**Lesson**:
+- ES6 module functions are private by default
+- Functions called from inline HTML handlers MUST be on `window` object
+- Better approach: Use event delegation instead of inline handlers
+- Alternative: Programmatically attach event listeners after rendering
+
+**Prevention**:
+- Avoid inline onclick/onchange handlers in modular code
+- Use data attributes + event delegation pattern
+- Document which functions need global exposure
+
+---
+
+### Issue #2: ES6 Module Access to Global Libraries
+
+**Problem**: Ground tracks failed to render (silent failure in propagation.js)
+
+**Code Context**:
+```html
+<!-- index.html:29 - Library loaded via script tag -->
+<script src="https://unpkg.com/satellite.js@5.0.0/dist/satellite.min.js"></script>
+```
+
+```javascript
+// propagation.js (ES6 module) - WRONG
+export function propagateSatellite(tleLine1, tleLine2, date) {
+    const satrec = satellite.twoline2satrec(tleLine1, tleLine2);
+    // ReferenceError: satellite is not defined (in module scope!)
+}
+```
+
+**Why It Failed**:
+- `satellite.js` creates `window.satellite` global
+- ES6 modules don't have automatic access to window globals
+- `satellite` identifier wasn't in module scope
+
+**Solution** (propagation.js:52-57):
+```javascript
+export function propagateSatellite(tleLine1, tleLine2, date) {
+    // Explicitly access global library via window
+    const satellite = window.satellite;
+    if (!satellite) {
+        logger.error('satellite.js library not loaded', logger.CATEGORY.SATELLITE);
+        return null;
+    }
+
+    const satrec = satellite.twoline2satrec(tleLine1, tleLine2);
+    // ... rest of function
+}
+```
+
+**Lesson**:
+- ES6 modules are isolated from global scope
+- Libraries loaded via `<script>` tags must be accessed as `window.libraryName`
+- Always check library exists before use
+- Add helpful error messages for missing dependencies
+
+**Prevention**:
+- Document external script dependencies in module JSDoc
+- Consider using import maps or bundlers for better dependency management
+- Test with library intentionally missing to verify error handling
+
+---
+
+### Issue #3: Property Name Mismatch (Satellite Update)
+
+**Problem**: Test "Can update satellite" failed - validation rejected valid updates
+
+**Code Context**:
+```javascript
+// Satellite objects in state use:
+{
+    tleLine1: '1 25544U ...',
+    tleLine2: '2 25544  51.6416 ...'
+}
+
+// Validation function expects:
+function validateSatellite(satellite) {
+    validateTLE(satellite.tle1, satellite.tle2); // ← Looking for tle1/tle2!
+}
+
+// updateSatellite() merged object and passed to validation:
+const updatedSatellite = { ...satellite, ...updates };
+validate(updatedSatellite); // ← Has tleLine1/tleLine2, needs tle1/tle2!
+```
+
+**Why It Failed**:
+- Internal storage: `tleLine1`, `tleLine2`
+- Validation expects: `tle1`, `tle2`
+- Update function merged without converting property names
+- Validation failed because it couldn't find `tle1` and `tle2` properties
+
+**Solution** (satelliteState.js:347-352):
+```javascript
+// Convert property names for validation
+const validationData = {
+    name: updatedSatellite.name,
+    tle1: updatedSatellite.tleLine1,  // Convert: tleLine1 → tle1
+    tle2: updatedSatellite.tleLine2   // Convert: tleLine2 → tle2
+};
+
+const validation = validateSatellite(validationData);
+```
+
+**Lesson**:
+- Property names must be explicitly mapped at module boundaries
+- Don't assume internal storage matches external API/validation
+- Storage layer and validation layer can use different schemas
+- Always convert/adapt at the boundary
+
+**Prevention**:
+- Document expected property names in JSDoc (`@param {Object} data - {tle1, tle2}`)
+- Use TypeScript interfaces to catch mismatches at compile time
+- Create adapter/mapper functions for property name conversions
+- Write integration tests that exercise full data flow (add → update → retrieve)
+
+---
+
+### Issue #4: Test State Pollution
+
+**Problem**: Test "Cannot mutate state directly (panelExpanded)" failed
+
+**Code Context**:
+```javascript
+// Previous test left state changed:
+uiState.setPanelExpanded(true); // panelExpanded = true
+
+// Immutability test expected initial state (false):
+const state1 = uiState.getUIState(); // panelExpanded = true (NOT false!)
+state1.panelExpanded = true; // Try to mutate to true
+const state2 = uiState.getUIState(); // panelExpanded = true
+
+// Test expected: state2.panelExpanded !== state1.panelExpanded
+// Actual: true !== true → FALSE (test fails!)
+```
+
+**Why It Failed**:
+- Test assumed initial state would be `panelExpanded = false`
+- Previous test left `panelExpanded = true`
+- Trying to mutate `true → true` made both values equal
+- Test failed because values were unexpectedly identical
+
+**Solution** (test-state.html:334):
+```javascript
+// Reset to predictable initial state before testing
+uiState.reset(); // panelExpanded=false, activeSection='time'
+
+const state1 = uiState.getUIState();
+state1.panelExpanded = true; // Try to mutate
+const state2 = uiState.getUIState();
+
+// Now works: false !== true ✓
+```
+
+**Lesson**:
+- Tests must be independent of execution order
+- Reset to known state before testing assumptions
+- Don't rely on state from previous tests
+- Immutability tests especially need predictable initial values
+
+**Prevention**:
+- Use `beforeEach()` / `afterEach()` test hooks for cleanup
+- Explicitly reset shared state at test start
+- Document expected initial state in test descriptions
+- Consider using fresh instances for each test
+
+---
+
+## Debugging Process
+
+### What Worked Well
+1. **Systematic testing** - Tested immediately after Phase 3 completion
+2. **User provided clear feedback** - Screenshots, console logs, specific errors
+3. **Incremental fixes** - Fixed one issue at a time, tested each
+4. **Root cause analysis** - Didn't just patch symptoms, found underlying issues
+
+### What Could Have Been Better
+1. **Prevention** - Could have anticipated ES6 module scope issues
+2. **Testing** - Should have run tests BEFORE completing phase
+3. **Documentation** - Module dependencies not clearly documented
+
+---
+
+## Key Lessons Learned
+
+### Technical
+
+1. **ES6 Modules Are Isolated By Design**
+   - No automatic access to global scope
+   - Must use `window.globalVar` to access script-loaded libraries
+   - Functions aren't global unless explicitly exported to `window`
+
+2. **Property Name Consistency Across Boundaries**
+   - Storage layer can use different names than API/validation layer
+   - ALWAYS map/convert at boundaries
+   - Document expected schemas clearly
+
+3. **Test Independence Is Critical**
+   - State pollution causes false positives/negatives
+   - Reset to known state before assertions
+   - Use test hooks for cleanup
+
+4. **HTML Event Handlers + Modules Don't Mix Well**
+   - Inline handlers require global functions
+   - Event delegation is better for modular code
+   - Programmatic listeners keep functions private
+
+### Process
+
+1. **Test After Every Phase**
+   - Don't wait to discover integration issues
+   - Catch bugs when context is fresh
+   - Easier to debug recent changes
+
+2. **Listen To Error Messages**
+   - "ReferenceError" immediately suggests scope issue
+   - Error stack traces pinpoint exact location
+   - Console errors are your friend
+
+3. **Write Integration Tests**
+   - Unit tests alone miss boundary issues
+   - Test data flowing between modules
+   - Verify property name conversions
+
+4. **Document Module Dependencies**
+   - External libraries (satellite.js)
+   - Required global exports
+   - Property name mappings
+
+---
+
+## Prevention Checklist
+
+### Before Modularizing
+- [ ] Identify functions called from HTML
+- [ ] List external libraries used
+- [ ] Document property name schemas
+- [ ] Plan test strategy
+
+### During Modularization
+- [ ] Expose HTML handler functions to `window`
+- [ ] Access globals via `window.libraryName`
+- [ ] Map property names at boundaries
+- [ ] Test after each extraction
+
+### After Modularization
+- [ ] Run full test suite
+- [ ] Check browser console for errors
+- [ ] Test all UI interactions
+- [ ] Verify external library integration
+
+---
+
+## Summary
+
+**Root Causes**:
+1. ES6 module scope isolation (functions not global)
+2. Global library access pattern (need `window.satellite`)
+3. Property name mismatch (tleLine1 vs tle1)
+4. Test state pollution (lack of reset)
+
+**Solutions**:
+1. Explicit `window` exports for HTML handlers
+2. `window.satellite` access pattern
+3. Property name mapping at validation boundary
+4. Test state reset before assertions
+
+**Time To Fix**: ~1 hour debugging + fixes
+
+**Key Insight**: ES6 modules provide excellent encapsulation but require explicit handling of:
+- Global library access
+- HTML event handler exposure
+- Data schema mapping at boundaries
+
+**Files Modified**:
+- app.js:2759-2761 (global function exports)
+- propagation.js:52-57 (window.satellite access)
+- satelliteState.js:347-352 (property name mapping)
+- test-state.html:334 (test state reset)
+
+**Commits**:
+- 0d936b5: Fix Phase 3 runtime errors
+- 373e664: Fix 2 failing test cases
+
+**Related Documentation**:
+- LESSONS_LEARNED.md (created): General refactoring patterns
+
+---
+
+**Status**: ✅ RESOLVED
+**Confidence**: 100% - All tests passing, application functioning correctly
+**Next Steps**: Proceed to Phase 4 with these lessons in mind
