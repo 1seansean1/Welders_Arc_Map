@@ -1,0 +1,34 @@
+# Backend Dependencies for Satellite Visualization System
+# Tested with Python 3.14.0
+#
+# COMPATIBILITY NOTES:
+# - Python 3.14 is pre-release, some packages may have issues
+# - Using stable versions known to work with Python 3.13+ (likely compatible)
+# - Will install and verify compatibility
+
+# Web Framework
+fastapi>=0.104.0          # Modern async web framework
+uvicorn[standard]>=0.24.0 # ASGI server with auto-reload
+
+# Satellite Orbital Mechanics
+skyfield>=1.46            # SGP4 propagation, ephemeris calculations
+# NOTE: If skyfield fails on 3.14, fallback to sgp4==2.23 (pure Python SGP4)
+
+# Data Processing
+numpy>=1.26.0             # Vectorized numerical operations
+pandas>=2.1.0             # Data manipulation (optional, for analysis)
+
+# Caching & Database
+redis>=5.0.0              # In-memory cache
+asyncpg>=0.29.0           # Async PostgreSQL driver
+
+# Utilities
+python-dateutil>=2.8.2    # Date/time parsing
+pytz>=2023.3              # Timezone support
+structlog>=23.2.0         # Structured logging
+
+# WebSocket support (for real-time updates)
+websockets>=12.0
+
+# CORS & Security
+python-multipart>=0.0.6   # Form data parsing

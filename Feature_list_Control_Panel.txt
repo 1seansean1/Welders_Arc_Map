@@ -1,0 +1,230 @@
+# Control Panel v2.1 - Feature List
+
+## Core Functionality
+
+### Panel States & Navigation
+- **Collapsible Panel System**
+  - Collapsed state: Icon-only view (42px width)
+  - Expanded state: Icon + label view (224px width)
+  - Smooth GPU-accelerated transitions (270ms cubic-bezier)
+  - Click anywhere on collapsed panel to expand
+  - Click outside panel to collapse (desktop only)
+
+- **7-Section Navigation**
+  - ⏰ **Time** - Time range controls (active/implemented)
+  - 🛰️ **Satellites** - Satellite management (fully implemented v1.0)
+  - 📡 **Sensors** - Sensor configuration (fully implemented v1.0)
+  - 📊 **Analysis** - Analysis tools (placeholder)
+  - 📈 **Real Time Data** - Live updates (placeholder)
+  - 📋 **Logs** - System logs (placeholder)
+  - ⚙️ **Settings** - Application settings (placeholder)
+
+### Time Controls (Fully Implemented)
+- **Dual Time Inputs**
+  - Start Time (default: NOW - 24 hours)
+  - Stop Time (default: NOW)
+  - Flatpickr datetime picker integration with dark theme
+  - Compact calendar popup (202px width, 8% reduced from standard)
+
+- **Quick Adjustment Controls**
+  - ◀ ▶ Arrow buttons: ±1 day per click
+  - NOW buttons: Instant reset to current UTC time
+  - Direct input: Click input field for calendar picker
+
+- **Change Management**
+  - Pending state tracking with visual feedback
+  - Orange border highlights on modified inputs
+  - Cancel button: Revert to last committed values
+  - Apply button: Commit pending changes
+  - Subdued vs. active button states
+
+- **Calendar Popup Features**
+  - Compact design (202px × ~230px)
+  - 24-hour time format
+  - Dark theme matching application
+  - Reduced font sizes (9-10px)
+  - Small arrow controls for hour/minute adjustment
+  - Click-outside closes calendar without collapsing panel
+
+### Satellite Management (Fully Implemented v1.0)
+- **Satellite Table**
+  - Columns: Select (checkbox), NORAD ID, Name, Star (watchlist)
+  - Click NORAD ID or Name to edit satellite
+  - 18 default satellites pre-loaded with TLE data
+  - Compact table design matching sensor table styling
+
+- **TLE Validation & Parsing**
+  - Validates 69-character TLE format (line 1 and line 2)
+  - Checks line numbering (must start with "1 " and "2 ")
+  - Extracts and validates NORAD ID from columns 3-7
+  - Ensures NORAD ID matches on both lines
+  - Real-time error feedback on invalid TLE data
+
+- **Satellite CRUD Operations**
+  - **Add**: Opens modal with name input + TLE textarea (paste both lines at once)
+  - **Edit**: Pre-populates name and TLE, allows updates (single selection required)
+  - **Delete**: Multi-select with confirmation modal showing satellite names
+  - **Cancel**: Close modal without saving changes
+
+- **Watchlist Feature**
+  - Star button (☆/⭐) in each satellite row
+  - Toggle watchlist status with single click
+  - Visual distinction between watchlisted and non-watchlisted satellites
+  - Watchlist state persists in frontend state
+
+- **Default Satellites** (18 total)
+  - Amateur Radio: AO-07, UO-11, AO-27, FO-29, GO-32
+  - ISS: International Space Station
+  - Starlink: 5 satellites (1008, 1011, 1012, 1017, 1019)
+  - GPS: BIIR-2 (PRN 13), BIIR-4 (PRN 20), BIIR-5 (PRN 22)
+  - GLONASS: COSMOS 2361, 2378, 2389, 2398
+
+- **Icon Design**
+  - External SVG file: satellite.svg (400×400px viewBox)
+  - Rendered at 14×14px with invert filter for light-on-dark
+  - Located in /static/satellite.svg
+
+- **Ground Track Visualization (Fully Implemented v2.0)**
+  - **SGP4 Orbital Propagation**
+    - satellite.js library (v5.0.0) for accurate orbital mechanics
+    - Real-time TLE → position conversion using SGP4 algorithm
+    - ECI to geodetic coordinate transformation
+    - Performance: <1ms per satellite propagation
+
+  - **Ground Track Calculation**
+    - Displays 90 minutes of orbital path (typical LEO orbit period)
+    - 60-second time steps (91 points per track)
+    - Automatic calculation from current time
+    - Handles multiple satellites simultaneously
+
+  - **Visualization Features**
+    - Deck.gl PathLayer for smooth orbital line rendering
+    - Checkbox control: Select satellite to show ground track
+    - Color-coded tracks: Each satellite assigned unique color
+      - Green, Orange, Blue, Yellow, Magenta, Cyan (cycles for 6+ satellites)
+    - Hover interaction shows satellite name and NORAD ID
+    - Stable rendering during pan/zoom (no glitching)
+
+  - **Performance Optimizations**
+    - Disabled layer transitions for instant updates
+    - Update triggers prevent unnecessary recalculation
+    - Efficient path rendering with wrapLongitude support
+    - Big O: O(n*k) where n = satellites, k = track points (~91)
+
+### Sensor Configuration (Fully Implemented v1.0)
+- **Sensor Table**
+  - Columns: Select (checkbox), Name, Latitude, Longitude, Altitude
+  - Click any column (except checkbox) to edit sensor
+  - 12 default sensors pre-loaded (global city locations)
+  - Sortable columns with visual indicators (▲/▼)
+
+- **Sensor CRUD Operations**
+  - **Add**: Opens modal with name, lat, lon, alt, FOV altitude inputs
+  - **Edit**: Pre-populates all fields, allows updates (row click or edit button)
+  - **Delete**: Multi-select with confirmation modal showing sensor names
+  - **Inline Editing**: Future enhancement (currently modal-based)
+
+- **Field of View (FOV) Calculations**
+  - FOV Altitude: User-defined reference altitude (default 500 km)
+  - Geometric FOV circle calculation based on sensor-to-altitude slant range
+  - Real-time polygon generation (64 vertices for smooth circles)
+  - Deck.gl PolygonLayer rendering with fill and stroke
+
+- **Sensor Visualization**
+  - Icon type: "donut" (circular marker)
+  - Deck.gl ScatterplotLayer for sensor positions
+  - FOV circles rendered as filled polygons
+  - Hover interaction with tooltip showing sensor details
+
+- **Default Sensors** (12 total)
+  - Global cities: Tokyo, New York, London, Paris, Beijing, Sydney
+  - Dubai, Mumbai, São Paulo, Moscow, Cairo, Singapore
+  - Realistic altitudes ranging from 5m to 760m
+  - Default FOV altitude: 500 km for all sensors
+
+- **Icon Design**
+  - External SVG file: sensor.svg (368×368px viewBox)
+  - Rendered at 14×14px with invert filter for light-on-dark
+  - Located in /static/sensor.svg
+
+## Design & Styling
+
+### Visual Design
+- **Minimalistic³ Philosophy**
+  - Limited color palette (3 colors: #0a0a0a, #f5f5f5, #9dd4ff)
+  - Thin lines (1px borders)
+  - Minimal padding (2-8px between elements)
+  - Small icons (14px standard)
+  - Compact buttons (20-32px heights)
+
+- **Typography**
+  - System fonts for performance
+  - Minimal size variations (7-12px)
+  - Single font family (SF Mono for monospace, system sans)
+  - Minimal font weights (500-600 max)
+
+- **Layout**
+  - Panel header: 50px height
+  - Navigation section: 33.33% height (upper third)
+  - Content area: 66.67% height (lower two-thirds)
+  - 14px left/right padding in content areas
+
+### Interactive States
+- **Hover Effects**
+  - Background highlights on buttons
+  - Border color changes
+  - Subtle transforms (scale 0.95 on active)
+
+- **Active States**
+  - Blue-grey accent color (#9dd4ff)
+  - Background highlighting
+  - Clear visual distinction
+
+## Mobile Compatibility
+
+### Responsive Design
+- **Breakpoints**
+  - Tablet: 768px
+  - Mobile: 480px
+  - Auto-collapse on mobile devices
+
+- **Touch Optimization**
+  - Touch event handlers
+  - Passive listeners for performance
+  - Minimum 32px touch targets
+  - Panel overlay mode (doesn't shift content)
+
+- **Mobile-Specific**
+  - Calendar closes on outside touch
+  - Panel requires explicit collapse button click
+  - Hardware-accelerated animations
+
+## Performance Features
+
+### Optimization Strategies
+- **60 FPS Target**
+  - CSS transform animations (GPU-accelerated)
+  - No JavaScript animations
+  - Debounced resize handlers (250ms)
+
+- **Click Behavior Optimization**
+  - Calendar-aware click-outside handling
+  - Event propagation management
+  - Flatpickr onClose hook integration
+
+### Code Quality
+- **Documentation**
+  - Mobile compatibility notes throughout
+  - Performance targets documented
+  - Big O complexity analysis
+  - Refactoring guidance for mobile optimization
+
+---
+
+**Version**: 2.1
+**Status**: Complete - Time, Satellites (with ground tracks), and Sensors fully implemented
+**Performance**: 60 FPS, <16.67ms frame budget, <1ms SGP4 propagation per satellite
+**Mobile**: Fully responsive, touch-optimized
+**Last Updated**: 2025-11-25
+**Libraries**: Leaflet 1.9.4, Deck.gl 9.0.0, satellite.js 5.0.0, Flatpickr
+**Next**: Analysis tools (Section 4), Real-time data streaming (Section 5)

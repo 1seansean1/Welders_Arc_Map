@@ -1,0 +1,1753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Satellite Visualization System</title>
+
+    <!--
+    MOBILE COMPATIBILITY NOTES:
+    - viewport meta tag prevents zooming (better for map interaction)
+    - Touch events supported for panel expand/collapse
+    - Responsive breakpoints at 768px (tablet) and 480px (mobile)
+    - Panel collapses automatically on mobile (<768px) to maximize map space
+    - Touch-friendly button sizes (minimum 44x44px per iOS guidelines)
+    - Uses CSS transforms for smooth 60fps animations on mobile GPUs
+    -->
+
+    <!-- Leaflet.js (for base map) - Lightweight, fast, no API token required -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+
+    <!-- Deck.gl (for satellite visualization) -->
+    <script src="https://unpkg.com/deck.gl@9.0.0/dist.min.js"></script>
+
+    <!-- satellite.js (for SGP4 orbital propagation) -->
+    <script src="https://unpkg.com/satellite.js@5.0.0/dist/satellite.min.js"></script>
+
+    <!-- Flatpickr datetime picker (dark theme) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <style>
+        /* ============================================
+           FLATPICKR CUSTOM SIZING
+           ============================================ */
+
+        /* Make calendar popup smaller */
+        .flatpickr-calendar {
+            width: 202px !important;
+            font-size: 10px !important;
+        }
+
+        .flatpickr-months {
+            height: 26px !important;
+        }
+
+        .flatpickr-month {
+            height: 26px !important;
+        }
+
+        .flatpickr-current-month {
+            font-size: 10px !important;
+            height: 26px !important;
+            line-height: 26px !important;
+            padding: 0 !important;
+        }
+
+        .flatpickr-current-month .flatpickr-monthDropdown-months {
+            font-size: 10px !important;
+        }
+
+        .flatpickr-weekdays {
+            height: 22px !important;
+        }
+
+        span.flatpickr-weekday {
+            font-size: 9px !important;
+            height: 22px !important;
+            line-height: 22px !important;
+        }
+
+        .flatpickr-days {
+            width: 202px !important;
+        }
+
+        .dayContainer {
+            width: 202px !important;
+            min-width: 202px !important;
+            max-width: 202px !important;
+        }
+
+        .flatpickr-day {
+            height: 26px !important;
+            line-height: 26px !important;
+            max-width: 29px !important;
+            font-size: 10px !important;
+        }
+
+        .flatpickr-time {
+            height: 30px !important;
+        }
+
+        .flatpickr-time input {
+            font-size: 10px !important;
+            height: 26px !important;
+        }
+
+        .flatpickr-time .flatpickr-time-separator,
+        .flatpickr-time .flatpickr-am-pm {
+            font-size: 10px !important;
+            height: 26px !important;
+            line-height: 26px !important;
+        }
+
+        /* Time input wrappers and arrows */
+        .flatpickr-time .numInputWrapper {
+            height: 26px !important;
+        }
+
+        .flatpickr-time .numInputWrapper span.arrowUp,
+        .flatpickr-time .numInputWrapper span.arrowDown {
+            width: 10px !important;
+            height: 10px !important;
+            line-height: 10px !important;
+        }
+
+        .flatpickr-time .numInputWrapper span.arrowUp {
+            top: 1px !important;
+        }
+
+        .flatpickr-time .numInputWrapper span.arrowDown {
+            top: auto !important;
+            bottom: 1px !important;
+        }
+
+        .flatpickr-time .numInputWrapper span.arrowUp:after {
+            border-bottom-width: 3px !important;
+            border-left: 3px solid transparent !important;
+            border-right: 3px solid transparent !important;
+            top: 3px !important;
+        }
+
+        .flatpickr-time .numInputWrapper span.arrowDown:after {
+            border-top-width: 3px !important;
+            border-left: 3px solid transparent !important;
+            border-right: 3px solid transparent !important;
+            top: 3px !important;
+        }
+
+        .flatpickr-prev-month,
+        .flatpickr-next-month {
+            height: 26px !important;
+            line-height: 26px !important;
+            width: 22px !important;
+        }
+
+        .flatpickr-prev-month svg,
+        .flatpickr-next-month svg {
+            width: 9px !important;
+            height: 9px !important;
+        }
+
+        /* ============================================
+           LEAFLET ZOOM CONTROL CUSTOM SIZING
+           ============================================ */
+
+        /* Compact zoom control - minimalistic design */
+        .leaflet-control-zoom {
+            border: 1px solid #333333 !important;
+            border-radius: 3px !important;
+            box-shadow: none !important;
+        }
+
+        .leaflet-control-zoom-in,
+        .leaflet-control-zoom-out {
+            width: 24px !important;
+            height: 24px !important;
+            line-height: 22px !important;
+            font-size: 14px !important;
+            background: #1a1a1a !important;
+            color: #f5f5f5 !important;
+            border: none !important;
+            border-radius: 0 !important;
+        }
+
+        .leaflet-control-zoom-in {
+            border-top-left-radius: 2px !important;
+            border-top-right-radius: 2px !important;
+            border-bottom: 1px solid #333333 !important;
+        }
+
+        .leaflet-control-zoom-out {
+            border-bottom-left-radius: 2px !important;
+            border-bottom-right-radius: 2px !important;
+        }
+
+        .leaflet-control-zoom-in:hover,
+        .leaflet-control-zoom-out:hover {
+            background: #2a2a2a !important;
+            color: #9dd4ff !important;
+        }
+
+        /* Mobile: Larger touch targets (44px minimum per iOS guidelines) */
+        @media (max-width: 768px) {
+            .leaflet-control-zoom-in,
+            .leaflet-control-zoom-out {
+                width: 44px !important;
+                height: 44px !important;
+                line-height: 42px !important;
+                font-size: 20px !important;
+            }
+        }
+
+        /* ============================================
+           MAP MAXIMIZE BUTTON
+           ============================================ */
+
+        /* Maximize button - positioned below zoom control */
+        #map-maximize-btn {
+            position: absolute;
+            top: 64px;  /* Below zoom control (48px + 16px gap) */
+            right: 10px;
+            width: 24px;
+            height: 24px;
+            background: #1a1a1a;
+            color: #f5f5f5;
+            border: 1px solid #333333;
+            border-radius: 3px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            z-index: 1000;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        #map-maximize-btn:hover {
+            background: #2a2a2a;
+            color: #9dd4ff;
+        }
+
+        /* Mobile: Larger touch target */
+        @media (max-width: 768px) {
+            #map-maximize-btn {
+                width: 44px;
+                height: 44px;
+                font-size: 20px;
+                top: 104px;  /* Below larger zoom control */
+            }
+        }
+
+        /* Maximized state */
+        #main-container.maximized {
+            grid-template-columns: 100% !important;
+            grid-template-rows: 100% !important;
+        }
+
+        #main-container.maximized #pane-top-right,
+        #main-container.maximized #pane-bottom-left,
+        #main-container.maximized #pane-bottom-right,
+        #main-container.maximized .grid-resize-handle {
+            display: none !important;
+        }
+
+        #main-container.maximized #pane-top-left {
+            grid-column: 1;
+            grid-row: 1;
+        }
+
+    </style>
+    <style>
+        /* ============================================
+           GLOBAL STYLES - Claude/Robinhood Inspired
+           ============================================ */
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* Color palette - Minimalist, high contrast */
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #2a2a2a;
+            --border-color: #333333;
+            --text-primary: #f5f5f5;
+            --text-secondary: #a3a3a3;
+            --text-muted: #666666;
+            --accent-blue-grey: #9dd4ff;
+            --accent-green: #00ff66;
+            --accent-yellow: #ffeb3b;
+            --accent-red: #ff4444;
+
+            /* Panel dimensions */
+            --panel-collapsed-width: 42px;
+            --panel-expanded-width: 224px;
+            --panel-transition: 0.27s cubic-bezier(0.4, 0.0, 0.2, 1);
+
+            /* Mobile-specific */
+            --mobile-panel-width: 240px;
+
+            /* Typography */
+            --font-mono: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+            --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* ============================================
+           CONTROL PANEL - Collapsible Sidebar
+           ============================================ */
+
+        #control-panel {
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100vh;
+            width: var(--panel-collapsed-width);
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            transition: width var(--panel-transition);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+
+            /* MOBILE: Hardware acceleration for smooth animation */
+            transform: translateZ(0);
+            will-change: width;
+        }
+
+        #control-panel.expanded {
+            width: var(--panel-expanded-width);
+        }
+
+        /* Panel Header (top section with collapse button) */
+        .panel-header {
+            height: 50px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 0 0 5px;
+            flex-shrink: 0;
+            justify-content: flex-start;
+        }
+
+        .panel-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-primary);
+            opacity: 0;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+            display: none;
+        }
+
+        #control-panel.expanded .panel-title {
+            opacity: 1;
+            display: block;
+        }
+
+        .collapse-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            position: relative;
+
+            /* MOBILE: Larger touch target */
+            min-width: 32px;
+            min-height: 32px;
+        }
+
+        .collapse-btn:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        /* Collapse button icon states */
+        /* When panel is collapsed (default), show expand icon (right arrow) */
+        .collapse-icon-expanded {
+            display: none !important;
+        }
+
+        .collapse-icon-collapsed {
+            display: block;
+        }
+
+        /* When panel is expanded, show collapse icon (left arrow) */
+        #control-panel.expanded .collapse-icon-expanded {
+            display: block !important;
+        }
+
+        #control-panel.expanded .collapse-icon-collapsed {
+            display: none !important;
+        }
+
+        /* SVG icons inherit color for hover states */
+        .nav-icon svg {
+            display: block;
+            flex-shrink: 0;
+        }
+
+        /* Navigation Buttons (upper 1/3) */
+        .nav-section {
+            flex: 0 0 33.333%;
+            border-bottom: 1px solid #555555;
+            padding: 1px 0;
+            overflow-y: auto;
+            overflow-x: hidden;  /* Remove horizontal scrollbar */
+        }
+
+        .nav-btn {
+            width: 100%;
+            height: 28px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 0 0 0 14px;
+            gap: 6px;
+            transition: none;
+            position: relative;
+
+            /* MOBILE: Minimum touch target size */
+            min-height: 28px;
+        }
+
+        .nav-btn:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .nav-btn.active {
+            background: var(--bg-tertiary);
+            color: var(--accent-blue-grey);
+        }
+
+        /* Removed the green bar ::before element */
+
+        .nav-icon {
+            font-size: 12px;
+            flex-shrink: 0;
+            width: 14px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-label {
+            font-size: 11px;
+            font-weight: 500;
+            white-space: nowrap;
+            display: none;
+        }
+
+        #control-panel.expanded .nav-label {
+            display: block;
+        }
+
+        /* Content Area (lower 2/3) */
+        .content-section {
+            flex: 1;
+            padding: 8px 14px 8px 14px;
+            overflow-y: auto;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        #control-panel.expanded .content-section {
+            opacity: 1;
+        }
+
+        /* Time Controls */
+        .time-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .time-control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .time-label {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .time-input-row {
+            display: flex;
+            gap: 2px;
+            align-items: center;
+        }
+
+        .time-arrow-btn {
+            width: 20px;
+            height: 20px;
+            border: 1px solid #666666;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 9px;
+            transition: none;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+
+        .time-arrow-btn:hover {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border-color: var(--accent-blue-grey);
+        }
+
+        .time-arrow-btn:active {
+            transform: scale(0.95);
+        }
+
+        .time-input {
+            flex: 0.75;
+            min-width: 0;
+            height: 20px;
+            background: var(--bg-primary);
+            border: 1px solid #666666;
+            color: var(--text-primary);
+            border-radius: 3px;
+            padding: 0 3px;
+            font-size: 8px;
+            font-family: var(--font-mono);
+            transition: none;
+        }
+
+        .time-input:focus {
+            outline: none;
+            border-color: var(--accent-blue-grey);
+        }
+
+        .time-input.pending {
+            border-color: #ff9800;
+        }
+
+        .time-now-btn {
+            width: 32px;
+            height: 20px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid #666666;
+            border-radius: 3px;
+            font-weight: 600;
+            font-size: 7px;
+            cursor: pointer;
+            transition: none;
+            flex-shrink: 0;
+        }
+
+        .time-now-btn:hover {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border-color: var(--accent-blue-grey);
+        }
+
+        .time-now-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Time Action Buttons (Cancel/Apply) */
+        .time-actions {
+            display: flex;
+            gap: 4px;
+            margin-top: 6px;
+            width: 85.5%;
+            pointer-events: none;
+            transition: none;
+        }
+
+        .time-actions.visible {
+            pointer-events: auto;
+        }
+
+        .time-action-btn {
+            flex: 1;
+            height: 24px;
+            border: none;
+            border-radius: 3px;
+            font-size: 9px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: none;
+        }
+
+        /* Subdued state - muted colors */
+        .time-cancel-btn {
+            background: #1f1f1f;
+            color: #4a4a4a;
+            border: 1px solid #555555;
+        }
+
+        .time-apply-btn {
+            background: #2a3540;
+            color: #4a5a65;
+            border: 1px solid #555555;
+        }
+
+        /* Active state - full colors */
+        .time-actions.visible .time-cancel-btn {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid #666666;
+        }
+
+        .time-actions.visible .time-apply-btn {
+            background: var(--accent-blue-grey);
+            color: var(--bg-primary);
+        }
+
+        /* Hover states only work when visible */
+        .time-actions.visible .time-cancel-btn:hover {
+            background: var(--bg-secondary);
+            border-color: var(--text-secondary);
+        }
+
+        .time-actions.visible .time-apply-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(157, 212, 255, 0.3);
+        }
+
+        .time-action-btn:active {
+            transform: translateY(0);
+        }
+
+        /* ============================================
+           4-PANE RESIZABLE GRID
+           ============================================ */
+
+        #main-container {
+            position: fixed;
+            left: var(--panel-collapsed-width);
+            top: 0;
+            width: calc(100vw - var(--panel-collapsed-width));
+            height: 100vh;
+            transition: left var(--panel-transition), width var(--panel-transition);
+            display: grid;
+            grid-template-columns: 65% 35%;
+            grid-template-rows: 60% 40%;
+            gap: 0;
+            overflow: hidden;
+        }
+
+        #control-panel.expanded ~ #main-container {
+            left: var(--panel-expanded-width);
+            width: calc(100vw - var(--panel-expanded-width));
+        }
+
+        /* Individual panes */
+        .pane {
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
+        }
+
+        #pane-top-left {
+            grid-column: 1;
+            grid-row: 1;
+        }
+
+        #pane-top-right {
+            grid-column: 2;
+            grid-row: 1;
+        }
+
+        #pane-bottom-left {
+            grid-column: 1;
+            grid-row: 2;
+        }
+
+        #pane-bottom-right {
+            grid-column: 2;
+            grid-row: 2;
+        }
+
+        /* Map container (inside top-left pane) */
+        #map-container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #1a1a1a;  /* Dark grey background while tiles load */
+        }
+
+        /* Deck.gl canvas */
+        #deck-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Coming soon placeholder */
+        .coming-soon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* ============================================
+           LOG PANEL (Bottom 20% of pane-bottom-left)
+           ============================================ */
+
+        #pane-bottom-left {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pane-content-area {
+            flex: 1 1 auto;
+            overflow: auto;
+        }
+
+        .pane-log-area {
+            flex: 0 0 100px;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-primary);
+            position: relative;
+            border-top: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        /* Log inline controls (positioned in top-left of log display) */
+        .log-inline-controls {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            z-index: 10;
+            background: rgba(10, 10, 10, 0.85);
+            padding: 2px 4px;
+            border-radius: 2px;
+        }
+
+        .log-text {
+            font-size: 7px;
+            color: var(--text-secondary);
+            font-family: 'Courier New', Consolas, monospace;
+            user-select: none;
+            min-width: 15px;
+            text-align: right;
+        }
+
+        .log-btn {
+            padding: 2px 6px;
+            font-size: 8px;
+            font-weight: 600;
+            border: 1px solid var(--border-color);
+            border-radius: 2px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: none;
+        }
+
+        .log-btn:hover {
+            background: var(--bg-primary);
+            border-color: var(--accent-blue-grey);
+        }
+
+        .log-btn:active {
+            transform: scale(0.95);
+        }
+
+        .log-btn.stub {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .log-display {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 4px;
+            padding-top: 24px;
+            padding-left: 4px;
+            font-family: 'Courier New', Consolas, monospace;
+            font-size: 8px;
+            line-height: 1.3;
+            color: var(--text-secondary);
+            user-select: text;
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+        }
+
+        .log-entry {
+            padding: 2px 0;
+            border-bottom: 1px solid #1a1a1a;
+            word-wrap: break-word;
+            color: var(--text-secondary);
+        }
+
+        /* Log panel resize handle (top border) */
+        .log-resize-handle {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 12px;
+            cursor: ns-resize;
+            z-index: 1002;
+        }
+
+        /* Gradient line shown on hover (keeps hitbox stable) */
+        .log-resize-handle::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 5px;
+            width: 100%;
+            height: 2px;
+            opacity: 0;
+            transition: opacity 0.15s;
+            background: linear-gradient(90deg,
+                rgba(157, 212, 255, 0.8) 0%,
+                rgba(180, 220, 255, 0.9) 25%,
+                rgba(200, 200, 255, 0.9) 50%,
+                rgba(180, 220, 255, 0.9) 75%,
+                rgba(157, 212, 255, 0.8) 100%);
+        }
+
+        .log-resize-handle:hover::before,
+        .log-resize-handle.active::before {
+            opacity: 1;
+        }
+
+        /* Log context menu */
+        .log-context-menu {
+            position: fixed;
+            display: none;
+            background: var(--bg-secondary);
+            border: 1px solid var(--accent-blue-grey);
+            border-radius: 2px;
+            z-index: 10000;
+            min-width: 100px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        .log-context-menu.visible {
+            display: block;
+        }
+
+        .log-context-item {
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 10px;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.15s;
+        }
+
+        .log-context-item:last-child {
+            border-bottom: none;
+        }
+
+        .log-context-item:hover {
+            background: var(--bg-tertiary);
+            color: var(--accent-blue-grey);
+        }
+
+        /* Grid border resize handles (invisible hitboxes) */
+        .grid-resize-handle {
+            position: absolute;
+            z-index: 1001;
+        }
+
+        /* Vertical border handle (between left and right panes) */
+        .grid-resize-vertical {
+            width: 12px;
+            height: 100%;
+            top: 0;
+            cursor: ew-resize;
+        }
+
+        /* Horizontal border handle (between top and bottom panes) */
+        .grid-resize-horizontal {
+            width: 100%;
+            height: 12px;
+            left: 0;
+            cursor: ns-resize;
+        }
+
+        /* Gradient lines shown on hover (keep hitboxes stable) */
+        .grid-resize-vertical::before {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 0;
+            width: 2px;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.15s;
+            background: linear-gradient(180deg,
+                rgba(157, 212, 255, 0.8) 0%,
+                rgba(180, 220, 255, 0.9) 25%,
+                rgba(200, 200, 255, 0.9) 50%,
+                rgba(180, 220, 255, 0.9) 75%,
+                rgba(157, 212, 255, 0.8) 100%);
+        }
+
+        .grid-resize-vertical:hover::before,
+        .grid-resize-vertical.active::before {
+            opacity: 1;
+        }
+
+        .grid-resize-horizontal::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 5px;
+            width: 100%;
+            height: 2px;
+            opacity: 0;
+            transition: opacity 0.15s;
+            background: linear-gradient(90deg,
+                rgba(157, 212, 255, 0.8) 0%,
+                rgba(180, 220, 255, 0.9) 25%,
+                rgba(200, 200, 255, 0.9) 50%,
+                rgba(180, 220, 255, 0.9) 75%,
+                rgba(157, 212, 255, 0.8) 100%);
+        }
+
+        .grid-resize-horizontal:hover::before,
+        .grid-resize-horizontal.active::before {
+            opacity: 1;
+        }
+
+        /* Crosshair handle (resizes all 4 panes simultaneously) */
+        .grid-resize-crosshair {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            cursor: move;
+            z-index: 1002;
+            opacity: 0;
+            transition: opacity 0.15s;
+            pointer-events: none;
+            --glow-intensity: 0;
+        }
+
+        .grid-resize-crosshair.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .grid-resize-crosshair svg {
+            filter: drop-shadow(0 0 calc(var(--glow-intensity) * 8px) rgba(157, 212, 255, var(--glow-intensity)));
+            transition: filter 0.05s linear;
+            pointer-events: none; /* SVG doesn't intercept events */
+            display: block; /* Remove inline spacing */
+        }
+
+        .grid-resize-crosshair.active svg {
+            filter: drop-shadow(0 0 12px rgba(157, 212, 255, 0.9));
+        }
+
+        /* ============================================
+           MOBILE RESPONSIVE
+           ============================================ */
+
+        @media (max-width: 768px) {
+            :root {
+                --panel-expanded-width: var(--mobile-panel-width);
+            }
+
+            /* On mobile, panel starts collapsed */
+            #control-panel {
+                width: var(--panel-collapsed-width);
+            }
+
+            /* Overlay mode on mobile when expanded */
+            #control-panel.expanded {
+                box-shadow: 2px 0 12px rgba(0, 0, 0, 0.5);
+            }
+
+            /* Map doesn't shift on mobile, panel overlays */
+            #map-container {
+                left: 0;
+                width: 100vw;
+            }
+
+            #control-panel.expanded ~ #map-container {
+                left: 0;
+                width: 100vw;
+            }
+        }
+
+        @media (max-width: 480px) {
+            :root {
+                --mobile-panel-width: 200px;
+            }
+
+            .panel-title {
+                font-size: 12px;
+            }
+
+            .nav-label {
+                font-size: 13px;
+            }
+
+            .content-section {
+                padding: 16px;
+            }
+        }
+
+        /* ============================================
+           SCROLLBAR STYLING
+           ============================================ */
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--bg-tertiary);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--border-color);
+        }
+
+        /* ============================================
+           SENSOR CONTROLS
+           ============================================ */
+
+        .sensor-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        /* Sensor table wrapper */
+        .sensor-table-wrapper {
+            max-height: 400px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            border: 1px solid var(--border-color);
+            border-radius: 3px;
+        }
+
+        /* Sensor table */
+        .sensor-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8px;
+            font-family: var(--font-mono);
+        }
+
+        .sensor-table thead {
+            position: sticky;
+            top: 0;
+            background: var(--bg-secondary);
+            z-index: 10;
+        }
+
+        .sensor-table th {
+            padding: 4px 2px;
+            text-align: center;
+            font-weight: 600;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-color);
+            font-size: 7px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.15s;
+        }
+
+        .sensor-table th:hover {
+            background: var(--bg-tertiary);
+            color: var(--accent-blue-grey);
+        }
+
+        .sensor-table td {
+            padding: 3px 2px;
+            border-bottom: 1px solid #2a2a2a;
+            color: var(--text-primary);
+            text-align: center;
+        }
+
+        .sensor-table tbody tr:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .sensor-table tbody tr.selected {
+            background: #1a2a3a;
+        }
+
+        /* Column widths (total ~195px to fit in 224px - 28px padding) */
+        .col-sel { width: 18px; }
+        .col-name { width: 60px; text-align: left; padding-left: 4px; }
+        .col-lat { width: 37px; }
+        .col-lon { width: 40px; }
+        .col-alt { width: 35px; }
+
+        /* Checkbox styling */
+        .sensor-checkbox {
+            width: 12px;
+            height: 12px;
+            cursor: pointer;
+            margin: 0;
+            accent-color: var(--accent-blue-grey);
+        }
+
+        /* Sensor action buttons */
+        .sensor-actions {
+            display: flex;
+            gap: 4px;
+            margin-top: 2px;
+        }
+
+        .sensor-action-btn {
+            flex: 1;
+            height: 22px;
+            border: 1px solid var(--border-color);
+            border-radius: 3px;
+            font-size: 9px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: none;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .sensor-action-btn:hover {
+            background: var(--bg-primary);
+            border-color: var(--accent-blue-grey);
+        }
+
+        .sensor-action-btn:active {
+            transform: scale(0.95);
+        }
+
+        .sensor-add-btn {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .sensor-edit-btn {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .sensor-delete-btn {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        /* Clickable rows */
+        .sensor-table tbody tr {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        /* ============================================
+           MODAL OVERLAY (Confirmation + Editor)
+           ============================================ */
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.75);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.visible {
+            display: flex;
+        }
+
+        /* Confirmation Modal */
+        .modal-confirm {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 16px;
+            min-width: 280px;
+            max-width: 400px;
+        }
+
+        .modal-confirm-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .modal-confirm-message {
+            font-size: 9px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        .modal-confirm-sensors {
+            font-size: 9px;
+            color: var(--accent-blue-grey);
+            margin-bottom: 16px;
+            padding: 6px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 3px;
+        }
+
+        .modal-confirm-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .modal-confirm-btn {
+            flex: 1;
+            height: 28px;
+            border: 1px solid var(--border-color);
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: none;
+        }
+
+        .modal-confirm-btn-cancel {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .modal-confirm-btn-cancel:hover {
+            background: var(--bg-primary);
+            border-color: var(--text-secondary);
+        }
+
+        .modal-confirm-btn-delete {
+            background: #aa3333;
+            color: var(--text-primary);
+            border-color: #aa3333;
+        }
+
+        .modal-confirm-btn-delete:hover {
+            background: #cc4444;
+        }
+
+        /* Editor Modal */
+        .modal-editor {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 16px;
+            width: 300px;
+        }
+
+        .modal-editor-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+
+        .modal-editor-form {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .modal-editor-field {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .modal-editor-label {
+            font-size: 8px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .modal-editor-input {
+            height: 24px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 3px;
+            color: var(--text-primary);
+            font-size: 10px;
+            font-family: var(--font-mono);
+            padding: 0 6px;
+        }
+
+        .modal-editor-input:focus {
+            outline: none;
+            border-color: var(--accent-blue-grey);
+        }
+
+        .modal-editor-textarea {
+            min-height: 60px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 3px;
+            color: var(--text-primary);
+            font-size: 10px;
+            font-family: var(--font-mono);
+            padding: 6px;
+            resize: vertical;
+        }
+
+        .modal-editor-textarea:focus {
+            outline: none;
+            border-color: var(--accent-blue-grey);
+        }
+
+        .modal-editor-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .modal-editor-btn {
+            flex: 1;
+            height: 28px;
+            border: 1px solid var(--border-color);
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: none;
+        }
+
+        .modal-editor-btn-cancel {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .modal-editor-btn-cancel:hover {
+            background: var(--bg-primary);
+            border-color: var(--text-secondary);
+        }
+
+        .modal-editor-btn-save {
+            background: var(--accent-blue-grey);
+            color: var(--bg-primary);
+        }
+
+        .modal-editor-btn-save:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(157, 212, 255, 0.3);
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Control Panel -->
+    <div id="control-panel">
+        <!-- Header with collapse button -->
+        <div class="panel-header">
+            <button class="collapse-btn" id="collapse-btn" title="Collapse panel">
+                <!-- Collapse icon: panel with left arrow -->
+                <svg class="collapse-icon-expanded" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="9" y1="3" x2="9" y2="21"></line>
+                    <polyline points="15 9 12 12 15 15"></polyline>
+                </svg>
+                <!-- Expand icon: panel with right arrow -->
+                <svg class="collapse-icon-collapsed" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="9" y1="3" x2="9" y2="21"></line>
+                    <polyline points="12 9 15 12 12 15"></polyline>
+                </svg>
+            </button>
+            <span class="panel-title">Control Panel</span>
+        </div>
+
+        <!-- Navigation Buttons (upper 1/3) -->
+        <div class="nav-section">
+            <button class="nav-btn active" data-section="time">
+                <span class="nav-icon">
+                    <!-- Clock icon -->
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                </span>
+                <span class="nav-label">Time</span>
+            </button>
+            <button class="nav-btn" data-section="satellites">
+                <span class="nav-icon">
+                    <!-- Satellite icon from satellite.svg -->
+                    <img src="/static/satellite.svg" width="14" height="14" style="filter: invert(1);">
+                </span>
+                <span class="nav-label">Satellites</span>
+            </button>
+            <button class="nav-btn" data-section="sensors">
+                <span class="nav-icon">
+                    <!-- Sensor icon from sensor.svg -->
+                    <img src="/static/sensor.svg" width="14" height="14" style="filter: invert(1);">
+                </span>
+                <span class="nav-label">Sensors</span>
+            </button>
+            <button class="nav-btn" data-section="analysis">
+                <span class="nav-icon">
+                    <!-- Bar chart icon -->
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="20" x2="12" y2="10"></line>
+                        <line x1="18" y1="20" x2="18" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="16"></line>
+                    </svg>
+                </span>
+                <span class="nav-label">Analysis</span>
+            </button>
+            <button class="nav-btn" data-section="realtime">
+                <span class="nav-icon">
+                    <!-- Activity/pulse icon -->
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                </span>
+                <span class="nav-label">Real Time Data</span>
+            </button>
+            <button class="nav-btn" data-section="logs">
+                <span class="nav-icon">
+                    <!-- File/document icon -->
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                </span>
+                <span class="nav-label">Logs</span>
+            </button>
+            <button class="nav-btn" data-section="settings">
+                <span class="nav-icon">
+                    <!-- Settings/gear icon -->
+                    <svg width="14" height="14" viewBox="0 0 472.615 472.615" fill="currentColor">
+                        <path d="M472.615,274.117V198.4l-55.335-9.255c-4.332-16.64-10.929-32.492-19.692-47.458L430.178,96l-53.563-53.563 l-45.686,32.591c-14.966-8.763-30.917-15.36-47.557-19.692L274.215,0H198.4l-9.157,55.335 c-16.64,4.332-32.591,10.929-47.557,19.692L96,42.437L42.437,96l32.591,45.686c-8.763,14.966-15.36,30.818-19.692,47.458L0,198.4 v75.717l55.335,9.255c4.332,16.64,10.929,32.591,19.692,47.557l-32.591,45.686L96,430.178l45.686-32.689 c14.966,8.862,30.917,15.458,47.557,19.791l9.157,55.335h75.815l9.157-55.335c16.64-4.332,32.591-10.929,47.557-19.791 l45.686,32.689l53.563-53.563l-32.591-45.686c8.763-14.966,15.36-30.917,19.692-47.557L472.615,274.117z M236.308,334.769 c-54.252,0-98.462-44.209-98.462-98.462c0-54.351,44.209-98.462,98.462-98.462s98.462,44.111,98.462,98.462 C334.769,290.56,290.56,334.769,236.308,334.769z"/>
+                    </svg>
+                </span>
+                <span class="nav-label">Settings</span>
+            </button>
+        </div>
+
+        <!-- Content Area (lower 2/3) -->
+        <div class="content-section">
+            <!-- Time Controls (default active) -->
+            <div id="content-time" class="time-controls">
+                <div class="time-control-group">
+                    <label class="time-label">Start</label>
+                    <div class="time-input-row">
+                        <button class="time-arrow-btn" data-target="start" data-delta="-1"><</button>
+                        <input type="datetime-local" class="time-input" id="start-time" />
+                        <button class="time-arrow-btn" data-target="start" data-delta="1">></button>
+                        <button class="time-now-btn" data-target="start">Now</button>
+                    </div>
+                </div>
+
+                <div class="time-control-group">
+                    <label class="time-label">Stop</label>
+                    <div class="time-input-row">
+                        <button class="time-arrow-btn" data-target="stop" data-delta="-1"><</button>
+                        <input type="datetime-local" class="time-input" id="stop-time" />
+                        <button class="time-arrow-btn" data-target="stop" data-delta="1">></button>
+                        <button class="time-now-btn" data-target="stop">Now</button>
+                    </div>
+                </div>
+
+                <!-- Cancel/Apply buttons (shown when changes are pending) -->
+                <div class="time-actions" id="time-actions">
+                    <button class="time-action-btn time-cancel-btn" id="time-cancel-btn">Cancel</button>
+                    <button class="time-action-btn time-apply-btn" id="time-apply-btn">Apply</button>
+                </div>
+            </div>
+
+            <!-- Other sections (hidden by default) -->
+            <div id="content-satellites" style="display: none;">
+                <!-- Satellite table -->
+                <div class="sensor-controls">
+                    <div class="sensor-table-wrapper">
+                        <table class="sensor-table" id="satellite-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-sel">Sel</th>
+                                    <th class="col-norad">NORAD</th>
+                                    <th class="col-name">Name</th>
+                                    <th class="col-star" style="width: 30px; text-align: center;">★</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- CRUD buttons -->
+                    <div class="sensor-actions">
+                        <button class="sensor-action-btn sensor-add-btn" id="satellite-add-btn">Add</button>
+                        <button class="sensor-action-btn sensor-edit-btn" id="satellite-edit-btn">Edit</button>
+                        <button class="sensor-action-btn sensor-delete-btn" id="satellite-delete-btn">Delete</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="content-sensors" style="display: none;">
+                <!-- Sensor table -->
+                <div class="sensor-controls">
+                    <div class="sensor-table-wrapper">
+                        <table class="sensor-table" id="sensor-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-sel">Sel</th>
+                                    <th class="col-name">Name</th>
+                                    <th class="col-lat">Lat</th>
+                                    <th class="col-lon">Lon</th>
+                                    <th class="col-alt">Alt</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sensor-table-body">
+                                <!-- Populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- CRUD buttons -->
+                    <div class="sensor-actions">
+                        <button class="sensor-action-btn sensor-add-btn" id="sensor-add-btn">Add</button>
+                        <button class="sensor-action-btn sensor-edit-btn" id="sensor-edit-btn">Edit</button>
+                        <button class="sensor-action-btn sensor-delete-btn" id="sensor-delete-btn">Delete</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="content-analysis" style="display: none;">
+                <p style="color: var(--text-muted);">Analysis tools coming soon...</p>
+            </div>
+
+            <div id="content-realtime" style="display: none;">
+                <p style="color: var(--text-muted);">Real-time data coming soon...</p>
+            </div>
+
+            <div id="content-logs" style="display: none;">
+                <p style="color: var(--text-muted);">Logs coming soon...</p>
+            </div>
+
+            <div id="content-settings" style="display: none;">
+                <p style="color: var(--text-muted);">Settings coming soon...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4-Pane Resizable Grid -->
+    <div id="main-container">
+        <!-- Top-left: Map -->
+        <div id="pane-top-left" class="pane">
+            <div id="map-container">
+                <!-- Deck.gl will create its canvas here -->
+                <!-- Map maximize button -->
+                <button id="map-maximize-btn" title="Maximize map">
+                    <span id="maximize-icon">⛶</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Top-right: Coming Soon 1 -->
+        <div id="pane-top-right" class="pane">
+            <div class="coming-soon">Coming Soon 1</div>
+        </div>
+
+        <!-- Bottom-left: Content + Log Panel -->
+        <div id="pane-bottom-left" class="pane">
+            <!-- Content area (80%) -->
+            <div class="pane-content-area">
+                <div class="coming-soon">Coming Soon 2</div>
+            </div>
+
+            <!-- Log panel (20%) -->
+            <div class="pane-log-area">
+                <!-- Log resize handle (top border) -->
+                <div class="log-resize-handle" id="log-resize-handle"></div>
+                <!-- Inline controls (top-left overlay) -->
+                <div class="log-inline-controls">
+                    <button class="log-btn stub" id="log-stub-btn" title="Reserved button (future use)">◌</button>
+                    <button class="log-btn" id="log-clear-btn" title="Clear log display">⊘</button>
+                    <button class="log-btn" id="log-download-btn" title="Download log as .txt file">⬇</button>
+                    <span class="log-text" id="log-text-placeholder">-</span>
+                    <span class="log-text" id="log-count">0</span>
+                </div>
+                <div class="log-display" id="log-display">
+                    <!-- Log entries will be inserted here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom-right: Coming Soon 3 -->
+        <div id="pane-bottom-right" class="pane">
+            <div class="coming-soon">Coming Soon 3</div>
+        </div>
+
+        <!-- Grid resize handles (borders) -->
+        <div class="grid-resize-handle grid-resize-vertical" id="grid-resize-vertical"></div>
+        <div class="grid-resize-handle grid-resize-horizontal" id="grid-resize-horizontal"></div>
+        <div class="grid-resize-crosshair" id="grid-resize-crosshair">
+            <svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                <!-- 4-point concave star -->
+                <path d="M 10,0 Q 10,5 7,7 Q 5,10 0,10 Q 5,10 7,13 Q 10,15 10,20 Q 10,15 13,13 Q 15,10 20,10 Q 15,10 13,7 Q 10,5 10,0 Z"
+                      fill="#9dd4ff"
+                      stroke="#9dd4ff"
+                      stroke-width="0.5"/>
+            </svg>
+        </div>
+    </div>
+
+    <!-- Log Context Menu -->
+    <div class="log-context-menu" id="log-context-menu">
+        <div class="log-context-item" id="log-context-clear">⊘ Clear</div>
+        <div class="log-context-item" id="log-context-download">⬇ Download</div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal-overlay" id="confirm-modal-overlay">
+        <div class="modal-confirm">
+            <div class="modal-confirm-title">Delete Sensor(s)</div>
+            <div class="modal-confirm-message">Are you sure you want to delete the following sensor(s)?</div>
+            <div class="modal-confirm-sensors" id="confirm-modal-sensors"></div>
+            <div class="modal-confirm-buttons">
+                <button class="modal-confirm-btn modal-confirm-btn-cancel" id="confirm-modal-cancel">Cancel</button>
+                <button class="modal-confirm-btn modal-confirm-btn-delete" id="confirm-modal-delete">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Editor Modal (Sensors) -->
+    <div class="modal-overlay" id="editor-modal-overlay">
+        <div class="modal-editor">
+            <div class="modal-editor-title" id="editor-modal-title">Add Sensor</div>
+            <form class="modal-editor-form" id="editor-modal-form" onsubmit="return false;">
+                <div class="modal-editor-field">
+                    <label class="modal-editor-label" for="editor-input-name">Name</label>
+                    <input type="text" class="modal-editor-input" id="editor-input-name" placeholder="Sensor name" maxlength="20" required>
+                </div>
+                <div class="modal-editor-field">
+                    <label class="modal-editor-label" for="editor-input-lat">Latitude (°)</label>
+                    <input type="text" class="modal-editor-input" id="editor-input-lat" placeholder="±90.0" required>
+                </div>
+                <div class="modal-editor-field">
+                    <label class="modal-editor-label" for="editor-input-lon">Longitude (°)</label>
+                    <input type="text" class="modal-editor-input" id="editor-input-lon" placeholder="±180.0" required>
+                </div>
+                <div class="modal-editor-field">
+                    <label class="modal-editor-label" for="editor-input-alt">Altitude (m)</label>
+                    <input type="text" class="modal-editor-input" id="editor-input-alt" placeholder="Meters" required>
+                </div>
+                <div class="modal-editor-field">
+                    <label class="modal-editor-label" for="editor-input-fov">FOV Altitude (km)</label>
+                    <input type="text" class="modal-editor-input" id="editor-input-fov" placeholder="500" required>
+                </div>
+                <div class="modal-editor-buttons">
+                    <button type="button" class="modal-editor-btn modal-editor-btn-cancel" id="editor-modal-cancel">Cancel</button>
+                    <button type="submit" class="modal-editor-btn modal-editor-btn-save" id="editor-modal-save">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal (Satellites) -->
+    <div class="modal-overlay" id="satellite-confirm-modal-overlay">
+        <div class="modal-confirm">
+            <div class="modal-confirm-title">Delete Satellite(s)</div>
+            <div class="modal-confirm-message">Are you sure you want to delete the following satellite(s)?</div>
+            <div class="modal-confirm-sensors" id="satellite-confirm-modal-list"></div>
+            <div class="modal-confirm-buttons">
+                <button class="modal-confirm-btn modal-confirm-btn-cancel" id="satellite-confirm-modal-cancel">Cancel</button>
+                <button class="modal-confirm-btn modal-confirm-btn-delete" id="satellite-confirm-modal-delete">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Editor Modal (Satellites) -->
+    <div class="modal-overlay" id="satellite-editor-modal-overlay">
+        <div class="modal-editor">
+            <div class="modal-editor-title" id="satellite-editor-modal-title">Add Satellite</div>
+            <form class="modal-editor-form" id="satellite-editor-modal-form" onsubmit="return false;">
+                <div class="modal-editor-field">
+                    <label class="modal-editor-label" for="satellite-editor-input-name">Name</label>
+                    <input type="text" class="modal-editor-input" id="satellite-editor-input-name" placeholder="Satellite name" maxlength="30" required>
+                </div>
+                <div class="modal-editor-field">
+                    <label class="modal-editor-label" for="satellite-editor-input-tle">TLE (Paste both lines)</label>
+                    <textarea class="modal-editor-textarea" id="satellite-editor-input-tle" placeholder="1 25544U 98067A   25328.54472231...&#10;2 25544  51.6316 232.5414..." rows="3" required></textarea>
+                </div>
+                <div class="modal-editor-buttons">
+                    <button type="button" class="modal-editor-btn modal-editor-btn-cancel" id="satellite-editor-modal-cancel">Cancel</button>
+                    <button type="submit" class="modal-editor-btn modal-editor-btn-save" id="satellite-editor-modal-save">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/app.js?v=45"></script>
+</body>
+</html>

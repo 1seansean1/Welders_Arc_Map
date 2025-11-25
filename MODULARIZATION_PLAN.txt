@@ -1,0 +1,1794 @@
+================================================================================
+WA_MAP MODULARIZATION PLAN
+================================================================================
+
+Project: Satellite Visualization System (WA_map)
+Goal: Transform 3,395-line monolithic app.js into maintainable modules
+Target: Maintain 60 FPS performance, improve code quality
+Timeline: 9 phases, ~15-20 hours total
+
+Plan Created: 2025-01-25
+Last Updated: 2025-01-25
+Status: READY TO START
+
+================================================================================
+PROGRESS TRACKING
+================================================================================
+
+Phase 0: Pre-Migration Preparation          [ ] NOT STARTED
+Phase 1: Extract Pure Utilities             [ ] NOT STARTED
+Phase 2: Event Bus & State Management       [ ] NOT STARTED
+Phase 3: Extract Data Operations            [ ] NOT STARTED
+Phase 4: Extract UI Components              [ ] NOT STARTED
+Phase 5: Extract Map Components             [ ] NOT STARTED
+Phase 6: Extract Initialization             [ ] NOT STARTED
+Phase 7: Testing & Validation               [ ] NOT STARTED
+Phase 8: Documentation & Cleanup            [ ] NOT STARTED
+Phase 9: Performance Optimization           [ ] NOT STARTED
+
+Overall Progress: 0%
+
+================================================================================
+TARGET ARCHITECTURE
+================================================================================
+
+static/
+├── app.js                    # Entry point + orchestration (< 200 lines)
+├── config.js                 # Configuration constants
+└── modules/
+    ├── events/              # No dependencies
+    │   └── eventBus.js      # Pub/sub for decoupled communication
+    ├── state/               # Depends on: events
+    │   ├── uiState.js       # Panel, mobile, active section
+    │   ├── sensorState.js   # Sensor data + CRUD state
+    │   ├── satelliteState.js# Satellite data + selection
+    │   └── timeState.js     # Time range + pending changes
+    ├── utils/               # No dependencies (pure functions)
+    │   ├── logger.js        # UILogger module
+    │   ├── time.js          # Time formatting utilities
+    │   ├── geometry.js      # FOV calculations, coordinates
+    │   └── validation.js    # Input validation functions
+    ├── data/                # Depends on: state, events
+    │   ├── sensorOps.js     # Sensor CRUD operations
+    │   ├── satelliteOps.js  # Satellite management
+    │   ├── propagation.js   # SGP4 calculations
+    │   └── websocket.js     # WebSocket connection manager
+    ├── ui/                  # Depends on: state, events, data
+    │   ├── controlPanel.js  # Panel expand/collapse
+    │   ├── sensorTable.js   # Sensor table rendering
+    │   ├── satelliteTable.js# Satellite table rendering
+    │   ├── timeControls.js  # Time inputs + Flatpickr
+    │   ├── modals.js        # Modal management
+    │   └── logPanel.js      # Log display + resize
+    ├── map/                 # Depends on: state, data
+    │   ├── leaflet.js       # Leaflet map initialization
+    │   ├── deckgl.js        # Deck.gl layer management
+    │   └── interactions.js  # Map click/zoom handlers
+    └── init/                # Depends on: everything
+        └── bootstrap.js     # Initialization sequence
+
+================================================================================
+PHASE 0: PRE-MIGRATION PREPARATION
+================================================================================
+Status: [ ] NOT STARTED
+Estimated Time: 30 minutes
+Dependencies: None
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 0.0: Create Documentation System
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+
+Tasks:
+  [ ] Create MODULARIZATION_PLAN.txt (this file)
+  [ ] Add status tracking system
+  [ ] Define progress indicators
+  [ ] Create notes section for each phase
+
+Notes:
+  - This file will be updated after each step
+  - Status indicators: [ ] NOT STARTED, [~] IN PROGRESS, [✓] COMPLETE, [X] FAILED
+  - Use git tags to mark phase completions
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 0.1: Backup Current State
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+
+Tasks:
+  [ ] Create feature branch: git checkout -b feature/modularization
+  [ ] Commit current state
+  [ ] Create rollback tag: git tag pre-modularization
+  [ ] Copy app.js to app.monolithic.js as fallback
+
+Commands:
+  cd C:\Users\seanp\Workspace\WA_map
+  git checkout -b feature/modularization
+  git add .
+  git commit -m "Backup: Pre-modularization state"
+  git tag pre-modularization
+  cp static/app.js static/app.monolithic.js
+
+Rollback:
+  git checkout main
+  git branch -D feature/modularization
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 0.2: Setup Infrastructure
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+
+Tasks:
+  [ ] Create directory structure
+  [ ] Create config.js
+  [ ] Update index.html with module script tags
+  [ ] Add browser compatibility checks
+  [ ] Add module load error handler
+
+Directory Structure:
+  mkdir -p static/modules/events
+  mkdir -p static/modules/state
+  mkdir -p static/modules/utils
+  mkdir -p static/modules/data
+  mkdir -p static/modules/ui
+  mkdir -p static/modules/map
+  mkdir -p static/modules/init
+
+Acceptance Criteria:
+  ✓ All directories exist
+  ✓ config.js created and exports CONFIG
+  ✓ index.html updated with <script type="module">
+  ✓ Browser shows expected "module not found" error
+
+Rollback:
+  rm -rf static/modules
+  git checkout templates/index.html
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+Phase 0 Summary
+──────────────────────────────────────────────────────────────────────────────
+Completion Date:
+Total Time:
+Lines Extracted: 0
+Remaining in app.js: 3,395
+
+Commit:
+  git add .
+  git commit -m "Phase 0: Pre-migration preparation complete"
+  git tag phase-0-complete
+
+Notes:
+
+
+================================================================================
+PHASE 1: EXTRACT PURE UTILITIES (NO DEPENDENCIES)
+================================================================================
+Status: [ ] NOT STARTED
+Estimated Time: 2 hours
+Dependencies: Phase 0 complete
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 1.1: Extract UILogger Module
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+Current Location: app.js lines 52-316 (265 lines)
+Target: modules/utils/logger.js
+
+Tasks:
+  [ ] Create modules/utils/logger.js
+  [ ] Copy UILogger class (lines 52-316)
+  [ ] Export as singleton: export const logger = new UILogger()
+  [ ] Update app.js: import logger from './modules/utils/logger.js'
+  [ ] Remove lines 52-316 from app.js
+  [ ] Update all references: UILogger.log → logger.log
+
+Testing Checklist:
+  [ ] No console errors on page load
+  [ ] "UI Logger initialized" message appears
+  [ ] Log entries visible in bottom-left panel
+  [ ] Clear button works
+  [ ] Download button works
+  [ ] Right-click context menu works
+  [ ] Performance: <5% frame time increase
+
+Performance Test:
+  Run in browser console:
+  - Log 100 messages rapidly
+  - Measure frame time before/after
+  - Should be <5% degradation
+
+Acceptance Criteria:
+  ✓ Logger module loads without errors
+  ✓ All existing functionality works
+  ✓ Performance within target
+
+Rollback:
+  git checkout static/app.js
+  rm static/modules/utils/logger.js
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 1.2: Extract Pure Time Utilities
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+Current Location: app.js lines 1967-1981 (15 lines)
+Target: modules/utils/time.js
+
+Tasks:
+  [ ] Create modules/utils/time.js
+  [ ] Move formatDateTimeLocal() function
+  [ ] Add utility functions: parseISOTime, addDays, getUTCNow, formatLogTime
+  [ ] Export all functions
+  [ ] Update app.js imports
+  [ ] Update all usages
+
+Testing Checklist:
+  [ ] formatDateTimeLocal returns correct format
+  [ ] addDays calculation works
+  [ ] Time inputs show formatted dates
+  [ ] NOW button works
+  [ ] Arrow buttons (±1 day) work
+
+Acceptance Criteria:
+  ✓ Time utilities export correctly
+  ✓ All time operations work
+  ✓ No console errors
+
+Rollback:
+  git checkout static/app.js
+  rm static/modules/utils/time.js
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 1.3: Extract Geometry Utilities
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+Current Location: app.js lines 1649-1673 (25 lines)
+Target: modules/utils/geometry.js
+
+Tasks:
+  [ ] Create modules/utils/geometry.js
+  [ ] Move calculateFOVCircle() function
+  [ ] Add helper functions: degreesToRadians, radiansToDegrees
+  [ ] Export all functions
+  [ ] Update app.js imports
+
+Testing Checklist:
+  [ ] FOV circles render on map
+  [ ] Circle points are valid coordinates
+  [ ] Circle closes properly (first = last point)
+  [ ] Sensor markers show donut visualization
+
+Acceptance Criteria:
+  ✓ FOV calculations correct
+  ✓ Sensor visualizations work
+  ✓ No geometry errors
+
+Rollback:
+  git checkout static/app.js
+  rm static/modules/utils/geometry.js
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 1.4: Extract Validation Utilities
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+Target: modules/utils/validation.js (NEW)
+
+Tasks:
+  [ ] Create modules/utils/validation.js
+  [ ] Add validateLatitude()
+  [ ] Add validateLongitude()
+  [ ] Add validateAltitude()
+  [ ] Add validateName() with XSS protection
+  [ ] Add validateTLE()
+  [ ] Add sanitizeHTML()
+  [ ] Update sensor/satellite forms to use validation
+  [ ] Add error message display
+
+Testing Checklist:
+  [ ] Valid inputs accepted
+  [ ] Invalid latitude rejected (>90, <-90)
+  [ ] Invalid longitude rejected (>180, <-180)
+  [ ] Empty names rejected
+  [ ] XSS attempts blocked (<script> tags)
+  [ ] Invalid TLE rejected
+
+Security Test:
+  Try entering: <script>alert('XSS')</script>
+  Should be rejected or sanitized
+
+Acceptance Criteria:
+  ✓ All validation functions work
+  ✓ XSS protection active
+  ✓ Error messages clear
+
+Rollback:
+  rm static/modules/utils/validation.js
+  git checkout static/app.js
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+Phase 1 Summary
+──────────────────────────────────────────────────────────────────────────────
+Completion Date:
+Total Time:
+Lines Extracted: ~500
+Remaining in app.js: ~2,900
+
+Modules Created:
+  - modules/utils/logger.js (265 lines)
+  - modules/utils/time.js (60 lines)
+  - modules/utils/geometry.js (60 lines)
+  - modules/utils/validation.js (120 lines)
+
+Commit:
+  git add static/modules/utils/
+  git add static/app.js
+  git commit -m "Phase 1: Extract pure utility modules"
+  git tag phase-1-complete
+
+Notes:
+
+
+================================================================================
+PHASE 2: EVENT BUS & STATE MANAGEMENT
+================================================================================
+Status: [ ] NOT STARTED
+Estimated Time: 2.5 hours
+Dependencies: Phase 1 complete
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 2.1: Create Event Bus
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+Target: modules/events/eventBus.js (NEW)
+
+Tasks:
+  [ ] Create modules/events/eventBus.js
+  [ ] Implement EventBus class with on(), off(), emit(), once()
+  [ ] Add error handling for listeners
+  [ ] Export singleton instance
+  [ ] Create EVENT_TYPES.md documentation
+
+Testing Checklist:
+  [ ] Basic pub/sub works
+  [ ] Multiple listeners work
+  [ ] Unsubscribe works
+  [ ] once() auto-unsubscribes
+  [ ] Errors in listeners don't crash app
+
+Test Code:
+  import eventBus from './modules/events/eventBus.js';
+
+  let received = null;
+  eventBus.on('test:event', (data) => { received = data; });
+  eventBus.emit('test:event', { value: 42 });
+  console.assert(received.value === 42);
+
+Acceptance Criteria:
+  ✓ Event bus exports correctly
+  ✓ All methods work as expected
+  ✓ Error handling robust
+
+Rollback:
+  rm -rf static/modules/events/
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 2.2: Create UI State Module
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+Current Location: app.js lines 21-46 (partial)
+Target: modules/state/uiState.js
+
+Tasks:
+  [ ] Create modules/state/uiState.js
+  [ ] Extract UI-related state: panelExpanded, activeSection, isMobile
+  [ ] Create getters: getUIState(), isMobile()
+  [ ] Create setters: setPanelExpanded(), setActiveSection()
+  [ ] Add event emissions on state changes
+  [ ] Update app.js to use UI state module
+
+Testing Checklist:
+  [ ] Panel expand/collapse works
+  [ ] Section switching works
+  [ ] Mobile detection works
+  [ ] Events emitted on changes
+
+Acceptance Criteria:
+  ✓ UI state encapsulated
+  ✓ Cannot mutate state directly
+  ✓ Events fire correctly
+
+Rollback:
+  rm static/modules/state/uiState.js
+  git checkout static/app.js
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 2.3: Create Sensor State Module
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+Current Location: app.js lines 21-46 (partial), 489-507 (defaults)
+Target: modules/state/sensorState.js
+
+Tasks:
+  [ ] Create modules/state/sensorState.js
+  [ ] Move default sensors array (lines 489-507)
+  [ ] Extract sensor-related state
+  [ ] Implement CRUD functions: addSensor(), updateSensor(), deleteSensors()
+  [ ] Implement selection: toggleSensorSelection(), getSelectedSensors()
+  [ ] Implement sorting: setSortState(), getSortState()
+  [ ] Add event emissions
+
+Testing Checklist:
+  [ ] Add sensor works and emits event
+  [ ] Update sensor works
+  [ ] Delete sensor works
+  [ ] Selection toggling works
+  [ ] Sort state maintained
+  [ ] Default 12 sensors load
+
+Acceptance Criteria:
+  ✓ All CRUD operations work
+  ✓ Events emitted correctly
+  ✓ State immutable from outside
+
+Rollback:
+  rm static/modules/state/sensorState.js
+  git checkout static/app.js
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 2.4: Create Satellite State Module
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+Current Location: app.js lines 508-676 (default satellites)
+Target: modules/state/satelliteState.js
+
+Tasks:
+  [ ] Create modules/state/satelliteState.js
+  [ ] Move default satellites array (166 satellites with TLE data)
+  [ ] Implement satellite CRUD
+  [ ] Implement selection and watchlist (star) functions
+  [ ] Add event emissions
+
+Testing Checklist:
+  [ ] Add satellite works
+  [ ] Edit satellite works
+  [ ] Delete satellite works
+  [ ] Selection toggling works
+  [ ] Watchlist (star) toggling works
+  [ ] Default satellites load
+
+Acceptance Criteria:
+  ✓ All satellite operations work
+  ✓ TLE data preserved
+  ✓ Events emitted correctly
+
+Rollback:
+  rm static/modules/state/satelliteState.js
+  git checkout static/app.js
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 2.5: Create Time State Module
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+Current Location: app.js lines 21-46 (partial)
+Target: modules/state/timeState.js
+
+Tasks:
+  [ ] Create modules/state/timeState.js
+  [ ] Extract time-related state
+  [ ] Implement time functions: setStartTime(), setStopTime()
+  [ ] Implement pending changes: applyTimeChanges(), cancelTimeChanges()
+  [ ] Add initialization: initializeTimeState()
+  [ ] Add event emissions
+
+Testing Checklist:
+  [ ] Time range initialization works
+  [ ] Setting times marks as pending
+  [ ] Apply commits changes
+  [ ] Cancel reverts changes
+  [ ] Events emitted correctly
+
+Acceptance Criteria:
+  ✓ Time state managed correctly
+  ✓ Pending changes tracked
+  ✓ Apply/cancel work
+
+Rollback:
+  rm static/modules/state/timeState.js
+  git checkout static/app.js
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 2.6: Update app.js to Use State Modules
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+
+Tasks:
+  [ ] Remove global state object (lines 21-46)
+  [ ] Import all state modules
+  [ ] Update all state.xxx references to use module functions
+  [ ] Test thoroughly
+
+Find/Replace Examples:
+  state.panelExpanded → uiState.getUIState().panelExpanded
+  state.panelExpanded = true → uiState.setPanelExpanded(true)
+  state.sensors.push(...) → sensorState.addSensor(...)
+  state.sensors → sensorState.getSensors()
+
+Testing Checklist:
+  [ ] All panel operations work
+  [ ] All sensor operations work
+  [ ] All satellite operations work
+  [ ] All time operations work
+  [ ] No direct state mutations remain
+
+Acceptance Criteria:
+  ✓ Global state object removed
+  ✓ All functionality works through modules
+  ✓ No regressions
+
+Rollback:
+  git checkout static/app.js
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+Phase 2 Summary
+──────────────────────────────────────────────────────────────────────────────
+Completion Date:
+Total Time:
+Lines Extracted: ~800
+Remaining in app.js: ~2,100
+
+Modules Created:
+  - modules/events/eventBus.js (120 lines)
+  - modules/state/uiState.js (150 lines)
+  - modules/state/sensorState.js (250 lines)
+  - modules/state/satelliteState.js (200 lines)
+  - modules/state/timeState.js (100 lines)
+
+Commit:
+  git add static/modules/events/
+  git add static/modules/state/
+  git add static/app.js
+  git commit -m "Phase 2: Event bus and state management"
+  git tag phase-2-complete
+
+Notes:
+
+
+================================================================================
+PHASE 3: EXTRACT DATA OPERATIONS
+================================================================================
+Status: [ ] NOT STARTED
+Estimated Time: 3 hours
+Dependencies: Phase 2 complete
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 3.1: Extract Sensor Operations
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+Current Location: app.js lines 1172-1280 (various functions)
+Target: modules/data/sensorOps.js
+
+Tasks:
+  [ ] Create modules/data/sensorOps.js
+  [ ] Move business logic functions: createSensor, updateSensorData
+  [ ] Add validation integration
+  [ ] Add duplicate name checking
+  [ ] Implement deleteSensorsById()
+  [ ] Implement getSortedSensors()
+  [ ] Implement toggleSort()
+
+Testing Checklist:
+  [ ] Create sensor with validation works
+  [ ] Duplicate name detected
+  [ ] Invalid inputs rejected with clear messages
+  [ ] Update sensor works
+  [ ] Delete sensors works
+  [ ] Sorting works (asc → desc → null)
+
+Acceptance Criteria:
+  ✓ All sensor operations work
+  ✓ Validation integrated
+  ✓ Business logic separated from UI
+
+Rollback:
+  rm static/modules/data/sensorOps.js
+  git checkout static/app.js
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 3.2: Extract Satellite Operations
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+Current Location: app.js lines 1488-1592 (various functions)
+Target: modules/data/satelliteOps.js
+
+Tasks:
+  [ ] Create modules/data/satelliteOps.js
+  [ ] Move satellite CRUD functions
+  [ ] Move TLE parsing function (lines 1295-1347)
+  [ ] Add TLE validation
+  [ ] Implement watchlist toggling
+  [ ] Implement selection management
+
+Testing Checklist:
+  [ ] Add satellite works
+  [ ] TLE parsing works
+  [ ] Invalid TLE rejected
+  [ ] Edit satellite works
+  [ ] Delete satellites works
+  [ ] Watchlist (star) toggling works
+
+Acceptance Criteria:
+  ✓ All satellite operations work
+  ✓ TLE validation active
+  ✓ Business logic separated
+
+Rollback:
+  rm static/modules/data/satelliteOps.js
+  git checkout static/app.js
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 3.3: Extract Satellite Propagation (SGP4)
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+Current Location: app.js lines 1690-1768
+Target: modules/data/propagation.js
+
+Tasks:
+  [ ] Create modules/data/propagation.js
+  [ ] Move propagateSatellite() function
+  [ ] Move calculateGroundTrack() function
+  [ ] Add batchPropagate() for multiple satellites
+  [ ] Add isInSunlight() for shadow detection
+
+Testing Checklist:
+  [ ] Single satellite propagation works
+  [ ] Coordinates are valid (lat ±90, lon ±180)
+  [ ] Ground track calculation works
+  [ ] Ground track closes properly
+  [ ] Performance: <5ms per satellite average
+
+Performance Test:
+  Propagate 100 satellites
+  Average time should be <5ms each
+
+Acceptance Criteria:
+  ✓ Propagation accurate
+  ✓ Performance acceptable
+  ✓ Error handling robust
+
+Rollback:
+  rm static/modules/data/propagation.js
+  git checkout static/app.js
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 3.4: Extract WebSocket Handler
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+Current Location: app.js lines 3365+
+Target: modules/data/websocket.js
+
+Tasks:
+  [ ] Create modules/data/websocket.js
+  [ ] Implement WebSocketManager class
+  [ ] Add connection management
+  [ ] Add reconnection logic (exponential backoff)
+  [ ] Add message handling with event emission
+  [ ] Export singleton instance
+
+Testing Checklist:
+  [ ] WebSocket connects successfully
+  [ ] Messages received and parsed
+  [ ] Events emitted for updates
+  [ ] Reconnection works after disconnect
+  [ ] Max reconnection attempts respected
+
+Manual Test:
+  1. Start backend: cd backend && ../venv/Scripts/python main.py
+  2. Reload frontend
+  3. Check console for "WebSocket connected"
+  4. Stop backend
+  5. Check reconnection attempts
+  6. Restart backend
+  7. Check successful reconnection
+
+Acceptance Criteria:
+  ✓ WebSocket connection stable
+  ✓ Reconnection works
+  ✓ Message handling correct
+
+Rollback:
+  rm static/modules/data/websocket.js
+  git checkout static/app.js
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+Phase 3 Summary
+──────────────────────────────────────────────────────────────────────────────
+Completion Date:
+Total Time:
+Lines Extracted: ~600
+Remaining in app.js: ~1,500
+
+Modules Created:
+  - modules/data/sensorOps.js (150 lines)
+  - modules/data/satelliteOps.js (150 lines)
+  - modules/data/propagation.js (200 lines)
+  - modules/data/websocket.js (120 lines)
+
+Commit:
+  git add static/modules/data/
+  git add static/app.js
+  git commit -m "Phase 3: Extract data operations"
+  git tag phase-3-complete
+
+Notes:
+
+
+================================================================================
+PHASE 4: EXTRACT UI COMPONENTS
+================================================================================
+Status: [ ] NOT STARTED
+Estimated Time: 4 hours
+Dependencies: Phase 3 complete
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 4.1: Extract Control Panel Module
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+Current Location: app.js lines 322-476
+Target: modules/ui/controlPanel.js
+
+Tasks:
+  [ ] Create modules/ui/controlPanel.js
+  [ ] Move panel expand/collapse logic
+  [ ] Move section switching
+  [ ] Move click outside handler
+  [ ] Move touch handlers
+  [ ] Export initializeControlPanel()
+
+Testing Checklist:
+  [ ] Panel expands on click when collapsed
+  [ ] Panel collapses on collapse button
+  [ ] Section switching works
+  [ ] Click outside closes panel (desktop)
+  [ ] Touch handlers work (mobile)
+  [ ] Active button highlighting works
+
+Acceptance Criteria:
+  ✓ All panel interactions work
+  ✓ Mobile behavior correct
+  ✓ Events integrated
+
+Rollback:
+  rm static/modules/ui/controlPanel.js
+  git checkout static/app.js
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 4.2: Extract Modal Controller
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+Current Location: app.js lines 1007-1171 (various modal functions)
+Target: modules/ui/modals.js
+
+Tasks:
+  [ ] Create modules/ui/modals.js
+  [ ] Implement showConfirmModal() with Promise
+  [ ] Implement showEditorModal() with Promise
+  [ ] Implement closeAllModals()
+  [ ] Add click outside to close
+
+Testing Checklist:
+  [ ] Confirm modal opens correctly
+  [ ] Editor modal opens with values
+  [ ] Modals close on cancel
+  [ ] Modals close on save
+  [ ] Click outside closes modal
+  [ ] Promises resolve correctly
+
+Acceptance Criteria:
+  ✓ All modals work
+  ✓ Promise-based API clean
+  ✓ Click outside works
+
+Rollback:
+  rm static/modules/ui/modals.js
+  git checkout static/app.js
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 4.3: Extract Sensor Table Module
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+Current Location: app.js lines 733-998 (table rendering)
+Target: modules/ui/sensorTable.js
+
+Tasks:
+  [ ] Create modules/ui/sensorTable.js
+  [ ] Move renderSensorTable()
+  [ ] Move createSensorRow()
+  [ ] Move column header click handlers
+  [ ] Move sort indicators
+  [ ] Move select all functionality
+  [ ] Export initialization function
+
+Testing Checklist:
+  [ ] Table renders with 12 default sensors
+  [ ] Checkboxes toggle selection
+  [ ] Select all works
+  [ ] Column headers clickable
+  [ ] Sort indicators show (▲ ▼)
+  [ ] Row highlighting works
+  [ ] Click row highlights it
+
+Acceptance Criteria:
+  ✓ Table fully functional
+  ✓ Sorting works
+  ✓ Selection works
+
+Rollback:
+  rm static/modules/ui/sensorTable.js
+  git checkout static/app.js
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 4.4: Extract Satellite Table Module
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+Current Location: app.js lines 1593-1630 (table rendering)
+Target: modules/ui/satelliteTable.js
+
+Tasks:
+  [ ] Create modules/ui/satelliteTable.js
+  [ ] Move renderSatelliteTable()
+  [ ] Move satellite row creation
+  [ ] Move watchlist (star) toggle
+  [ ] Export initialization function
+
+Testing Checklist:
+  [ ] Table renders satellites
+  [ ] Checkboxes toggle selection
+  [ ] Star icon toggles watchlist
+  [ ] NORAD IDs displayed correctly
+  [ ] Names displayed correctly
+
+Acceptance Criteria:
+  ✓ Table fully functional
+  ✓ Selection works
+  ✓ Watchlist works
+
+Rollback:
+  rm static/modules/ui/satelliteTable.js
+  git checkout static/app.js
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 4.5: Extract Time Controls Module
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+Current Location: app.js lines 1942-2214 (time controls)
+Target: modules/ui/timeControls.js
+
+Tasks:
+  [ ] Create modules/ui/timeControls.js
+  [ ] Move initializeTimeControls()
+  [ ] Move initializeFlatpickr()
+  [ ] Move setPendingState(), clearPendingState()
+  [ ] Move applyTimeChanges(), cancelTimeChanges()
+  [ ] Move arrow button handlers
+  [ ] Move NOW button handlers
+
+Testing Checklist:
+  [ ] Start/stop time inputs populated
+  [ ] Flatpickr calendar opens
+  [ ] NOW button resets to current time
+  [ ] Arrow buttons increment/decrement by 1 day
+  [ ] Pending state shows Apply/Cancel buttons
+  [ ] Apply commits changes
+  [ ] Cancel reverts changes
+
+Acceptance Criteria:
+  ✓ All time controls work
+  ✓ Flatpickr integrated
+  ✓ Pending changes tracked
+
+Rollback:
+  rm static/modules/ui/timeControls.js
+  git checkout static/app.js
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 4.6: Extract Log Panel Module
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+Current Location: app.js lines 2990-3089 (log panel resize)
+Target: modules/ui/logPanel.js
+
+Tasks:
+  [ ] Create modules/ui/logPanel.js
+  [ ] Move log panel resize functionality
+  [ ] Move resize handle drag logic
+  [ ] Export initializeLogPanel()
+
+Testing Checklist:
+  [ ] Log panel visible at bottom
+  [ ] Resize handle appears on hover
+  [ ] Can drag to resize panel
+  [ ] Min/max heights enforced
+  [ ] Resize smooth (no jank)
+
+Acceptance Criteria:
+  ✓ Log panel resize works
+  ✓ UI smooth during drag
+  ✓ Bounds enforced
+
+Rollback:
+  rm static/modules/ui/logPanel.js
+  git checkout static/app.js
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+Phase 4 Summary
+──────────────────────────────────────────────────────────────────────────────
+Completion Date:
+Total Time:
+Lines Extracted: ~1,000
+Remaining in app.js: ~500
+
+Modules Created:
+  - modules/ui/controlPanel.js (200 lines)
+  - modules/ui/modals.js (150 lines)
+  - modules/ui/sensorTable.js (250 lines)
+  - modules/ui/satelliteTable.js (150 lines)
+  - modules/ui/timeControls.js (200 lines)
+  - modules/ui/logPanel.js (100 lines)
+
+Commit:
+  git add static/modules/ui/
+  git add static/app.js
+  git commit -m "Phase 4: Extract UI components"
+  git tag phase-4-complete
+
+Notes:
+
+
+================================================================================
+PHASE 5: EXTRACT MAP COMPONENTS
+================================================================================
+Status: [ ] NOT STARTED
+Estimated Time: 2 hours
+Dependencies: Phase 4 complete
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 5.1: Extract Leaflet Initialization
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+Current Location: app.js lines 2239-2373
+Target: modules/map/leaflet.js
+
+Tasks:
+  [ ] Create modules/map/leaflet.js
+  [ ] Move initializeLeaflet()
+  [ ] Export map instance accessor
+  [ ] Emit map:ready event
+
+Testing Checklist:
+  [ ] Map renders in top-left pane
+  [ ] Dark tiles load
+  [ ] Zoom controls work
+  [ ] Map is interactive (pan/zoom)
+
+Acceptance Criteria:
+  ✓ Map initializes correctly
+  ✓ All interactions work
+  ✓ Events emitted
+
+Rollback:
+  rm static/modules/map/leaflet.js
+  git checkout static/app.js
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 5.2: Extract Deck.gl Layer Management
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+Current Location: app.js lines 2374-2640 (266 lines)
+Target: modules/map/deckgl.js
+
+Tasks:
+  [ ] Create modules/map/deckgl.js
+  [ ] Move initializeDeckGL()
+  [ ] Move updateDeckOverlay()
+  [ ] Move layer creation functions
+  [ ] Optimize layer updates (use updateTriggers)
+
+Testing Checklist:
+  [ ] Deck.gl canvas overlays map
+  [ ] Satellite points render
+  [ ] Sensor FOV circles render
+  [ ] Ground tracks render
+  [ ] Layers update when data changes
+  [ ] Performance: 60 FPS maintained
+
+Performance Test:
+  Enable all sensors and satellites
+  Check FPS in DevTools Performance tab
+  Should maintain 60 FPS
+
+Acceptance Criteria:
+  ✓ All layers render correctly
+  ✓ Performance target met
+  ✓ Updates optimized
+
+Rollback:
+  rm static/modules/map/deckgl.js
+  git checkout static/app.js
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 5.3: Extract Map Interactions
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+Current Location: Various in app.js
+Target: modules/map/interactions.js
+
+Tasks:
+  [ ] Create modules/map/interactions.js
+  [ ] Move maximize button logic (lines 3111-3163)
+  [ ] Move grid resize handlers (lines 2663-2970)
+  [ ] Export initialization functions
+
+Testing Checklist:
+  [ ] Maximize button toggles full screen
+  [ ] Grid resize handles work (vertical, horizontal)
+  [ ] Crosshair handle works
+  [ ] Resize is smooth
+  [ ] Grid percentages update correctly
+
+Acceptance Criteria:
+  ✓ All interactions work
+  ✓ Resize smooth
+  ✓ No layout issues
+
+Rollback:
+  rm static/modules/map/interactions.js
+  git checkout static/app.js
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+Phase 5 Summary
+──────────────────────────────────────────────────────────────────────────────
+Completion Date:
+Total Time:
+Lines Extracted: ~600
+Remaining in app.js: ~200 (mostly initialization)
+
+Modules Created:
+  - modules/map/leaflet.js (150 lines)
+  - modules/map/deckgl.js (300 lines)
+  - modules/map/interactions.js (150 lines)
+
+Commit:
+  git add static/modules/map/
+  git add static/app.js
+  git commit -m "Phase 5: Extract map components"
+  git tag phase-5-complete
+
+Notes:
+
+
+================================================================================
+PHASE 6: EXTRACT INITIALIZATION & FINALIZE
+================================================================================
+Status: [ ] NOT STARTED
+Estimated Time: 1 hour
+Dependencies: Phase 5 complete
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 6.1: Create Bootstrap Module
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+Target: modules/init/bootstrap.js
+
+Tasks:
+  [ ] Create modules/init/bootstrap.js
+  [ ] Move initialization sequence
+  [ ] Define initialization order
+  [ ] Add error handling for init failures
+  [ ] Export init() function
+
+Initialization Order:
+  1. Logger
+  2. State modules
+  3. Event bus listeners
+  4. UI components (panel, modals, tables)
+  5. Map (Leaflet + Deck.gl)
+  6. WebSocket connection
+  7. Initial data load
+
+Testing Checklist:
+  [ ] App initializes without errors
+  [ ] All components ready
+  [ ] Correct initialization order
+  [ ] Error handling works
+
+Acceptance Criteria:
+  ✓ Clean initialization
+  ✓ Proper error handling
+  ✓ All modules initialized
+
+Rollback:
+  rm static/modules/init/bootstrap.js
+  git checkout static/app.js
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 6.2: Finalize Main app.js
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+
+Tasks:
+  [ ] Reduce app.js to < 200 lines
+  [ ] Import config
+  [ ] Import all modules
+  [ ] Call bootstrap.init()
+  [ ] Add error boundary
+  [ ] Add module load fallback
+
+Final app.js Structure:
+  // Imports
+  import { CONFIG } from './config.js';
+  import logger from './modules/utils/logger.js';
+  import eventBus from './modules/events/eventBus.js';
+  import * as bootstrap from './modules/init/bootstrap.js';
+
+  // Error boundary
+  window.addEventListener('error', handleGlobalError);
+
+  // Initialize
+  bootstrap.init().catch(handleInitError);
+
+Testing Checklist:
+  [ ] App loads successfully
+  [ ] All features work
+  [ ] No console errors
+  [ ] Fallback works if module fails
+
+Acceptance Criteria:
+  ✓ app.js < 200 lines
+  ✓ Clean imports
+  ✓ All functionality works
+
+Rollback:
+  git checkout static/app.js
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+Phase 6 Summary
+──────────────────────────────────────────────────────────────────────────────
+Completion Date:
+Total Time:
+Lines Extracted: All (~3,200 total)
+Remaining in app.js: < 200 (orchestration only)
+
+Modules Created:
+  - modules/init/bootstrap.js (150 lines)
+
+Final Module Count: 20+ modules
+
+Commit:
+  git add static/modules/init/
+  git add static/app.js
+  git commit -m "Phase 6: Finalize modularization"
+  git tag phase-6-complete
+
+Notes:
+
+
+================================================================================
+PHASE 7: TESTING & VALIDATION
+================================================================================
+Status: [ ] NOT STARTED
+Estimated Time: 2 hours
+Dependencies: Phase 6 complete
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 7.1: Comprehensive Functional Testing
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+
+Testing Checklist:
+
+Control Panel:
+  [ ] Panel expands/collapses
+  [ ] All sections accessible
+  [ ] Mobile behavior correct
+
+Sensor Management:
+  [ ] Add sensor works with validation
+  [ ] Edit sensor works
+  [ ] Delete sensor(s) works
+  [ ] Table sorting works
+  [ ] Selection works
+  [ ] FOV circles render
+
+Satellite Management:
+  [ ] Add satellite works
+  [ ] TLE validation works
+  [ ] Edit satellite works
+  [ ] Delete satellite(s) works
+  [ ] Selection works
+  [ ] Watchlist (star) works
+
+Time Controls:
+  [ ] Start/stop times set correctly
+  [ ] NOW button works
+  [ ] Arrow buttons work
+  [ ] Flatpickr calendar works
+  [ ] Apply/Cancel buttons work
+  [ ] Pending state tracked
+
+Map:
+  [ ] Leaflet map renders
+  [ ] Deck.gl layers render
+  [ ] Satellite positions shown
+  [ ] Sensor FOV circles shown
+  [ ] Ground tracks shown
+  [ ] Zoom controls work
+  [ ] Pan works
+  [ ] Maximize button works
+
+Grid/Layout:
+  [ ] 4-pane grid displays
+  [ ] Vertical resize works
+  [ ] Horizontal resize works
+  [ ] Crosshair resize works
+  [ ] Log panel resize works
+
+Logging:
+  [ ] Logs appear in panel
+  [ ] Clear button works
+  [ ] Download button works
+  [ ] Context menu works
+
+WebSocket:
+  [ ] Connection establishes
+  [ ] Messages received
+  [ ] Reconnection works
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 7.2: Performance Validation
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+
+Performance Tests:
+
+Frame Rate:
+  [ ] Idle: 60 FPS maintained
+  [ ] Panel animation: 60 FPS
+  [ ] Map pan/zoom: 60 FPS
+  [ ] Layer updates: 60 FPS
+  [ ] 100 satellites rendered: >55 FPS
+
+Load Time:
+  [ ] Initial page load: <2 seconds
+  [ ] Module loading: <500ms total
+  [ ] Map tiles: <3 seconds
+
+Operations:
+  [ ] Add sensor: <100ms
+  [ ] Delete sensor: <50ms
+  [ ] Propagate satellite: <5ms per satellite
+  [ ] Update deck layer: <50ms
+  [ ] Log 100 entries: <200ms
+
+Memory:
+  [ ] Initial: <50MB
+  [ ] After 1 min usage: <100MB
+  [ ] No memory leaks detected
+
+Tools:
+  - Chrome DevTools Performance tab
+  - Chrome DevTools Memory profiler
+  - FPS meter
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 7.3: Cross-Browser Testing
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+
+Browser Testing:
+
+Chrome/Edge (Chromium):
+  [ ] All features work
+  [ ] Performance acceptable
+  [ ] No console errors
+
+Firefox:
+  [ ] All features work
+  [ ] Performance acceptable
+  [ ] No console errors
+
+Safari (if available):
+  [ ] All features work
+  [ ] Performance acceptable
+  [ ] No console errors
+
+Mobile (Chrome/Safari):
+  [ ] Touch events work
+  [ ] Panel overlay works
+  [ ] Responsive layout works
+  [ ] Performance acceptable
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 7.4: Regression Testing
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+
+Compare with Monolithic Version:
+
+Load both versions:
+  - Modular: http://localhost:8000
+  - Monolithic: (rename app.monolithic.js to app.js temporarily)
+
+Test Parity:
+  [ ] All features present in both
+  [ ] Behavior identical
+  [ ] Performance similar or better
+  [ ] No new bugs introduced
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+Phase 7 Summary
+──────────────────────────────────────────────────────────────────────────────
+Completion Date:
+Total Time:
+
+Test Results:
+  Functional Tests Passed: __/__
+  Performance Tests Passed: __/__
+  Cross-Browser Tests Passed: __/__
+  Regression Tests Passed: __/__
+
+Issues Found:
+
+
+Commit:
+  git add .
+  git commit -m "Phase 7: Testing and validation complete"
+  git tag phase-7-complete
+
+Notes:
+
+
+================================================================================
+PHASE 8: DOCUMENTATION & CLEANUP
+================================================================================
+Status: [ ] NOT STARTED
+Estimated Time: 1.5 hours
+Dependencies: Phase 7 complete
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 8.1: Create Architecture Documentation
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+
+Tasks:
+  [ ] Create ARCHITECTURE.md
+  [ ] Document module hierarchy
+  [ ] Document dependencies
+  [ ] Document event contracts
+  [ ] Document state management
+  [ ] Create module dependency diagram
+
+Document Contents:
+  - Module overview
+  - Dependency graph
+  - Event types
+  - State management patterns
+  - Common patterns
+  - How to add new features
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 8.2: Add JSDoc Comments
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+
+Tasks:
+  [ ] Add JSDoc to all public functions
+  [ ] Add @param and @returns tags
+  [ ] Add usage examples
+  [ ] Document performance characteristics
+
+Modules to Document:
+  [ ] All state modules
+  [ ] All data modules
+  [ ] All UI modules
+  [ ] Event bus
+  [ ] Utilities
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 8.3: Update README.md
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+
+Tasks:
+  [ ] Update code organization section
+  [ ] Add module structure
+  [ ] Update development instructions
+  [ ] Document build process (if added)
+  [ ] Add module loading info
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 8.4: Code Cleanup
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+
+Tasks:
+  [ ] Remove TODO comments
+  [ ] Remove debug console.logs
+  [ ] Fix any ESLint warnings (if using)
+  [ ] Standardize code formatting
+  [ ] Remove unused imports
+  [ ] Check for circular dependencies
+
+Tools:
+  - Find unused code
+  - Check for console.logs
+  - Validate imports
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 8.5: Create Development Guide
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+
+Tasks:
+  [ ] Create DEVELOPMENT.md
+  [ ] Document how to add new sensor
+  [ ] Document how to add new satellite
+  [ ] Document how to add new UI component
+  [ ] Document event system usage
+  [ ] Document state management patterns
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+Phase 8 Summary
+──────────────────────────────────────────────────────────────────────────────
+Completion Date:
+Total Time:
+
+Documentation Created:
+  - ARCHITECTURE.md
+  - DEVELOPMENT.md
+  - Updated README.md
+  - JSDoc comments added
+
+Commit:
+  git add .
+  git commit -m "Phase 8: Documentation and cleanup"
+  git tag phase-8-complete
+
+Notes:
+
+
+================================================================================
+PHASE 9: PERFORMANCE OPTIMIZATION (OPTIONAL)
+================================================================================
+Status: [ ] NOT STARTED
+Estimated Time: 2 hours
+Dependencies: Phase 8 complete
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 9.1: Bundle for Production
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+
+Tasks:
+  [ ] Install bundler (Vite recommended)
+  [ ] Configure build
+  [ ] Create production build
+  [ ] Add source maps
+  [ ] Test bundled version
+
+Commands:
+  npm init -y
+  npm install vite --save-dev
+  npx vite build
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 9.2: Add Code Splitting
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+
+Tasks:
+  [ ] Identify lazy-loadable modules
+  [ ] Implement dynamic imports for non-critical modules
+  [ ] Test lazy loading
+
+Candidates for Lazy Loading:
+  - Satellite propagation (heavy computation)
+  - Deck.gl layers (only when needed)
+  - Flatpickr (only when time controls visible)
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 9.3: Move SGP4 to Web Worker
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+
+Tasks:
+  [ ] Create propagation.worker.js
+  [ ] Move SGP4 calculations to worker
+  [ ] Implement message passing
+  [ ] Update data/propagation.js to use worker
+
+Benefits:
+  - Offload heavy calculations from main thread
+  - Maintain 60 FPS during propagation
+  - Better for batch operations
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 9.4: Optimize Deck.gl Layer Updates
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+
+Tasks:
+  [ ] Use updateTriggers for incremental updates
+  [ ] Implement data diffing
+  [ ] Only update changed layers
+  [ ] Profile and measure improvements
+
+Current: Full layer recreation on every update
+Target: Incremental updates only
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+STEP 9.5: Add HTTP/2 Server Push (Optional)
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+
+Tasks:
+  [ ] Configure backend for HTTP/2
+  [ ] Add module preload hints
+  [ ] Test parallel loading
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+Phase 9 Summary
+──────────────────────────────────────────────────────────────────────────────
+Completion Date:
+Total Time:
+
+Optimizations Applied:
+  [ ] Bundling
+  [ ] Code splitting
+  [ ] Web Worker for SGP4
+  [ ] Deck.gl optimization
+  [ ] HTTP/2
+
+Performance Improvements:
+  Initial Load Time: ___ → ___ (improvement: __%)
+  FPS with 100 satellites: ___ → ___
+  Propagation Time: ___ → ___ (improvement: __%)
+
+Commit:
+  git add .
+  git commit -m "Phase 9: Performance optimizations"
+  git tag phase-9-complete
+
+Notes:
+
+
+================================================================================
+FINAL MERGE & DEPLOYMENT
+================================================================================
+Status: [ ] NOT STARTED
+
+──────────────────────────────────────────────────────────────────────────────
+Merge to Main Branch
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+
+Tasks:
+  [ ] Final testing on feature branch
+  [ ] Update version in package.json (if created)
+  [ ] Update CHANGELOG (if exists)
+  [ ] Merge to main: git checkout main && git merge feature/modularization
+  [ ] Tag release: git tag v2.0.0-modular
+  [ ] Push to remote: git push origin main --tags
+
+Notes:
+
+
+──────────────────────────────────────────────────────────────────────────────
+Deployment Checklist
+──────────────────────────────────────────────────────────────────────────────
+Status: [ ] NOT STARTED
+
+Pre-Deployment:
+  [ ] All tests passing
+  [ ] Documentation complete
+  [ ] Performance validated
+  [ ] No console errors
+
+Deployment:
+  [ ] Update production server
+  [ ] Clear browser caches
+  [ ] Update cache-bust version (?v=46)
+  [ ] Monitor for errors
+
+Post-Deployment:
+  [ ] Smoke test production
+  [ ] Monitor performance
+  [ ] Check error logs
+  [ ] User acceptance testing
+
+Notes:
+
+
+================================================================================
+PROJECT COMPLETION
+================================================================================
+
+Start Date:
+End Date:
+Total Duration:
+
+Final Statistics:
+  - Lines of Code in app.js: 3,395 → < 200 (94% reduction)
+  - Number of Modules: 20+
+  - Test Coverage: ___%
+  - Performance: 60 FPS ✓ / ✗
+  - All Features Working: ✓ / ✗
+
+Modules Created:
+  Utils: 4 modules (logger, time, geometry, validation)
+  Events: 1 module (eventBus)
+  State: 4 modules (ui, sensor, satellite, time)
+  Data: 4 modules (sensorOps, satelliteOps, propagation, websocket)
+  UI: 6 modules (controlPanel, modals, sensorTable, satelliteTable, timeControls, logPanel)
+  Map: 3 modules (leaflet, deckgl, interactions)
+  Init: 1 module (bootstrap)
+
+Lessons Learned:
+
+
+Future Improvements:
+
+
+================================================================================
+ROLLBACK PROCEDURES
+================================================================================
+
+Complete Rollback to Pre-Modularization:
+  git checkout main
+  git branch -D feature/modularization
+  git checkout pre-modularization
+
+Rollback to Specific Phase:
+  git checkout phase-X-complete
+
+Rollback Single Module:
+  git checkout HEAD~1 -- static/modules/[module-path]
+
+Emergency Fallback (keep both versions):
+  1. Rename templates/index.html to index.modular.html
+  2. Create index.html that loads app.monolithic.js
+  3. Toggle between versions as needed
+
+================================================================================
+NOTES & OBSERVATIONS
+================================================================================
+
+[Space for notes during implementation]
+
+
+
+
+================================================================================
+END OF PLAN
+================================================================================
