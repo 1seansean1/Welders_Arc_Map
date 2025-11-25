@@ -556,8 +556,8 @@ Notes:
 ================================================================================
 PHASE 2: EVENT BUS & STATE MANAGEMENT
 ================================================================================
-Status: [~] IN PROGRESS
-Estimated Time: 2.5 hours
+Status: [✓] COMPLETE
+Completion Time: ~1.5 hours
 Dependencies: Phase 1 complete
 
 ──────────────────────────────────────────────────────────────────────────────
@@ -873,24 +873,31 @@ Notes:
 ──────────────────────────────────────────────────────────────────────────────
 STEP 2.5: Create Time State Module
 ──────────────────────────────────────────────────────────────────────────────
-Status: [ ] NOT STARTED
-Current Location: app.js lines 21-46 (partial)
+Status: [✓] COMPLETE
+Current Location: app.js lines 32-40 (time state)
 Target: modules/state/timeState.js
+Completion: 2025-11-25 11:15 UTC
 
 Tasks:
-  [ ] Create modules/state/timeState.js
-  [ ] Extract time-related state
-  [ ] Implement time functions: setStartTime(), setStopTime()
-  [ ] Implement pending changes: applyTimeChanges(), cancelTimeChanges()
-  [ ] Add initialization: initializeTimeState()
-  [ ] Add event emissions
+  [✓] Create modules/state/timeState.js (380 lines)
+  [✓] Extract time-related state
+  [✓] Implement time functions: setStartTime(), setStopTime(), setCurrentTime()
+  [✓] Implement pending changes: applyTimeChanges(), cancelTimeChanges()
+  [✓] Add initialization: initializeTimeState()
+  [✓] Add time range setter: setTimeRange()
+  [✓] Add reset: resetToNow()
+  [✓] Add event emissions
+  [✓] Add range validation
+  [✓] Create comprehensive test suite (12 tests)
 
 Testing Checklist:
-  [ ] Time range initialization works
-  [ ] Setting times marks as pending
-  [ ] Apply commits changes
-  [ ] Cancel reverts changes
-  [ ] Events emitted correctly
+  [✓] Time range initialization works
+  [✓] Setting times marks as pending
+  [✓] Apply commits changes
+  [✓] Cancel reverts changes
+  [✓] Events emitted correctly
+  [✓] Range validation works
+  [✓] Reset to now works
 
 Acceptance Criteria:
   ✓ Time state managed correctly
@@ -901,7 +908,19 @@ Rollback:
   rm static/modules/state/timeState.js
   git checkout static/app.js
 
+Files Created:
+  - static/modules/state/timeState.js (380 lines)
+    * Pending changes mechanism (apply/cancel)
+    * Time range with validation
+    * Event emissions for all changes
+    * Immutable Date access
+  - static/test-state.html (updated, +12 time tests, 69+ total)
+
 Notes:
+  - Pending changes prevent accidental time changes
+  - Range validation ensures start < stop
+  - initializeTimeState() sets NOW-lookback to NOW
+  - NOTE: app.js integration deferred to Phase 4
 
 
 ──────────────────────────────────────────────────────────────────────────────

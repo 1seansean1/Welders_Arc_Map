@@ -59,6 +59,7 @@
         import uiState from './modules/state/uiState.js';
         import sensorState from './modules/state/sensorState.js';
         import satelliteState from './modules/state/satelliteState.js';
+        import timeState from './modules/state/timeState.js';
         import eventBus from './modules/events/eventBus.js';
 
         const resultsDiv = document.getElementById('test-results');
@@ -794,6 +795,158 @@
             18,
             'Reset restores 18 default satellites',
             'Satellite Reset'
+        );
+
+        // ============================================
+        // TIME STATE MODULE TESTS
+        // ============================================
+        console.log('Testing Time State module...');
+
+        // Test 1: Module imports correctly
+        assertTrue(
+            typeof timeState === 'object',
+            'Time State imports as object',
+            'Time Module Import'
+        );
+
+        // Test 2: Initialize time state
+        timeState.initializeTimeState();
+        const initialTimeState = timeState.getTimeState();
+        assertTrue(
+            initialTimeState.startTime !== null && initialTimeState.stopTime !== null,
+            'Time state initializes with start and stop times',
+            'Time Initial State'
+        );
+
+        assertEquals(
+            initialTimeState.hasPendingChanges,
+            false,
+            'No pending changes after initialization',
+            'Time Initial State'
+        );
+
+        // Test 3: Get current time
+        const currentTime = timeState.getCurrentTime();
+        assertTrue(
+            currentTime instanceof Date,
+            'getCurrentTime returns Date object',
+            'Time Retrieval'
+        );
+
+        // Test 4: Set start time (marks as pending)
+        const newStart = new Date('2025-01-01T00:00:00');
+        timeState.setStartTime(newStart);
+        assertTrue(
+            timeState.hasPendingChanges(),
+            'Setting start time marks as pending',
+            'Time Pending Changes'
+        );
+
+        // Test 5: Set stop time (marks as pending)
+        const newStop = new Date('2025-01-02T00:00:00');
+        timeState.setStopTime(newStop);
+        assertTrue(
+            timeState.hasPendingChanges(),
+            'Setting stop time marks as pending',
+            'Time Pending Changes'
+        );
+
+        // Test 6: Cancel pending changes
+        const beforeCancel = timeState.getStartTime();
+        timeState.cancelTimeChanges();
+        const afterCancel = timeState.getStartTime();
+        assertTrue(
+            beforeCancel.getTime() !== afterCancel.getTime(),
+            'Cancel reverts to committed times',
+            'Time Pending Changes'
+        );
+
+        assertEquals(
+            timeState.hasPendingChanges(),
+            false,
+            'No pending changes after cancel',
+            'Time Pending Changes'
+        );
+
+        // Test 7: Apply pending changes
+        const testStart = new Date('2025-02-01T00:00:00');
+        const testStop = new Date('2025-02-02T00:00:00');
+        timeState.setTimeRange(testStart, testStop);
+        assertTrue(
+            timeState.hasPendingChanges(),
+            'setTimeRange marks as pending',
+            'Time Range'
+        );
+
+        timeState.applyTimeChanges();
+        assertEquals(
+            timeState.hasPendingChanges(),
+            false,
+            'No pending changes after apply',
+            'Time Pending Changes'
+        );
+
+        const committed = timeState.getCommittedStartTime();
+        assertEquals(
+            committed.getTime(),
+            testStart.getTime(),
+            'Apply commits the changes',
+            'Time Pending Changes'
+        );
+
+        // Test 8: Lookback hours
+        timeState.setLookbackHours(48);
+        assertEquals(
+            timeState.getLookbackHours(),
+            48,
+            'Can set lookback hours',
+            'Time Lookback'
+        );
+
+        // Test 9: Set current time
+        const newCurrent = new Date('2025-03-01T12:00:00');
+        timeState.setCurrentTime(newCurrent);
+        const setCurrent = timeState.getCurrentTime();
+        assertEquals(
+            setCurrent.getTime(),
+            newCurrent.getTime(),
+            'Can set current time',
+            'Time Current'
+        );
+
+        // Test 10: Event emissions
+        let timeChangedEvent = null;
+        eventBus.once('time:changed', (data) => {
+            timeChangedEvent = data;
+        });
+
+        const eventTestTime = new Date('2025-04-01T00:00:00');
+        timeState.setCurrentTime(eventTestTime);
+
+        assertTrue(
+            timeChangedEvent && timeChangedEvent.currentTime.getTime() === eventTestTime.getTime(),
+            'time:changed event emitted with correct data',
+            'Time Events'
+        );
+
+        // Test 11: Range validation
+        timeState.setTimeRange(new Date('2025-01-02'), new Date('2025-01-01')); // Invalid: start > stop
+        const invalidRange = timeState.getStartTime();
+        assertTrue(
+            invalidRange.getTime() === testStart.getTime(), // Should not have changed from previous valid value
+            'Invalid time range rejected (start > stop)',
+            'Time Validation'
+        );
+
+        // Test 12: Reset to now
+        timeState.resetToNow();
+        const nowTime = timeState.getCurrentTime();
+        const actualNow = new Date();
+        assertTrue(
+            Math.abs(nowTime.getTime() - actualNow.getTime()) < 1000,
+            'resetToNow sets time to current',
+            'Time Reset',
+            `Diff: ${Math.abs(nowTime.getTime() - actualNow.getTime())}ms`
         );
 
         // ============================================
