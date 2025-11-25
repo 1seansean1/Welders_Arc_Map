@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>State Modules Test Suite</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #f5f5f5;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 { color: #9dd4ff; }
+        h2 { color: #00ff66; margin-top: 30px; }
+        .test-section {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .test-result {
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        .pass {
+            background: #004400;
+            border-left: 4px solid #00ff66;
+        }
+        .fail {
+            background: #440000;
+            border-left: 4px solid #ff4444;
+        }
+        .summary {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+            font-size: 18px;
+        }
+        .pass-count { color: #00ff66; }
+        .fail-count { color: #ff4444; }
+    </style>
+</head>
+<body>
+    <h1>🧪 State Modules Test Suite</h1>
+    <p>Testing Phase 2 State modules...</p>
+
+    <div id="test-results"></div>
+    <div id="summary" class="summary"></div>
+
+    <script type="module">
+        // Import state modules
+        import uiState from './modules/state/uiState.js';
+        import eventBus from './modules/events/eventBus.js';
+
+        const resultsDiv = document.getElementById('test-results');
+        const summaryDiv = document.getElementById('summary');
+        let passCount = 0;
+        let failCount = 0;
+
+        function addTestResult(category, testName, passed, message = '') {
+            if (!document.getElementById(category)) {
+                const section = document.createElement('div');
+                section.className = 'test-section';
+                section.innerHTML = `<h2>${category}</h2><div id="${category}-results"></div>`;
+                resultsDiv.appendChild(section);
+            }
+
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${passed ? 'pass' : 'fail'}`;
+            resultDiv.textContent = `${passed ? '✅' : '❌'} ${testName}${message ? ': ' + message : ''}`;
+            document.getElementById(category + '-results').appendChild(resultDiv);
+
+            if (passed) passCount++;
+            else failCount++;
+        }
+
+        function assertEquals(actual, expected, testName, category) {
+            const passed = actual === expected;
+            const message = passed ? '' : `Expected ${expected}, got ${actual}`;
+            addTestResult(category, testName, passed, message);
+            return passed;
+        }
+
+        function assertTrue(condition, testName, category, message = '') {
+            addTestResult(category, testName, condition, message);
+            return condition;
+        }
+
+        // ============================================
+        // UI STATE MODULE TESTS
+        // ============================================
+        console.log('Testing UI State module...');
+
+        // Test 1: Module imports correctly
+        assertTrue(
+            typeof uiState === 'object',
+            'UI State imports as object',
+            'Module Import'
+        );
+
+        // Test 2: Has required methods
+        assertTrue(
+            typeof uiState.getUIState === 'function',
+            'UI State has getUIState() method',
+            'API Surface'
+        );
+
+        assertTrue(
+            typeof uiState.setPanelExpanded === 'function',
+            'UI State has setPanelExpanded() method',
+            'API Surface'
+        );
+
+        assertTrue(
+            typeof uiState.setActiveSection === 'function',
+            'UI State has setActiveSection() method',
+            'API Surface'
+        );
+
+        assertTrue(
+            typeof uiState.isMobile === 'function',
+            'UI State has isMobile() method',
+            'API Surface'
+        );
+
+        // ============================================
+        // INITIAL STATE TESTS
+        // ============================================
+        console.log('Testing initial state...');
+
+        const initialState = uiState.getUIState();
+
+        assertEquals(
+            initialState.panelExpanded,
+            false,
+            'Panel starts collapsed',
+            'Initial State'
+        );
+
+        assertEquals(
+            initialState.activeSection,
+            'time',
+            'Active section starts as "time"',
+            'Initial State'
+        );
+
+        assertTrue(
+            typeof initialState.isMobile === 'boolean',
+            'isMobile is boolean',
+            'Initial State'
+        );
+
+        // ============================================
+        // PANEL EXPANSION TESTS
+        // ============================================
+        console.log('Testing panel expansion...');
+
+        // Test expand
+        let eventFired = false;
+        eventBus.once('ui:panel:opened', () => {
+            eventFired = true;
+        });
+
+        const expandResult = uiState.setPanelExpanded(true);
+        assertEquals(
+            expandResult,
+            true,
+            'setPanelExpanded(true) returns true',
+            'Panel Expansion'
+        );
+
+        assertEquals(
+            uiState.isPanelExpanded(),
+            true,
+            'isPanelExpanded() returns true',
+            'Panel Expansion'
+        );
+
+        assertTrue(
+            eventFired,
+            'ui:panel:opened event fired',
+            'Panel Expansion'
+        );
+
+        // Test collapse
+        eventFired = false;
+        eventBus.once('ui:panel:closed', () => {
+            eventFired = true;
+        });
+
+        const collapseResult = uiState.setPanelExpanded(false);
+        assertEquals(
+            collapseResult,
+            false,
+            'setPanelExpanded(false) returns false',
+            'Panel Expansion'
+        );
+
+        assertEquals(
+            uiState.isPanelExpanded(),
+            false,
+            'isPanelExpanded() returns false',
+            'Panel Expansion'
+        );
+
+        assertTrue(
+            eventFired,
+            'ui:panel:closed event fired',
+            'Panel Expansion'
+        );
+
+        // Test toggle
+        uiState.togglePanelExpanded();
+        assertEquals(
+            uiState.isPanelExpanded(),
+            true,
+            'togglePanelExpanded() toggles to true',
+            'Panel Expansion'
+        );
+
+        uiState.togglePanelExpanded();
+        assertEquals(
+            uiState.isPanelExpanded(),
+            false,
+            'togglePanelExpanded() toggles back to false',
+            'Panel Expansion'
+        );
+
+        // ============================================
+        // ACTIVE SECTION TESTS
+        // ============================================
+        console.log('Testing active section...');
+
+        // Test setting valid sections
+        eventFired = false;
+        let receivedData = null;
+        eventBus.once('ui:section:changed', (data) => {
+            eventFired = true;
+            receivedData = data;
+        });
+
+        const sectionResult = uiState.setActiveSection('sensors');
+        assertEquals(
+            sectionResult,
+            'sensors',
+            'setActiveSection("sensors") returns "sensors"',
+            'Active Section'
+        );
+
+        assertEquals(
+            uiState.getActiveSection(),
+            'sensors',
+            'getActiveSection() returns "sensors"',
+            'Active Section'
+        );
+
+        assertTrue(
+            eventFired && receivedData.newSection === 'sensors',
+            'ui:section:changed event fired with correct data',
+            'Active Section'
+        );
+
+        // Test other valid sections
+        uiState.setActiveSection('satellites');
+        assertEquals(
+            uiState.getActiveSection(),
+            'satellites',
+            'Can set section to "satellites"',
+            'Active Section'
+        );
+
+        uiState.setActiveSection('settings');
+        assertEquals(
+            uiState.getActiveSection(),
+            'settings',
+            'Can set section to "settings"',
+            'Active Section'
+        );
+
+        uiState.setActiveSection('time');
+        assertEquals(
+            uiState.getActiveSection(),
+            'time',
+            'Can set section back to "time"',
+            'Active Section'
+        );
+
+        // Test invalid section (should not change)
+        const beforeInvalid = uiState.getActiveSection();
+        uiState.setActiveSection('invalid');
+        assertEquals(
+            uiState.getActiveSection(),
+            beforeInvalid,
+            'Invalid section name rejected',
+            'Active Section'
+        );
+
+        // ============================================
+        // STATE CHANGE EVENTS
+        // ============================================
+        console.log('Testing state change events...');
+
+        let stateChanges = [];
+        const stateChangeHandler = (data) => {
+            stateChanges.push(data.key);
+        };
+        eventBus.on('state:ui:changed', stateChangeHandler);
+
+        uiState.setPanelExpanded(true);
+        uiState.setActiveSection('sensors');
+
+        eventBus.off('state:ui:changed', stateChangeHandler);
+
+        assertTrue(
+            stateChanges.includes('panelExpanded') && stateChanges.includes('activeSection'),
+            'state:ui:changed emitted for both changes',
+            'State Events',
+            `Events: ${stateChanges.join(', ')}`
+        );
+
+        // ============================================
+        // IMMUTABILITY TESTS
+        // ============================================
+        console.log('Testing state immutability...');
+
+        const state1 = uiState.getUIState();
+        state1.panelExpanded = true; // Try to mutate
+        state1.activeSection = 'hacked'; // Try to mutate
+
+        const state2 = uiState.getUIState();
+
+        assertTrue(
+            state2.panelExpanded !== state1.panelExpanded,
+            'Cannot mutate state directly (panelExpanded)',
+            'Immutability'
+        );
+
+        assertTrue(
+            state2.activeSection !== state1.activeSection,
+            'Cannot mutate state directly (activeSection)',
+            'Immutability'
+        );
+
+        // ============================================
+        // RESET TESTS
+        // ============================================
+        console.log('Testing reset...');
+
+        uiState.setPanelExpanded(true);
+        uiState.setActiveSection('sensors');
+
+        uiState.reset();
+
+        const resetState = uiState.getUIState();
+
+        assertEquals(
+            resetState.panelExpanded,
+            false,
+            'Reset sets panelExpanded to false',
+            'Reset'
+        );
+
+        assertEquals(
+            resetState.activeSection,
+            'time',
+            'Reset sets activeSection to "time"',
+            'Reset'
+        );
+
+        // ============================================
+        // JSON SERIALIZATION TESTS
+        // ============================================
+        console.log('Testing JSON serialization...');
+
+        const json = uiState.toJSON();
+        assertTrue(
+            typeof json === 'string' && json.includes('panelExpanded'),
+            'toJSON() returns valid JSON string',
+            'Serialization'
+        );
+
+        // Test fromObject
+        uiState.fromObject({
+            panelExpanded: true,
+            activeSection: 'satellites'
+        });
+
+        const loadedState = uiState.getUIState();
+        assertTrue(
+            loadedState.panelExpanded === true && loadedState.activeSection === 'satellites',
+            'fromObject() loads state correctly',
+            'Serialization'
+        );
+
+        // Clean up - reset to defaults
+        uiState.reset();
+
+        // ============================================
+        // SUMMARY
+        // ============================================
+        const total = passCount + failCount;
+        const passPercent = ((passCount / total) * 100).toFixed(1);
+
+        summaryDiv.innerHTML = `
+            <h2>Test Summary</h2>
+            <p>
+                Total Tests: ${total}<br>
+                <span class="pass-count">✅ Passed: ${passCount}</span><br>
+                <span class="fail-count">❌ Failed: ${failCount}</span><br>
+                Success Rate: ${passPercent}%
+            </p>
+            ${failCount === 0 ?
+                '<p style="color: #00ff66; font-size: 24px;">🎉 All tests passed!</p>' :
+                '<p style="color: #ff4444; font-size: 24px;">⚠️ Some tests failed. Check results above.</p>'
+            }
+        `;
+
+        // Log summary to console
+        console.log('\n' + '='.repeat(50));
+        console.log('STATE MODULES TEST SUMMARY');
+        console.log('='.repeat(50));
+        console.log(`Total Tests: ${total}`);
+        console.log(`Passed: ${passCount}`);
+        console.log(`Failed: ${failCount}`);
+        console.log(`Success Rate: ${passPercent}%`);
+        console.log('='.repeat(50));
+
+        if (failCount === 0) {
+            console.log('✅ State modules working correctly!');
+        } else {
+            console.error('❌ Some tests failed. Review results above.');
+        }
+    </script>
+</body>
+</html>
