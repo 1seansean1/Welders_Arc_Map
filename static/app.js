@@ -19,6 +19,7 @@
 // ============================================
 
 import logger from './modules/utils/logger.js';
+import { formatDateTimeLocal, addDays, addHours, getUTCNow } from './modules/utils/time.js';
 
 // ============================================
 // GLOBAL STATE
@@ -1695,20 +1696,6 @@ let startPicker, stopPicker;
 
 // Track if a calendar was just closed to prevent panel collapse
 let calendarJustClosed = false;
-
-/**
- * Format date for datetime-local input
- * Format: YYYY-MM-DDTHH:mm
- */
-function formatDateTimeLocal(date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-}
 
 /**
  * Initialize time controls with default values
