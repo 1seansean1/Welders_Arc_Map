@@ -15,6 +15,12 @@
  */
 
 // ============================================
+// MODULE IMPORTS
+// ============================================
+
+import logger from './modules/utils/logger.js';
+
+// ============================================
 // GLOBAL STATE
 // ============================================
 
@@ -44,276 +50,6 @@ const state = {
     nextSatelliteId: 1,
     selectedSatellites: [],  // IDs of selected satellites
     watchlistSatellites: []  // IDs of starred satellites
-};
-
-// ============================================
-// UI LOGGER MODULE
-// ============================================
-
-/**
- * UI Logger - Logs to both console and UI display
- *
- * Features:
- * - Dual logging (console + UI)
- * - Color-coded log levels (info, success, warning, error, diagnostic)
- * - Category-based logging (MAP, SATELLITE, SENSOR, UI, SYNC, DATA)
- * - Contextual metadata (key-value pairs for debugging)
- * - Auto-scroll to top (newest first)
- * - Clear and download functionality
- * - Timestamp for each entry
- * - Structured log export with categories and context
- *
- * PERFORMANCE: O(1) append, maintains max 500 entries
- */
-const UILogger = {
-    // Category constants for organized logging
-    CATEGORY: {
-        MAP: 'MAP',
-        SATELLITE: 'SAT',
-        SENSOR: 'SNS',
-        PANEL: 'UI',
-        SYNC: 'SYNC',
-        DATA: 'DATA'
-    },
-
-    logBuffer: [], // Store all logs for download
-    maxEntries: 500, // Limit UI display to prevent DOM bloat
-    displayElement: null,
-    countElement: null,
-
-    /**
-     * Initialize logger (call after DOM loaded)
-     */
-    init() {
-        this.displayElement = document.getElementById('log-display');
-        this.countElement = document.getElementById('log-count');
-
-        // Setup clear button
-        const clearBtn = document.getElementById('log-clear-btn');
-        if (clearBtn) {
-            clearBtn.addEventListener('click', () => this.clear());
-        }
-
-        // Setup download button
-        const downloadBtn = document.getElementById('log-download-btn');
-        if (downloadBtn) {
-            downloadBtn.addEventListener('click', () => this.download());
-        }
-
-        // Setup stub button (reserved for future use)
-        const stubBtn = document.getElementById('log-stub-btn');
-        if (stubBtn) {
-            stubBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                // Reserved for future functionality
-            });
-        }
-
-        // Setup context menu
-        this.initContextMenu();
-
-        this.log('UI Logger initialized', 'success');
-    },
-
-    /**
-     * Initialize right-click context menu for log display
-     * Provides quick access to Clear and Download actions
-     */
-    initContextMenu() {
-        const contextMenu = document.getElementById('log-context-menu');
-        const contextClear = document.getElementById('log-context-clear');
-        const contextDownload = document.getElementById('log-context-download');
-
-        if (!contextMenu || !this.displayElement) return;
-
-        // Show context menu on right-click
-        this.displayElement.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-
-            // Show menu temporarily to measure dimensions
-            contextMenu.classList.add('visible');
-            const menuRect = contextMenu.getBoundingClientRect();
-
-            // Get viewport dimensions
-            const viewportWidth = window.innerWidth;
-            const viewportHeight = window.innerHeight;
-
-            // Calculate position with boundary checks
-            let left = e.clientX;
-            let top = e.clientY;
-
-            // Check right boundary - flip to left if would overflow
-            if (left + menuRect.width > viewportWidth) {
-                left = Math.max(0, viewportWidth - menuRect.width);
-            }
-
-            // Check bottom boundary - flip to top if would overflow
-            if (top + menuRect.height > viewportHeight) {
-                top = Math.max(0, viewportHeight - menuRect.height);
-            }
-
-            // Position menu with boundary-safe coordinates
-            contextMenu.style.left = `${left}px`;
-            contextMenu.style.top = `${top}px`;
-        });
-
-        // Hide context menu on click outside
-        document.addEventListener('click', (e) => {
-            if (!contextMenu.contains(e.target)) {
-                contextMenu.classList.remove('visible');
-            }
-        });
-
-        // Clear action
-        if (contextClear) {
-            contextClear.addEventListener('click', () => {
-                this.clear();
-                contextMenu.classList.remove('visible');
-            });
-        }
-
-        // Download action
-        if (contextDownload) {
-            contextDownload.addEventListener('click', () => {
-                this.download();
-                contextMenu.classList.remove('visible');
-            });
-        }
-    },
-
-    /**
-     * Log message to console and UI
-     * @param {string} message - Log message
-     * @param {string} level - Log level: 'info', 'success', 'warning', 'error', 'diagnostic'
-     * @param {string} category - Optional category (MAP, SAT, SNS, UI, SYNC, DATA)
-     * @param {object} context - Optional context object with key-value pairs
-     */
-    log(message, level = 'info', category = null, context = null) {
-        const timestamp = new Date().toISOString();
-
-        // Format message with category
-        let displayMsg = message;
-        if (category) {
-            displayMsg = `[${category}] ${message}`;
-        }
-
-        // Append context as key=value
-        if (context) {
-            const contextStr = Object.entries(context)
-                .map(([k, v]) => `${k}=${v}`)
-                .join(', ');
-            displayMsg += ` (${contextStr})`;
-        }
-
-        // Store full structured entry
-        this.logBuffer.push({ timestamp, message, level, category, context });
-
-        // Log to console with appropriate method and include context
-        const consoleMethod = level === 'error' ? 'error' : level === 'warning' ? 'warn' : 'log';
-        console[consoleMethod](message, context || '');
-
-        // Add to UI (if initialized)
-        if (this.displayElement) {
-            this.addToDisplay(timestamp, displayMsg, level);
-        }
-    },
-
-    /**
-     * Add entry to UI display (newest at top)
-     */
-    addToDisplay(timestamp, message, level) {
-        // Create log entry element
-        const entry = document.createElement('div');
-        entry.className = `log-entry ${level}`;
-
-        // Format timestamp (HH:MM:SS.mmm)
-        const time = new Date(timestamp);
-        const timeStr = time.toTimeString().split(' ')[0] + '.' + time.getMilliseconds().toString().padStart(3, '0');
-
-        entry.textContent = `[${timeStr}] ${message}`;
-
-        // Insert at top (newest first)
-        if (this.displayElement.firstChild) {
-            this.displayElement.insertBefore(entry, this.displayElement.firstChild);
-        } else {
-            this.displayElement.appendChild(entry);
-        }
-
-        // Limit displayed entries
-        while (this.displayElement.children.length > this.maxEntries) {
-            this.displayElement.removeChild(this.displayElement.lastChild);
-        }
-
-        // Auto-scroll to top to show newest entry
-        this.displayElement.scrollTop = 0;
-
-        // Update status bar counter (fast: direct textContent update)
-        this.updateCount();
-    },
-
-    /**
-     * Update log count in status bar
-     * PERFORMANCE: O(1) - direct textContent update
-     */
-    updateCount() {
-        if (this.countElement) {
-            this.countElement.textContent = this.logBuffer.length;
-        }
-    },
-
-    /**
-     * Clear displayed logs (does not clear buffer for download)
-     */
-    clear() {
-        if (this.displayElement) {
-            this.displayElement.innerHTML = '';
-            this.log('Display cleared (buffer preserved for download)', 'info');
-        }
-    },
-
-    /**
-     * Download log buffer as .txt file
-     * Includes category and context for structured debugging
-     */
-    download() {
-        if (this.logBuffer.length === 0) {
-            this.log('No logs to download', 'warning');
-            return;
-        }
-
-        // Format log entries with category and context
-        const logText = this.logBuffer.map(entry => {
-            let line = `[${entry.timestamp}] [${entry.level.toUpperCase()}]`;
-            if (entry.category) line += ` [${entry.category}]`;
-            line += ` ${entry.message}`;
-            if (entry.context) {
-                line += ` ${JSON.stringify(entry.context)}`;
-            }
-            return line;
-        }).join('\n');
-
-        // Create download blob
-        const blob = new Blob([logText], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-
-        // Create download link
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `system-log-${new Date().toISOString().replace(/[:.]/g, '-')}.txt`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-
-        this.log(`Downloaded ${this.logBuffer.length} log entries`, 'success');
-    },
-
-    // Convenience methods for different log levels
-    info(message, category, context) { this.log(message, 'info', category, context); },
-    success(message, category, context) { this.log(message, 'success', category, context); },
-    warning(message, category, context) { this.log(message, 'warning', category, context); },
-    error(message, category, context) { this.log(message, 'error', category, context); },
-    diagnostic(message, category, context) { this.log(message, 'diagnostic', category, context); }
 };
 
 // ============================================
@@ -678,7 +414,7 @@ function initializeSensors() {
     state.sensors = JSON.parse(JSON.stringify(defaultSensors)); // Deep copy
     renderSensorTable();
     initializeSensorTableHeaders();
-    UILogger.success('Sensors initialized', UILogger.CATEGORY.SENSOR, { count: state.sensors.length });
+    logger.success('Sensors initialized', logger.CATEGORY.SENSOR, { count: state.sensors.length });
 }
 
 /**
@@ -689,7 +425,7 @@ function initializeSatellites() {
     state.satellites = JSON.parse(JSON.stringify(defaultSatellites)); // Deep copy
     state.nextSatelliteId = state.satellites.length + 1;
     renderSatelliteTable();
-    UILogger.success('Satellites initialized', UILogger.CATEGORY.SATELLITE, { count: state.satellites.length });
+    logger.success('Satellites initialized', logger.CATEGORY.SATELLITE, { count: state.satellites.length });
 }
 
 /**
@@ -720,7 +456,7 @@ function initializeSensorTableHeaders() {
         }
     });
 
-    UILogger.success('Column header sort handlers initialized', UILogger.CATEGORY.SENSOR);
+    logger.success('Column header sort handlers initialized', logger.CATEGORY.SENSOR);
 }
 
 /**
@@ -749,7 +485,7 @@ function renderSensorTable() {
     // Update column header indicators
     updateColumnHeaderIndicators();
 
-    UILogger.diagnostic('Sensor table rendered', UILogger.CATEGORY.SENSOR, { count: state.sensors.length });
+    logger.diagnostic('Sensor table rendered', logger.CATEGORY.SENSOR, { count: state.sensors.length });
 }
 
 /**
@@ -870,7 +606,7 @@ function handleColumnHeaderClick(columnName) {
 
     // Re-render table with new sort
     renderSensorTable();
-    UILogger.diagnostic('Sensor table sorted', UILogger.CATEGORY.SENSOR, {
+    logger.diagnostic('Sensor table sorted', logger.CATEGORY.SENSOR, {
         column: columnName,
         direction: state.currentSortDirection || 'default'
     });
@@ -887,11 +623,11 @@ function toggleSelectAll() {
     if (allSelected) {
         // Deselect all
         state.sensors.forEach(s => s.selected = false);
-        UILogger.diagnostic('All sensors deselected', UILogger.CATEGORY.SENSOR);
+        logger.diagnostic('All sensors deselected', logger.CATEGORY.SENSOR);
     } else {
         // Select all
         state.sensors.forEach(s => s.selected = true);
-        UILogger.diagnostic('All sensors selected', UILogger.CATEGORY.SENSOR, { count: state.sensors.length });
+        logger.diagnostic('All sensors selected', logger.CATEGORY.SENSOR, { count: state.sensors.length });
     }
 
     // Re-render table and update map
@@ -932,7 +668,7 @@ function createSensorRow(sensor, index) {
         // Add blue highlight to this row
         tr.classList.add('selected');
 
-        UILogger.diagnostic('Sensor activated', UILogger.CATEGORY.SENSOR, { name: sensor.name, id: sensor.id });
+        logger.diagnostic('Sensor activated', logger.CATEGORY.SENSOR, { name: sensor.name, id: sensor.id });
     });
 
     // Row double-click handler - opens edit modal
@@ -958,7 +694,7 @@ function createSensorRow(sensor, index) {
         e.stopPropagation(); // Prevent row click
         sensor.selected = e.target.checked;
         // NOTE: Do NOT modify tr.classList here - blue highlight is controlled by activeRowId only
-        UILogger.diagnostic('Sensor checkbox toggled', UILogger.CATEGORY.SENSOR, {
+        logger.diagnostic('Sensor checkbox toggled', logger.CATEGORY.SENSOR, {
             name: sensor.name,
             selected: sensor.selected
         });
@@ -1028,7 +764,7 @@ function showConfirmModal(sensors, onConfirm) {
 
     const handleCancel = () => {
         closeModal();
-        UILogger.diagnostic('Deletion cancelled', UILogger.CATEGORY.SENSOR);
+        logger.diagnostic('Deletion cancelled', logger.CATEGORY.SENSOR);
     };
 
     const handleDelete = () => {
@@ -1100,7 +836,7 @@ function showEditorModal(sensor = null, onSave) {
 
     const handleCancel = () => {
         closeModal();
-        UILogger.diagnostic('Edit cancelled', UILogger.CATEGORY.SENSOR);
+        logger.diagnostic('Edit cancelled', logger.CATEGORY.SENSOR);
     };
 
     const handleSubmit = (e) => {
@@ -1188,9 +924,9 @@ function addSensor() {
         renderSensorTable();
         updateDeckOverlay(); // Update map visualization
 
-        UILogger.success(
+        logger.success(
             `Sensor "${newSensor.name}" added`,
-            UILogger.CATEGORY.SENSOR,
+            logger.CATEGORY.SENSOR,
             {
                 id: newSensor.id,
                 lat: newSensor.lat.toFixed(2),
@@ -1210,7 +946,7 @@ function editSensor() {
     const activeSensor = state.sensors.find(s => s.id === state.activeRowId);
 
     if (!activeSensor) {
-        UILogger.warning('No sensor selected for edit', UILogger.CATEGORY.SENSOR);
+        logger.warning('No sensor selected for edit', logger.CATEGORY.SENSOR);
         return;
     }
 
@@ -1233,9 +969,9 @@ function editSensor() {
         if (original.lon !== data.lon) changes.push(`lon: ${original.lon.toFixed(2)}→${data.lon.toFixed(2)}`);
         if (original.alt !== data.alt) changes.push(`alt: ${original.alt}→${data.alt}`);
 
-        UILogger.success(
+        logger.success(
             `Sensor "${data.name}" updated`,
-            UILogger.CATEGORY.SENSOR,
+            logger.CATEGORY.SENSOR,
             {
                 id: activeSensor.id,
                 changes: changes.length > 0 ? changes.join('; ') : 'none'
@@ -1252,7 +988,7 @@ function deleteSensor() {
     const selectedSensors = state.sensors.filter(s => s.selected);
 
     if (selectedSensors.length === 0) {
-        UILogger.warning('No sensors selected for deletion', UILogger.CATEGORY.SENSOR);
+        logger.warning('No sensors selected for deletion', logger.CATEGORY.SENSOR);
         return;
     }
 
@@ -1270,9 +1006,9 @@ function deleteSensor() {
         // Update map visualization
         updateDeckOverlay();
 
-        UILogger.success(
+        logger.success(
             `Deleted ${count} sensor(s)`,
-            UILogger.CATEGORY.SENSOR,
+            logger.CATEGORY.SENSOR,
             { sensors: names }
         );
     });
@@ -1380,7 +1116,7 @@ function showSatelliteEditorModal(satellite = null, onSave) {
 
     const handleCancel = () => {
         closeModal();
-        UILogger.diagnostic('Satellite edit cancelled', UILogger.CATEGORY.SATELLITE);
+        logger.diagnostic('Satellite edit cancelled', logger.CATEGORY.SATELLITE);
     };
 
     const handleSubmit = (e) => {
@@ -1458,7 +1194,7 @@ function showSatelliteConfirmModal(satellites, onConfirm) {
 
     const handleCancel = () => {
         closeModal();
-        UILogger.diagnostic('Satellite deletion cancelled', UILogger.CATEGORY.SATELLITE);
+        logger.diagnostic('Satellite deletion cancelled', logger.CATEGORY.SATELLITE);
     };
 
     const handleConfirm = () => {
@@ -1503,9 +1239,9 @@ function addSatellite() {
         renderSatelliteTable();
         updateDeckOverlay(); // Update map visualization
 
-        UILogger.success(
+        logger.success(
             `Satellite "${newSatellite.name}" added`,
-            UILogger.CATEGORY.SATELLITE,
+            logger.CATEGORY.SATELLITE,
             {
                 id: newSatellite.id,
                 noradId: newSatellite.noradId,
@@ -1531,9 +1267,9 @@ function editSatellite(satelliteId) {
         renderSatelliteTable();
         updateDeckOverlay();
 
-        UILogger.success(
+        logger.success(
             `Satellite "${satellite.name}" updated`,
-            UILogger.CATEGORY.SATELLITE,
+            logger.CATEGORY.SATELLITE,
             { id: satellite.id, noradId: satellite.noradId }
         );
     });
@@ -1546,7 +1282,7 @@ function deleteSatellites() {
     const selectedSatellites = state.satellites.filter(s => s.selected);
 
     if (selectedSatellites.length === 0) {
-        UILogger.warning('No satellites selected for deletion', UILogger.CATEGORY.SATELLITE);
+        logger.warning('No satellites selected for deletion', logger.CATEGORY.SATELLITE);
         return;
     }
 
@@ -1563,9 +1299,9 @@ function deleteSatellites() {
         // Update map visualization
         updateDeckOverlay();
 
-        UILogger.success(
+        logger.success(
             `Deleted ${count} satellite(s)`,
-            UILogger.CATEGORY.SATELLITE,
+            logger.CATEGORY.SATELLITE,
             { satellites: names }
         );
     });
@@ -1581,9 +1317,9 @@ function toggleSatelliteWatchlist(satelliteId) {
     satellite.watchlisted = !satellite.watchlisted;
     renderSatelliteTable();
 
-    UILogger.diagnostic(
+    logger.diagnostic(
         `Satellite "${satellite.name}" ${satellite.watchlisted ? 'added to' : 'removed from'} watchlist`,
-        UILogger.CATEGORY.SATELLITE
+        logger.CATEGORY.SATELLITE
     );
 }
 
@@ -1697,7 +1433,7 @@ function propagateSatellite(tleLine1, tleLine2, date) {
 
         // Check for propagation errors
         if (positionAndVelocity.error) {
-            UILogger.warning('SGP4 propagation error', UILogger.CATEGORY.SATELLITE, {
+            logger.warning('SGP4 propagation error', logger.CATEGORY.SATELLITE, {
                 error: positionAndVelocity.error
             });
             return null;
@@ -1723,7 +1459,7 @@ function propagateSatellite(tleLine1, tleLine2, date) {
             alt: positionGd.height // kilometers
         };
     } catch (error) {
-        UILogger.error('Failed to propagate satellite', UILogger.CATEGORY.SATELLITE, {
+        logger.error('Failed to propagate satellite', logger.CATEGORY.SATELLITE, {
             error: error.message
         });
         return null;
@@ -1768,7 +1504,7 @@ function calculateGroundTrack(tleLine1, tleLine2, startTime, durationMinutes = 9
  */
 function updateDeckOverlay() {
     if (!window.deckgl) {
-        UILogger.warning('Deck.gl not initialized', UILogger.CATEGORY.SATELLITE);
+        logger.warning('Deck.gl not initialized', logger.CATEGORY.SATELLITE);
         return;
     }
 
@@ -1830,7 +1566,7 @@ function updateDeckOverlay() {
         },
         onHover: ({object}) => {
             if (object) {
-                UILogger.diagnostic('Sensor hover', UILogger.CATEGORY.SENSOR, {
+                logger.diagnostic('Sensor hover', logger.CATEGORY.SENSOR, {
                     name: object.sensor.name,
                     lat: object.sensor.lat.toFixed(2),
                     lon: object.sensor.lon.toFixed(2)
@@ -1919,7 +1655,7 @@ function updateDeckOverlay() {
         },
         onHover: ({object}) => {
             if (object) {
-                UILogger.diagnostic('Satellite ground track hover', UILogger.CATEGORY.SATELLITE, {
+                logger.diagnostic('Satellite ground track hover', logger.CATEGORY.SATELLITE, {
                     name: object.name,
                     noradId: object.satellite.noradId
                 });
@@ -1932,7 +1668,7 @@ function updateDeckOverlay() {
         layers: [fovLayer, sensorLayer, groundTrackLayer]
     });
 
-    UILogger.info(`Map updated: ${sensorsToRender.length} sensor(s), ${satellitesToRender.length} satellite ground track(s)`);
+    logger.info(`Map updated: ${sensorsToRender.length} sensor(s), ${satellitesToRender.length} satellite ground track(s)`);
 }
 
 // ============================================
@@ -2039,7 +1775,7 @@ function initializeFlatpickr() {
         }
     });
 
-    UILogger.success('Flatpickr initialized', UILogger.CATEGORY.DATA);
+    logger.success('Flatpickr initialized', logger.CATEGORY.DATA);
 }
 
 /**
@@ -2055,7 +1791,7 @@ function setPendingState() {
     // Show Cancel/Apply buttons (make them fully visible)
     timeActionsDiv.classList.add('visible');
 
-    UILogger.diagnostic('Time changes pending', UILogger.CATEGORY.DATA);
+    logger.diagnostic('Time changes pending', logger.CATEGORY.DATA);
 }
 
 /**
@@ -2084,9 +1820,9 @@ function applyTimeChanges() {
 
     const duration = (state.committedStopTime - state.committedStartTime) / (1000 * 60 * 60); // hours
 
-    UILogger.info(
+    logger.info(
         'Time range applied',
-        UILogger.CATEGORY.DATA,
+        logger.CATEGORY.DATA,
         {
             start: state.committedStartTime.toISOString().slice(0, 16),
             stop: state.committedStopTime.toISOString().slice(0, 16),
@@ -2113,9 +1849,9 @@ function cancelTimeChanges() {
 
     clearPendingState();
 
-    UILogger.info(
+    logger.info(
         'Time changes cancelled',
-        UILogger.CATEGORY.DATA,
+        logger.CATEGORY.DATA,
         {
             reverted: state.committedStartTime.toISOString().slice(0, 16)
         }
@@ -2237,7 +1973,7 @@ timeApplyBtn.addEventListener('click', (e) => {
  * - Commercial use requires CARTO Enterprise license
  */
 function initializeLeaflet() {
-    UILogger.info('Initializing Leaflet map', UILogger.CATEGORY.MAP);
+    logger.info('Initializing Leaflet map', logger.CATEGORY.MAP);
 
     // Initial view state - Western Pacific
     // Centered over the Western Pacific (wider Asia-Pacific view)
@@ -2321,9 +2057,9 @@ function initializeLeaflet() {
 
         // No attribution control (minimalistic design)
 
-        UILogger.success(
+        logger.success(
             'Leaflet map initialized',
-            UILogger.CATEGORY.MAP,
+            logger.CATEGORY.MAP,
             {
                 zoom: INITIAL_VIEW_STATE.zoom,
                 center: `${INITIAL_VIEW_STATE.center[0]},${INITIAL_VIEW_STATE.center[1]}`,
@@ -2331,7 +2067,7 @@ function initializeLeaflet() {
             }
         );
 
-        UILogger.diagnostic('Map configuration', UILogger.CATEGORY.MAP, {
+        logger.diagnostic('Map configuration', logger.CATEGORY.MAP, {
             tiles: 'CartoDB Dark Matter',
             projection: 'Web Mercator',
             bundleSize: '39 KB'
@@ -2343,9 +2079,9 @@ function initializeLeaflet() {
         return map;
 
     } catch (error) {
-        UILogger.error(
+        logger.error(
             `Map initialization failed: ${error.message}`,
-            UILogger.CATEGORY.MAP,
+            logger.CATEGORY.MAP,
             { error: error.stack }
         );
         return null;
@@ -2374,15 +2110,15 @@ function initializeLeaflet() {
 function initializeDeckGL(map) {
     // Check if Deck.gl library is loaded
     if (typeof deck === 'undefined') {
-        UILogger.error(
+        logger.error(
             'Deck.gl library not loaded',
-            UILogger.CATEGORY.SATELLITE,
+            logger.CATEGORY.SATELLITE,
             { expected: 'window.deck', found: typeof deck }
         );
         return null;
     }
 
-    UILogger.info('Initializing Deck.gl overlay', UILogger.CATEGORY.SATELLITE);
+    logger.info('Initializing Deck.gl overlay', logger.CATEGORY.SATELLITE);
 
     try {
         // Get Leaflet map center and zoom for initial sync
@@ -2442,7 +2178,7 @@ function initializeDeckGL(map) {
                     // Show satellite name on hover
                     onHover: ({object}) => {
                         if (object) {
-                            UILogger.diagnostic('Satellite hover', UILogger.CATEGORY.SATELLITE, {
+                            logger.diagnostic('Satellite hover', logger.CATEGORY.SATELLITE, {
                                 name: object.name,
                                 altitude: `${object.altitude}km`
                             });
@@ -2485,9 +2221,9 @@ function initializeDeckGL(map) {
 
             // DIAGNOSTIC: Log sync event with structured context (reduced frequency)
             if (Math.random() < 0.1) { // Log only 10% of syncs to reduce noise
-                UILogger.diagnostic(
+                logger.diagnostic(
                     'Leaflet→Deck sync',
-                    UILogger.CATEGORY.SYNC,
+                    logger.CATEGORY.SYNC,
                     {
                         lng: center.lng.toFixed(4),
                         lat: center.lat.toFixed(4),
@@ -2507,9 +2243,9 @@ function initializeDeckGL(map) {
                 const heightDiff = Math.abs(containerRect.height - canvasRect.height);
 
                 if (widthDiff > 1 || heightDiff > 1) {
-                    UILogger.warning(
+                    logger.warning(
                         'Canvas size mismatch',
-                        UILogger.CATEGORY.SYNC,
+                        logger.CATEGORY.SYNC,
                         {
                             container: `${containerRect.width.toFixed(0)}×${containerRect.height.toFixed(0)}`,
                             canvas: `${canvasRect.width.toFixed(0)}×${canvasRect.height.toFixed(0)}`,
@@ -2522,7 +2258,7 @@ function initializeDeckGL(map) {
                         width: containerRect.width,
                         height: containerRect.height
                     });
-                    UILogger.diagnostic('Canvas size auto-corrected', UILogger.CATEGORY.SYNC, {
+                    logger.diagnostic('Canvas size auto-corrected', logger.CATEGORY.SYNC, {
                         size: `${containerRect.width.toFixed(0)}×${containerRect.height.toFixed(0)}px`
                     });
                 }
@@ -2553,9 +2289,9 @@ function initializeDeckGL(map) {
 
                         // Higher thresholds to account for throttling delay
                         if (lngDrift > 0.01 || latDrift > 0.01 || zoomDrift > 0.01) {
-                            UILogger.warning(
+                            logger.warning(
                                 'Sync drift detected',
-                                UILogger.CATEGORY.SYNC,
+                                logger.CATEGORY.SYNC,
                                 {
                                     lngDrift: lngDrift.toFixed(6),
                                     latDrift: latDrift.toFixed(6),
@@ -2593,29 +2329,29 @@ function initializeDeckGL(map) {
                 deckCanvas.style.zIndex = '400';  // Above Leaflet tiles (z-index 200) but below controls (z-index 1000)
                 deckCanvas.style.pointerEvents = 'none';  // Let Leaflet handle all interaction
 
-                UILogger.success('Deck.gl canvas positioned', UILogger.CATEGORY.SATELLITE, {
+                logger.success('Deck.gl canvas positioned', logger.CATEGORY.SATELLITE, {
                     zIndex: 400,
                     size: `${rect.width.toFixed(0)}×${rect.height.toFixed(0)}px`
                 });
             } else {
-                UILogger.warning('Could not find Deck.gl canvas for styling', UILogger.CATEGORY.SATELLITE);
+                logger.warning('Could not find Deck.gl canvas for styling', logger.CATEGORY.SATELLITE);
             }
         });
 
-        UILogger.success(
+        logger.success(
             'Deck.gl initialized',
-            UILogger.CATEGORY.SATELLITE,
+            logger.CATEGORY.SATELLITE,
             { satellites: state.satellites.length }
         );
 
-        UILogger.diagnostic('Deck.gl configuration', UILogger.CATEGORY.SATELLITE, {
+        logger.diagnostic('Deck.gl configuration', logger.CATEGORY.SATELLITE, {
             context: 'Separate WebGL',
             controller: 'disabled',
             viewStateMode: 'controlled'
         });
 
         const initialView = deckgl.viewState || deckgl.props.viewState;
-        UILogger.diagnostic('Coordinate system', UILogger.CATEGORY.SATELLITE, {
+        logger.diagnostic('Coordinate system', logger.CATEGORY.SATELLITE, {
             projection: 'Web Mercator',
             view: 'MapView(repeat=true)',
             coordinateSystem: 'LNGLAT (WGS84→WebMercator)',
@@ -2629,9 +2365,9 @@ function initializeDeckGL(map) {
         return deckgl;
 
     } catch (error) {
-        UILogger.error(
+        logger.error(
             `Deck.gl initialization failed: ${error.message}`,
-            UILogger.CATEGORY.SATELLITE,
+            logger.CATEGORY.SATELLITE,
             { error: error.stack }
         );
         return null;
@@ -2667,7 +2403,7 @@ function initializePaneResizer() {
     const crosshairHandle = document.getElementById('grid-resize-crosshair');
 
     if (!mainContainer || !verticalHandle || !horizontalHandle || !crosshairHandle) {
-        UILogger.warning('Pane resizer elements not found', UILogger.CATEGORY.PANEL);
+        logger.warning('Pane resizer elements not found', logger.CATEGORY.PANEL);
         return;
     }
 
@@ -2817,12 +2553,12 @@ function initializePaneResizer() {
                 width: rect.width,
                 height: rect.height
             });
-            UILogger.diagnostic('Deck.gl canvas resized', UILogger.CATEGORY.SATELLITE, {
+            logger.diagnostic('Deck.gl canvas resized', logger.CATEGORY.SATELLITE, {
                 size: `${rect.width.toFixed(0)}×${rect.height.toFixed(0)}px`
             });
         }
 
-        UILogger.diagnostic('Map optimized', UILogger.CATEGORY.MAP, {
+        logger.diagnostic('Map optimized', logger.CATEGORY.MAP, {
             size: `${rect.width.toFixed(0)}×${rect.height.toFixed(0)}px`,
             ratio: aspectRatio.toFixed(2)
         });
@@ -2934,9 +2670,9 @@ function initializePaneResizer() {
             }, 50);
         }
 
-        UILogger.diagnostic(
+        logger.diagnostic(
             'Grid resized',
-            UILogger.CATEGORY.PANEL,
+            logger.CATEGORY.PANEL,
             {
                 horizontal: `${currentHorizontalPercent.toFixed(1)}%`,
                 vertical: `${currentVerticalPercent.toFixed(1)}%`
@@ -2964,8 +2700,8 @@ function initializePaneResizer() {
     document.addEventListener('touchmove', handleDragMove, { passive: false });
     document.addEventListener('touchend', handleDragEnd);
 
-    UILogger.success('Grid border resizers initialized');
-    UILogger.info('Hover over borders to see crosshair, drag to resize');
+    logger.success('Grid border resizers initialized');
+    logger.info('Hover over borders to see crosshair, drag to resize');
 }
 
 // ============================================
@@ -2994,7 +2730,7 @@ function initializeLogPanelResizer() {
     const resizeHandle = document.getElementById('log-resize-handle');
 
     if (!bottomLeftPane || !contentArea || !logArea || !resizeHandle) {
-        UILogger.warning('Log panel resizer elements not found', UILogger.CATEGORY.PANEL);
+        logger.warning('Log panel resizer elements not found', logger.CATEGORY.PANEL);
         return;
     }
 
@@ -3067,9 +2803,9 @@ function initializeLogPanelResizer() {
         isDragging = false;
         resizeHandle.classList.remove('active');
 
-        UILogger.diagnostic(
+        logger.diagnostic(
             'Log panel resized',
-            UILogger.CATEGORY.PANEL,
+            logger.CATEGORY.PANEL,
             { height: `${currentLogHeight.toFixed(0)}px` }
         );
     }
@@ -3084,7 +2820,7 @@ function initializeLogPanelResizer() {
     document.addEventListener('touchmove', handleDragMove, { passive: false });
     document.addEventListener('touchend', handleDragEnd);
 
-    UILogger.success('Log panel resizer initialized');
+    logger.success('Log panel resizer initialized');
 }
 
 // ============================================
@@ -3114,7 +2850,7 @@ function initializeMapMaximize() {
     const maximizeIcon = document.getElementById('maximize-icon');
 
     if (!maximizeBtn || !mainContainer) {
-        UILogger.warning('Map maximize button not found', UILogger.CATEGORY.PANEL);
+        logger.warning('Map maximize button not found', logger.CATEGORY.PANEL);
         return;
     }
 
@@ -3128,13 +2864,13 @@ function initializeMapMaximize() {
             mainContainer.classList.add('maximized');
             maximizeIcon.textContent = '⊡';  // Restore icon
             maximizeBtn.title = 'Restore map';
-            UILogger.diagnostic('Map maximized', UILogger.CATEGORY.MAP);
+            logger.diagnostic('Map maximized', logger.CATEGORY.MAP);
         } else {
             // Restore: show all panes in grid
             mainContainer.classList.remove('maximized');
             maximizeIcon.textContent = '⛶';  // Maximize icon
             maximizeBtn.title = 'Maximize map';
-            UILogger.diagnostic('Map restored', UILogger.CATEGORY.MAP);
+            logger.diagnostic('Map restored', logger.CATEGORY.MAP);
         }
 
         // Update map size after transition
@@ -3150,7 +2886,7 @@ function initializeMapMaximize() {
                         width: rect.width,
                         height: rect.height
                     });
-                    UILogger.diagnostic('Deck.gl canvas resized on maximize/restore', UILogger.CATEGORY.SATELLITE, {
+                    logger.diagnostic('Deck.gl canvas resized on maximize/restore', logger.CATEGORY.SATELLITE, {
                         size: `${rect.width.toFixed(0)}×${rect.height.toFixed(0)}px`
                     });
                 }
@@ -3158,7 +2894,7 @@ function initializeMapMaximize() {
         }
     });
 
-    UILogger.success('Map maximize button initialized', UILogger.CATEGORY.PANEL);
+    logger.success('Map maximize button initialized', logger.CATEGORY.PANEL);
 }
 
 // ============================================
@@ -3183,7 +2919,7 @@ window.addEventListener('resize', () => {
             togglePanel(false);
         }
 
-        UILogger.diagnostic('Window resized', UILogger.CATEGORY.PANEL, { mobile: state.isMobile });
+        logger.diagnostic('Window resized', logger.CATEGORY.PANEL, { mobile: state.isMobile });
     }, 250);
 });
 
@@ -3221,7 +2957,7 @@ function initializeSensorButtons() {
         });
     }
 
-    UILogger.success('Sensor button handlers initialized', UILogger.CATEGORY.SENSOR);
+    logger.success('Sensor button handlers initialized', logger.CATEGORY.SENSOR);
 }
 
 /**
@@ -3247,9 +2983,9 @@ function initializeSatelliteButtons() {
             if (selectedSatellites.length === 1) {
                 editSatellite(selectedSatellites[0].id);
             } else if (selectedSatellites.length === 0) {
-                UILogger.warning('Please select a satellite to edit', UILogger.CATEGORY.SATELLITE);
+                logger.warning('Please select a satellite to edit', logger.CATEGORY.SATELLITE);
             } else {
-                UILogger.warning('Please select only one satellite to edit', UILogger.CATEGORY.SATELLITE);
+                logger.warning('Please select only one satellite to edit', logger.CATEGORY.SATELLITE);
             }
         });
     }
@@ -3261,7 +2997,7 @@ function initializeSatelliteButtons() {
         });
     }
 
-    UILogger.success('Satellite button handlers initialized', UILogger.CATEGORY.SATELLITE);
+    logger.success('Satellite button handlers initialized', logger.CATEGORY.SATELLITE);
 }
 
 /**
@@ -3270,11 +3006,11 @@ function initializeSatelliteButtons() {
  */
 function init() {
     // Initialize UI logger first
-    UILogger.init();
+    logger.init();
 
-    UILogger.info('Initializing Satellite Visualization System');
-    UILogger.info(`Mobile device: ${state.isMobile}`);
-    UILogger.info(`Window size: ${window.innerWidth} × ${window.innerHeight}`);
+    logger.info('Initializing Satellite Visualization System');
+    logger.info(`Mobile device: ${state.isMobile}`);
+    logger.info(`Window size: ${window.innerWidth} × ${window.innerHeight}`);
 
     // Initialize time controls with default values
     initializeTimeControls();
@@ -3304,11 +3040,11 @@ function init() {
             // Without this, sensors with selected=true won't appear until user toggles checkbox
             requestAnimationFrame(() => {
                 updateDeckOverlay();
-                UILogger.success('Map and visualization layers loaded', UILogger.CATEGORY.MAP);
+                logger.success('Map and visualization layers loaded', logger.CATEGORY.MAP);
             });
         });
     } else {
-        UILogger.warning('Map initialization failed', UILogger.CATEGORY.MAP);
+        logger.warning('Map initialization failed', logger.CATEGORY.MAP);
     }
 
     // Initialize 4-pane resizable grid
@@ -3325,7 +3061,7 @@ function init() {
         togglePanel(false);
     }
 
-    UILogger.success('Initialization complete', UILogger.CATEGORY.PANEL);
+    logger.success('Initialization complete', logger.CATEGORY.PANEL);
 }
 
 // Run initialization when DOM is ready
@@ -3349,10 +3085,10 @@ async function fetchSatellites() {
     try {
         const response = await fetch('/api/satellites?limit=100');
         const data = await response.json();
-        UILogger.success('Satellites loaded', UILogger.CATEGORY.DATA, { total: data.total });
+        logger.success('Satellites loaded', logger.CATEGORY.DATA, { total: data.total });
         return data.satellites;
     } catch (error) {
-        UILogger.error('Failed to fetch satellites', UILogger.CATEGORY.DATA, { error: error.message });
+        logger.error('Failed to fetch satellites', logger.CATEGORY.DATA, { error: error.message });
         return [];
     }
 }
@@ -3365,7 +3101,7 @@ async function fetchSatellites() {
 function connectWebSocket() {
     // TODO: Implement WebSocket connection
     // const ws = new WebSocket('ws://localhost:8000/ws/realtime');
-    UILogger.info('WebSocket connection: Not yet implemented', UILogger.CATEGORY.DATA);
+    logger.info('WebSocket connection: Not yet implemented', logger.CATEGORY.DATA);
 }
 
 // Export for use in other modules (if needed)
@@ -3377,19 +3113,19 @@ window.SatelliteApp = {
     // Debug helpers
     updateDeckOverlay,
     testSensors: () => {
-        UILogger.info('Debug Info', UILogger.CATEGORY.SENSOR, {
+        logger.info('Debug Info', logger.CATEGORY.SENSOR, {
             deckglReady: !!window.deckgl,
             totalSensors: state.sensors.length,
             selectedSensors: state.sensors.filter(s => s.selected).length
         });
-        UILogger.diagnostic('Sensor sample', UILogger.CATEGORY.SENSOR, {
+        logger.diagnostic('Sensor sample', logger.CATEGORY.SENSOR, {
             sample: JSON.stringify(state.sensors.slice(0, 3))
         });
         if (window.deckgl) {
-            UILogger.success('Deck.gl is ready', UILogger.CATEGORY.SATELLITE);
+            logger.success('Deck.gl is ready', logger.CATEGORY.SATELLITE);
             updateDeckOverlay();
         } else {
-            UILogger.warning('Deck.gl not initialized yet', UILogger.CATEGORY.SATELLITE);
+            logger.warning('Deck.gl not initialized yet', logger.CATEGORY.SATELLITE);
         }
     }
 };
