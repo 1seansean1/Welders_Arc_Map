@@ -45,9 +45,23 @@ User reports bug → immediately add to BUGS.md using template. Assign sequentia
 
 Any change to code or documentation → commit to GitHub immediately after completion. Commit message format: `<type>(<scope>): <summary>`. Types: feat|fix|docs|refactor|test|chore|perf. Push after commit. No prompt required—this is default behavior.
 
+### Mandatory Behaviors (Quick Reference)
+
+All AI assistants must perform these actions without prompting:
+
+| # | Behavior | Trigger | Reference |
+|---|----------|---------|-----------|
+| 1 | Read AI_GOVERNOR.md | Before any work | §Document Authority |
+| 2 | Add bugs to BUGS.md (BUG-XXX format) | User reports bug | §Bug Tracking Protocol |
+| 3 | Commit with `<type>(<scope>): <summary>` | Any code/doc change | §Git Commit Protocol |
+| 4 | Answer Four Questions | Before any work | §Codebase Stewardship |
+| 5 | Pass all Quality Gates | Before marking done | §Quality Gates |
+| 6 | Update referenced docs | After work completion | §Maintenance Obligation |
+| 7 | Flag outdated info, propose additions | Continuously | §Maintenance Obligation |
+
 ---
 
-**Version**: 2.0.0 | **Last Updated**: 2025-11-26
+**Version**: 2.1.0 | **Last Updated**: 2025-11-26
 
 ---
 
@@ -84,6 +98,10 @@ Any change to code or documentation → commit to GitHub immediately after compl
 ---
 
 ## Changelog
+
+### [2.1.0] - 2025-11-26
+- Added: Mandatory Behaviors (Quick Reference) table consolidating all required AI behaviors
+- Improved: Clearer identification of mandatory vs. optional guidance
 
 ### [2.0.0] - 2025-11-26
 - **MAJOR**: Renamed from `AI_assistance_guide.md` to `AI_GOVERNOR.md`
