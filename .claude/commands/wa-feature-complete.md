@@ -8,24 +8,18 @@ Complete end-to-end feature workflow: gather requirements → plan → implement
 
 ---
 
-## Phase 1: Gather Requirements (INTERACTIVE)
+## Phase 1: Gather Requirements
 
-**Ask the user the following questions** (wait for responses):
+**User provides feature request.** Extract and summarize:
 
-1. **What feature do you want?** Describe what it should do.
-2. **Where should it appear?** (UI location, module, API endpoint, etc.)
-3. **Any specific requirements?** (constraints, dependencies, edge cases)
-4. **Priority?** (P0=critical, P1=high, P2=medium, P3=low)
-
-After gathering responses, summarize back to the user:
 ```
 Feature: [name]
 Description: [what it does]
 Location: [where it lives]
-Priority: [P0-P3]
+Priority: [infer P0-P3 from context]
 ```
 
-**Ask**: "Does this capture your intent? (yes/adjust)"
+**Then immediately proceed to Phase 2.** Do not ask for confirmation.
 
 ---
 
@@ -189,8 +183,8 @@ Provide completion summary:
 
 ## Execution Mode
 
-**Phase 1 is INTERACTIVE** - wait for user input before proceeding.
-**Phases 2-11 execute sequentially** - report progress at each phase.
+**All phases execute sequentially** - report progress at each phase.
+**No confirmation needed** - parse user request and proceed immediately.
 **Stop on test failure** - do not skip to documentation if tests fail.
 
-**Start now: Ask the Phase 1 questions.**
+**Start now: Parse the user's feature request and begin Phase 1.**
