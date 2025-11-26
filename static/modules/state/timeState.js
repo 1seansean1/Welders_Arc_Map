@@ -57,6 +57,11 @@ class TimeState {
             glowEnabled: true,     // Whether to show equator crossing glow
             glowIntensity: 1.0,    // Glow brightness multiplier (0.1 - 2.0)
 
+            // Time slider settings
+            timeStepMinutes: 5,    // Step size for < > buttons (1, 5, 15, 30, 60)
+            isRealTime: true,      // True = auto-update to current time
+            playbackSpeed: 1,      // Playback multiplier (1x, 2x, etc.)
+
             // Pending changes tracking
             hasPendingChanges: false,
             committedStartTime: null,
@@ -219,6 +224,141 @@ class TimeState {
         eventBus.emit('time:glow:changed', {
             glowEnabled: this._state.glowEnabled,
             glowIntensity: this._state.glowIntensity
+        });
+    }
+
+    // ============================================
+    // TIME SLIDER METHODS
+    // ============================================
+
+    /**
+     * Get time step in minutes
+     * @returns {number} Time step in minutes
+     */
+    getTimeStepMinutes() {
+        return this._state.timeStepMinutes;
+    }
+
+    /**
+     * Set time step in minutes
+     * @param {number} minutes - Step size (1, 5, 15, 30, 60)
+     */
+    setTimeStepMinutes(minutes) {
+        const validSteps = [1, 5, 15, 30, 60];
+        if (!validSteps.includes(minutes)) {
+            logger.log(`setTimeStepMinutes: must be one of ${validSteps.join(', ')}`, logger.CATEGORY.ERROR);
+            return;
+        }
+
+        this._state.timeStepMinutes = minutes;
+        logger.log(`Time step set: ${minutes} minutes`, logger.CATEGORY.TIME);
+
+        eventBus.emit('time:step:changed', {
+            timeStepMinutes: minutes
+        });
+    }
+
+    /**
+     * Check if in real-time mode
+     * @returns {boolean} True if tracking real time
+     */
+    isRealTime() {
+        return this._state.isRealTime;
+    }
+
+    /**
+     * Step current time forward or backward
+     * @param {number} direction - 1 for forward, -1 for backward
+     */
+    stepTime(direction) {
+        if (direction !== 1 && direction !== -1) {
+            logger.log('stepTime: direction must be 1 or -1', logger.CATEGORY.ERROR);
+            return;
+        }
+
+        // Exit real-time mode when manually stepping
+        this._state.isRealTime = false;
+
+        const stepMs = this._state.timeStepMinutes * 60 * 1000;
+        const newTime = new Date(this._state.currentTime.getTime() + (direction * stepMs));
+
+        // Clamp to start/stop range if set
+        if (this._state.committedStartTime && newTime < this._state.committedStartTime) {
+            this._state.currentTime = new Date(this._state.committedStartTime);
+        } else if (this._state.committedStopTime && newTime > this._state.committedStopTime) {
+            this._state.currentTime = new Date(this._state.committedStopTime);
+        } else {
+            this._state.currentTime = newTime;
+        }
+
+        logger.log(`Time stepped ${direction > 0 ? 'forward' : 'backward'}: ${this._state.currentTime.toISOString()}`, logger.CATEGORY.TIME);
+
+        eventBus.emit('time:changed', {
+            currentTime: new Date(this._state.currentTime),
+            isRealTime: false
+        });
+    }
+
+    /**
+     * Set current time from slider position (0-1)
+     * @param {number} position - Slider position (0 = start, 1 = stop)
+     */
+    setTimeFromSlider(position) {
+        if (typeof position !== 'number' || position < 0 || position > 1) {
+            logger.log('setTimeFromSlider: position must be 0-1', logger.CATEGORY.ERROR);
+            return;
+        }
+
+        // Exit real-time mode when manually scrubbing
+        this._state.isRealTime = false;
+
+        const start = this._state.committedStartTime || this._state.startTime;
+        const stop = this._state.committedStopTime || this._state.stopTime;
+
+        if (!start || !stop) {
+            logger.log('setTimeFromSlider: start/stop times not set', logger.CATEGORY.ERROR);
+            return;
+        }
+
+        const range = stop.getTime() - start.getTime();
+        const newTime = new Date(start.getTime() + (position * range));
+        this._state.currentTime = newTime;
+
+        eventBus.emit('time:changed', {
+            currentTime: new Date(this._state.currentTime),
+            isRealTime: false
+        });
+    }
+
+    /**
+     * Get slider position for current time (0-1)
+     * @returns {number} Slider position (0 = start, 1 = stop)
+     */
+    getSliderPosition() {
+        const start = this._state.committedStartTime || this._state.startTime;
+        const stop = this._state.committedStopTime || this._state.stopTime;
+
+        if (!start || !stop) return 0;
+
+        const range = stop.getTime() - start.getTime();
+        if (range <= 0) return 0;
+
+        const position = (this._state.currentTime.getTime() - start.getTime()) / range;
+        return Math.max(0, Math.min(1, position));
+    }
+
+    /**
+     * Resume real-time mode (track current system time)
+     */
+    resumeRealTime() {
+        this._state.isRealTime = true;
+        this._state.currentTime = new Date();
+
+        logger.log('Resumed real-time mode', logger.CATEGORY.TIME);
+
+        eventBus.emit('time:changed', {
+            currentTime: new Date(this._state.currentTime),
+            isRealTime: true
         });
     }
 

@@ -565,6 +565,164 @@ const UI_HYPOTHESES = {
                 }
             };
         }
+    },
+    'H-UI-5': {
+        id: 'H-UI-5',
+        name: 'Time Slider Step Buttons',
+        category: 'ui',
+        hypothesis: 'Step buttons increment/decrement current time by step size',
+        symptom: 'Buttons do nothing or wrong increment',
+        prediction: 'stepTime(1) adds timeStepMinutes to currentTime',
+        nullPrediction: 'Time would not change or change wrong amount',
+        threshold: { stepCorrect: true },
+        causalChain: [
+            'SYMPTOM: Step buttons don\'t change time correctly',
+            'PROXIMATE: stepTime() not called or wrong delta',
+            'ROOT: Event handler not connected',
+            'MECHANISM: timeState.stepTime() uses timeStepMinutes',
+            'FIX: Connect button click to stepTime(direction)'
+        ],
+        testFn: async () => {
+            const timeState = window.SatelliteApp?.timeState || window.timeState;
+            if (!timeState) return { passed: false, error: 'timeState not available' };
+
+            // Save original state
+            const originalTime = timeState.getCurrentTime();
+            const stepMinutes = timeState.getTimeStepMinutes?.() || 5;
+
+            // Test step forward
+            timeState.stepTime?.(1);
+            const afterForward = timeState.getCurrentTime();
+            const forwardDiff = (afterForward - originalTime) / 60000; // minutes
+
+            // Test step backward
+            timeState.stepTime?.(-1);
+            const afterBackward = timeState.getCurrentTime();
+            const backwardDiff = (afterBackward - afterForward) / 60000; // minutes
+
+            // Restore original time
+            timeState.setCurrentTime?.(originalTime);
+            timeState.resumeRealTime?.();
+
+            const forwardCorrect = Math.abs(forwardDiff - stepMinutes) < 0.1;
+            const backwardCorrect = Math.abs(backwardDiff + stepMinutes) < 0.1;
+            const passed = forwardCorrect && backwardCorrect;
+
+            return {
+                passed,
+                details: {
+                    stepMinutes,
+                    forwardDiff: forwardDiff.toFixed(2),
+                    backwardDiff: backwardDiff.toFixed(2),
+                    forwardCorrect,
+                    backwardCorrect
+                }
+            };
+        }
+    },
+    'H-UI-6': {
+        id: 'H-UI-6',
+        name: 'Time Slider Position',
+        category: 'ui',
+        hypothesis: 'Slider position maps to time within start-stop range',
+        symptom: 'Slider position doesn\'t reflect current time',
+        prediction: 'Position 0=start, 1=stop, proportional between',
+        nullPrediction: 'Slider would be disconnected from time state',
+        threshold: { positionCorrect: true },
+        causalChain: [
+            'SYMPTOM: Slider shows wrong position',
+            'PROXIMATE: getSliderPosition() returns wrong value',
+            'ROOT: Position calculation formula error',
+            'MECHANISM: (currentTime - startTime) / (stopTime - startTime)',
+            'FIX: Correct position mapping formula'
+        ],
+        testFn: async () => {
+            const timeState = window.SatelliteApp?.timeState || window.timeState;
+            if (!timeState) return { passed: false, error: 'timeState not available' };
+            if (!timeState.getSliderPosition) return { passed: true, skipped: true, reason: 'getSliderPosition not implemented' };
+
+            const start = timeState.getCommittedStartTime?.() || timeState.getStartTime?.();
+            const stop = timeState.getCommittedStopTime?.() || timeState.getStopTime?.();
+
+            if (!start || !stop) return { passed: true, skipped: true, reason: 'Start/stop times not set' };
+
+            // Test position at start time
+            timeState.setCurrentTime?.(start);
+            const posAtStart = timeState.getSliderPosition();
+
+            // Test position at stop time
+            timeState.setCurrentTime?.(stop);
+            const posAtStop = timeState.getSliderPosition();
+
+            // Test position at midpoint
+            const midTime = new Date((start.getTime() + stop.getTime()) / 2);
+            timeState.setCurrentTime?.(midTime);
+            const posAtMid = timeState.getSliderPosition();
+
+            // Restore to real-time
+            timeState.resumeRealTime?.();
+
+            const startCorrect = Math.abs(posAtStart - 0) < 0.01;
+            const stopCorrect = Math.abs(posAtStop - 1) < 0.01;
+            const midCorrect = Math.abs(posAtMid - 0.5) < 0.01;
+            const passed = startCorrect && stopCorrect && midCorrect;
+
+            return {
+                passed,
+                details: {
+                    posAtStart: posAtStart.toFixed(3),
+                    posAtStop: posAtStop.toFixed(3),
+                    posAtMid: posAtMid.toFixed(3),
+                    startCorrect,
+                    stopCorrect,
+                    midCorrect
+                }
+            };
+        }
+    },
+    'H-UI-7': {
+        id: 'H-UI-7',
+        name: 'Now Button Real-Time Resume',
+        category: 'ui',
+        hypothesis: 'Now button resets to current time and resumes real-time mode',
+        symptom: 'Now button doesn\'t resume real-time tracking',
+        prediction: 'After Now click, isRealTime() returns true',
+        nullPrediction: 'isRealTime would stay false',
+        threshold: { realTimeResumed: true },
+        causalChain: [
+            'SYMPTOM: Now button doesn\'t resume real-time',
+            'PROXIMATE: resumeRealTime() not called',
+            'ROOT: Button click handler missing or wrong',
+            'MECHANISM: isRealTime flag not set to true',
+            'FIX: Call timeState.resumeRealTime() on click'
+        ],
+        testFn: async () => {
+            const timeState = window.SatelliteApp?.timeState || window.timeState;
+            if (!timeState) return { passed: false, error: 'timeState not available' };
+            if (!timeState.isRealTime || !timeState.resumeRealTime) {
+                return { passed: true, skipped: true, reason: 'isRealTime/resumeRealTime not implemented' };
+            }
+
+            // First, step time to exit real-time mode
+            timeState.stepTime?.(-1);
+            const afterStep = timeState.isRealTime();
+
+            // Then resume real-time
+            timeState.resumeRealTime();
+            const afterResume = timeState.isRealTime();
+
+            const passed = afterStep === false && afterResume === true;
+
+            return {
+                passed,
+                details: {
+                    afterStepRealTime: afterStep,
+                    afterResumeRealTime: afterResume,
+                    exitedRealTime: !afterStep,
+                    resumedRealTime: afterResume
+                }
+            };
+        }
     }
 };
 

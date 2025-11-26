@@ -27,6 +27,7 @@
 
 | Task | Priority | Completed | Notes |
 |------|----------|-----------|-------|
+| Time Slider with Step Controls | P1 | 2025-11-26 | TIME-011: Slider bar, step buttons, Now button, step size selector |
 | TLE Rendering Features | P1 | 2025-11-26 | Current time display, tail/head controls, gradient fade, chevron icon, equator glow |
 | Settings Panel Completion | P2 | 2025-11-26 | Glow effect enable/disable and intensity controls |
 | Documentation Standardization | P1 | 2025-11-26 | Created FEATURES, BUGS, LESSONS, TESTS, PLAN |
@@ -202,5 +203,6 @@ venv\Scripts\python backend\main.py
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.2 | 2025-11-26 | Added TIME-011: Time Slider with Step Controls to recently completed |
 | 1.1 | 2025-11-26 | Added TLE Rendering Features milestone, updated active tasks |
 | 1.0 | 2025-11-26 | Initial standardized plan document |

@@ -697,6 +697,135 @@
         }
 
         /* ============================================
+           TIME SLIDER CONTROLS
+           ============================================ */
+
+        .time-slider-section {
+            margin-top: 8px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 8px;
+        }
+
+        .time-slider-controls {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 4px;
+        }
+
+        .time-step-select {
+            width: 42px;
+            height: 20px;
+            background: var(--bg-primary);
+            border: 1px solid #666666;
+            border-radius: 3px;
+            color: var(--text-primary);
+            font-size: 8px;
+            font-family: var(--font-mono);
+            cursor: pointer;
+            padding: 0 2px;
+        }
+
+        .time-step-select:focus {
+            outline: none;
+            border-color: var(--accent-blue-grey);
+        }
+
+        .time-slider-btn {
+            width: 20px;
+            height: 20px;
+            border: 1px solid #666666;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            flex-shrink: 0;
+        }
+
+        .time-slider-btn:hover {
+            background: var(--bg-primary);
+            border-color: var(--accent-blue-grey);
+        }
+
+        .time-slider-btn:active {
+            transform: scale(0.95);
+        }
+
+        .time-slider {
+            flex: 1;
+            height: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: var(--bg-tertiary);
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+            min-width: 40px;
+        }
+
+        .time-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            background: var(--accent-blue-grey);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .time-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .time-slider::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            background: var(--accent-blue-grey);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
+        /* Real-time mode indicator - green thumb */
+        .time-slider.realtime::-webkit-slider-thumb {
+            background: var(--accent-green);
+        }
+
+        .time-slider.realtime::-moz-range-thumb {
+            background: var(--accent-green);
+        }
+
+        .time-slider-now-btn {
+            width: 32px;
+            height: 20px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid #666666;
+            border-radius: 3px;
+            font-weight: 600;
+            font-size: 7px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .time-slider-now-btn:hover {
+            background: var(--bg-primary);
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        .time-slider-now-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* ============================================
            GROUND TRACK DURATION CONTROLS
            ============================================ */
 
@@ -1709,6 +1838,34 @@
                     <button class="time-action-btn time-apply-btn" id="time-apply-btn">Apply</button>
                 </div>
 
+                <!-- Time Slider Section -->
+                <div class="time-slider-section">
+                    <label class="time-label" style="margin-top: 12px;">Simulation Time</label>
+
+                    <!-- Step size selector -->
+                    <div class="time-slider-controls">
+                        <select class="time-step-select" id="time-step-select" title="Step size">
+                            <option value="1">1m</option>
+                            <option value="5" selected>5m</option>
+                            <option value="15">15m</option>
+                            <option value="30">30m</option>
+                            <option value="60">1h</option>
+                        </select>
+
+                        <!-- Step back button -->
+                        <button class="time-slider-btn" id="time-step-back" title="Step backward">&lt;</button>
+
+                        <!-- Time slider -->
+                        <input type="range" class="time-slider" id="time-slider" min="0" max="1000" value="1000" />
+
+                        <!-- Step forward button -->
+                        <button class="time-slider-btn" id="time-step-forward" title="Step forward">&gt;</button>
+
+                        <!-- Now button -->
+                        <button class="time-slider-now-btn" id="time-slider-now" title="Reset to now">Now</button>
+                    </div>
+                </div>
+
                 <!-- Ground Track Duration Controls -->
                 <div class="track-duration-section">
                     <label class="time-label" style="margin-top: 12px;">Ground Track</label>
@@ -1975,7 +2132,7 @@
     </div>
 
     <!-- ES6 Module Loading -->
-    <script type="module" src="/static/app.js?v=46"></script>
+    <script type="module" src="/static/app.js?v=47"></script>
 
     <!-- Fallback for browsers without ES6 module support -->
     <script nomodule>

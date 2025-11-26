@@ -102,6 +102,7 @@
 | TIME-008 | Time-based Ground Tracks | P1 | M | DONE | TIME-001, SAT-005 |
 | TIME-009 | Current Time Display | P1 | S | DONE | TIME-001 |
 | TIME-010 | Ground Track Tail/Head Controls | P2 | M | DONE | TIME-001, SAT-005 |
+| TIME-011 | Time Slider with Step Controls | P1 | M | DONE | TIME-001 |
 
 ### Control Panel (UI)
 
@@ -227,15 +228,15 @@
 | MAP | 10 | 10 | 0 | 0 | 0 |
 | SAT | 14 | 12 | 0 | 1 | 1 |
 | SEN | 9 | 8 | 0 | 0 | 1 |
-| TIME | 10 | 10 | 0 | 0 | 0 |
+| TIME | 11 | 11 | 0 | 0 | 0 |
 | UI | 10 | 8 | 0 | 2 | 0 |
 | LOG | 10 | 8 | 0 | 0 | 2 |
 | TEST | 12 | 10 | 0 | 1 | 0 |
 | BACK | 9 | 3 | 0 | 4 | 2 |
 | ARCH | 5 | 5 | 0 | 0 | 0 |
-| **TOTAL** | **89** | **74** | **0** | **8** | **6** |
+| **TOTAL** | **90** | **75** | **0** | **8** | **6** |
 
-**Completion Rate**: 83% (74/89 features complete)
+**Completion Rate**: 83% (75/90 features complete)
 
 ---
 
@@ -243,5 +244,6 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.2 | 2025-11-26 | Added TIME-011: Time Slider with Step Controls |
 | 1.1 | 2025-11-26 | Added TLE rendering features: SAT-012/013/014, TIME-009/010, UI-009/010 |
 | 1.0 | 2025-11-26 | Initial consolidated feature registry |

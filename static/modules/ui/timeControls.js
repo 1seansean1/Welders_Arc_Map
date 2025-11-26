@@ -25,6 +25,7 @@
  */
 
 import timeState from '../state/timeState.js';
+import eventBus from '../events/eventBus.js';
 import logger from '../utils/logger.js';
 import { formatDateTimeLocal } from '../utils/time.js';
 import { setCalendarJustClosed } from './controlPanel.js';
@@ -46,6 +47,13 @@ const trackTailSlider = document.getElementById('track-tail-slider');
 const trackTailInput = document.getElementById('track-tail-input');
 const trackHeadSlider = document.getElementById('track-head-slider');
 const trackHeadInput = document.getElementById('track-head-input');
+
+// Time slider controls
+const timeSlider = document.getElementById('time-slider');
+const timeStepSelect = document.getElementById('time-step-select');
+const timeStepBackBtn = document.getElementById('time-step-back');
+const timeStepForwardBtn = document.getElementById('time-step-forward');
+const timeSliderNowBtn = document.getElementById('time-slider-now');
 
 // ============================================
 // STATE
@@ -355,3 +363,118 @@ function initializeTrackDurationControls() {
 
 // Auto-initialize track duration controls when module loads
 initializeTrackDurationControls();
+
+// ============================================
+// TIME SLIDER CONTROLS
+// ============================================
+
+/**
+ * Initialize time slider controls
+ * Sets up slider, step buttons, and Now button
+ */
+function initializeTimeSliderControls() {
+    if (!timeSlider || !timeStepSelect || !timeStepBackBtn || !timeStepForwardBtn || !timeSliderNowBtn) {
+        logger.warning('Time slider controls not found', logger.CATEGORY.UI);
+        return;
+    }
+
+    // Step size select handler
+    timeStepSelect.addEventListener('change', (e) => {
+        const stepMinutes = parseInt(e.target.value);
+        timeState.setTimeStepMinutes(stepMinutes);
+    });
+
+    // Step back button handler
+    timeStepBackBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        timeState.stepTime(-1);
+        updateSliderFromState();
+
+        // Visual feedback
+        timeStepBackBtn.style.transform = 'scale(0.9)';
+        setTimeout(() => {
+            timeStepBackBtn.style.transform = 'scale(1)';
+        }, 100);
+    });
+
+    // Step forward button handler
+    timeStepForwardBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        timeState.stepTime(1);
+        updateSliderFromState();
+
+        // Visual feedback
+        timeStepForwardBtn.style.transform = 'scale(0.9)';
+        setTimeout(() => {
+            timeStepForwardBtn.style.transform = 'scale(1)';
+        }, 100);
+    });
+
+    // Time slider input handler (during drag)
+    timeSlider.addEventListener('input', (e) => {
+        const position = parseInt(e.target.value) / 1000; // 0-1000 → 0-1
+        timeState.setTimeFromSlider(position);
+        updateSliderRealTimeClass();
+    });
+
+    // Now button handler
+    timeSliderNowBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        timeState.resumeRealTime();
+        updateSliderFromState();
+
+        // Visual feedback
+        timeSliderNowBtn.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+            timeSliderNowBtn.style.transform = 'scale(1)';
+        }, 100);
+    });
+
+    // Initialize slider position
+    updateSliderFromState();
+
+    logger.diagnostic('Time slider controls initialized', logger.CATEGORY.UI);
+}
+
+/**
+ * Update slider position from current time state
+ */
+function updateSliderFromState() {
+    if (!timeSlider) return;
+
+    const position = timeState.getSliderPosition();
+    timeSlider.value = Math.round(position * 1000);
+    updateSliderRealTimeClass();
+}
+
+/**
+ * Update slider real-time class (green when tracking real time)
+ */
+function updateSliderRealTimeClass() {
+    if (!timeSlider) return;
+
+    if (timeState.isRealTime()) {
+        timeSlider.classList.add('realtime');
+    } else {
+        timeSlider.classList.remove('realtime');
+    }
+}
+
+// Auto-initialize time slider controls when module loads
+initializeTimeSliderControls();
+
+// Subscribe to time events for slider updates
+eventBus.on('time:applied', () => {
+    // When time range is applied, update slider position
+    updateSliderFromState();
+    updateSliderRealTimeClass();
+});
+
+eventBus.on('time:cancelled', () => {
+    // When time changes are cancelled, update slider position
+    updateSliderFromState();
+    updateSliderRealTimeClass();
+});
+
+// Export for external use
+export { updateSliderFromState };
