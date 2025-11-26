@@ -1,0 +1,297 @@
+# WA_map Test Documentation
+
+> **Document Type**: TESTS
+> **Version**: 1.0
+> **Last Updated**: 2025-11-26
+> **Maintainer**: AI Governor System
+
+---
+
+## Test Philosophy
+
+All tests follow a **hypothesis-driven** approach inspired by the scientific method:
+
+1. **Hypothesis**: Statement of what should be true
+2. **Symptom**: What user sees when broken
+3. **Prediction**: Specific measurable outcome if working
+4. **Threshold**: Quantitative pass criteria
+
+---
+
+## Test Categories
+
+| Category | Prefix | Count | Purpose |
+|----------|--------|-------|---------|
+| Map | H-MAP-* | 6 | Leaflet-Deck.gl synchronization |
+| State | H-STATE-* | 4 | State module integrity |
+| Event | H-EVENT-* | 2 | Event bus functionality |
+| UI | H-UI-* | 3 | User interface components |
+| Validation | H-VALID-* | 2 | Input validation |
+| **Total** | | **17** | |
+
+---
+
+## Test Matrix
+
+### Map Tests (H-MAP-*)
+
+| ID | Name | Status | Description |
+|----|------|--------|-------------|
+| H-DRIFT-1 | Initial Zoom Offset | PASS | Deck.gl zoom = Leaflet zoom - 1 |
+| H-TIME-1 | Ground Track Time Source | PASS | Tracks use timeState, not wall clock |
+| H-SYNC-1 | Pan Synchronization | PASS | Zero drift during pan operations |
+| H-SYNC-2 | Zoom Synchronization | PASS | Zero drift during zoom operations |
+| H-PERF-1 | Rapid Pan Performance | PASS | <10% dropped frames, 0 glitches |
+| H-BATCH-1 | setProps Batching | PASS | Updates combined per frame |
+
+### State Tests (H-STATE-*)
+
+| ID | Name | Status | Description |
+|----|------|--------|-------------|
+| H-STATE-1 | Satellite State Immutability | PASS | getAllSatellites() returns deep copy |
+| H-STATE-2 | Sensor Selection Persistence | PASS | Selection survives table re-render |
+| H-STATE-3 | Time Pending Changes | PASS | hasPendingChanges() tracks correctly |
+| H-STATE-4 | Sort State Cycle | PASS | 3 clicks: asc → desc → default |
+
+### Event Tests (H-EVENT-*)
+
+| ID | Name | Status | Description |
+|----|------|--------|-------------|
+| H-EVENT-1 | Event Delivery | PASS | All subscribers receive events |
+| H-EVENT-2 | Once Listener Cleanup | PASS | once() auto-removes after first call |
+
+### UI Tests (H-UI-*)
+
+| ID | Name | Status | Description |
+|----|------|--------|-------------|
+| H-UI-1 | Panel Expand/Collapse | PASS | togglePanel() inverts state |
+| H-UI-2 | Section Switching | PASS | Exactly 1 section visible |
+| H-UI-4 | Table Row Highlight | PASS | Only 1 row highlighted at a time |
+
+### Validation Tests (H-VALID-*)
+
+| ID | Name | Status | Description |
+|----|------|--------|-------------|
+| H-VALID-1 | Coordinate Bounds | PASS | Lat >90 or <-90 rejected |
+| H-VALID-2 | TLE Checksum | PASS | Invalid checksum rejected |
+
+---
+
+## Running Tests
+
+### Via UI (Settings Panel)
+
+1. Open application
+2. Navigate to Settings panel
+3. Expand "Test Suite" section
+4. Click "Run All Tests" or individual ▶ buttons
+
+### Via Console
+
+```javascript
+// Run all 17 tests
+await window.automatedTests.runAllTests();
+
+// Run specific category
+await window.automatedTests.runMapTests();
+
+// View test history
+console.log(window.testResults.getAllRuns());
+
+// Export results
+window.testResults.download('json');  // or 'csv'
+
+// Detect regressions from last run
+console.log(window.testResults.detectRegressions());
+```
+
+### Browser-Based Test Files
+
+| File | Tests | Purpose |
+|------|-------|---------|
+| `/static/test-utils.html` | 50+ | Utility module tests |
+| `/static/test-eventbus.html` | 24 | Event bus tests |
+| `/static/test-state.html` | 69+ | State module tests |
+| `/static/test-deckgl.html` | - | Manual Deck.gl tests |
+
+---
+
+## Test Infrastructure
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `static/modules/test/testRegistry.js` | All hypothesis definitions |
+| `static/modules/test/testResults.js` | Result persistence & history |
+| `static/modules/map/automated-tests.js` | Map-specific test implementations |
+| `static/modules/map/diagnostics.js` | Performance measurement framework |
+
+### Result Persistence
+
+Results stored in localStorage:
+- Up to 50 runs preserved
+- Automatic regression detection
+- JSON and CSV export available
+
+### Result Storage Schema
+
+```javascript
+{
+    version: '1.0',
+    runs: [{
+        id: 'run-2025-11-26-143052',
+        timestamp: '2025-11-26T14:30:52.000Z',
+        duration: 12450,
+        summary: { total: 17, passed: 17, failed: 0, skipped: 0 },
+        results: [{
+            hypothesisId: 'H-DRIFT-1',
+            name: 'Initial Zoom Offset',
+            passed: true,
+            duration: 145,
+            measurements: { leafletZoom: 4, deckglZoom: 3, difference: 0.0 }
+        }]
+    }]
+}
+```
+
+---
+
+## Writing New Tests
+
+### Hypothesis Template
+
+```javascript
+'H-CATEGORY-N': {
+    id: 'H-CATEGORY-N',
+    name: 'Short Name',
+    category: 'state|event|ui|map|data|valid',
+    hypothesis: 'Statement of what should be true',
+    symptom: 'What user sees when broken',
+    prediction: 'Specific measurable outcome if working',
+    nullPrediction: 'What happens if broken',
+    threshold: { /* specific pass criteria */ },
+    causalChain: [
+        'SYMPTOM: User-visible problem',
+        'PROXIMATE: Immediate technical cause',
+        'ROOT: Underlying code issue',
+        'MECHANISM: Why root causes symptom',
+        'FIX: How to resolve'
+    ],
+    testFn: async () => { /* implementation */ }
+}
+```
+
+### Example Test Implementation
+
+```javascript
+'H-STATE-1': {
+    id: 'H-STATE-1',
+    name: 'Satellite State Immutability',
+    category: 'state',
+    hypothesis: 'getAllSatellites() returns deep copy, not reference',
+    symptom: 'External mutations corrupt internal state',
+    prediction: 'Modifying returned array should not affect state',
+    threshold: { mutationDetected: false },
+    testFn: async () => {
+        const satellites1 = satelliteState.getAllSatellites();
+        const originalLength = satellites1.length;
+
+        // Attempt mutation
+        satellites1.push({ id: 999, name: 'FAKE' });
+
+        // Get fresh copy
+        const satellites2 = satelliteState.getAllSatellites();
+
+        return {
+            passed: satellites2.length === originalLength,
+            measurements: {
+                originalLength,
+                afterMutation: satellites2.length,
+                mutationDetected: satellites2.length !== originalLength
+            }
+        };
+    }
+}
+```
+
+---
+
+## Diagnostics Framework
+
+### Recording Metrics
+
+```javascript
+// Start recording
+diagnostics.startRecording();
+
+// Perform test actions...
+
+// Stop and get report
+const report = diagnostics.stopRecording();
+```
+
+### Available Metrics
+
+| Metric | Description |
+|--------|-------------|
+| Frame Timings | Individual frame durations |
+| Sync Drifts | Leaflet-Deck.gl position differences |
+| setProps Calls | Rate of Deck.gl updates |
+| Glitch Events | Rendering anomalies |
+| Resize Events | Container size changes |
+
+### Debug Commands
+
+```javascript
+window.deckglDebug.startDiagnostics()   // Start recording
+window.deckglDebug.stopDiagnostics()    // Stop and view report
+window.deckglDebug.validateMapSync()    // Check current sync state
+window.deckglDebug.saveBaseline()       // Save for comparison
+window.deckglDebug.compareToBaseline()  // Compare after changes
+window.deckglDebug.getSetPropsHistory() // View recent setProps calls
+window.deckglDebug.getLayerInfo()       // View current layer state
+```
+
+---
+
+## Test Coverage Gaps
+
+### Covered
+
+- utils/ (test-utils.html)
+- events/ (test-eventbus.html)
+- state/ (test-state.html)
+- map/sync (automated-tests.js)
+
+### Pending
+
+| Module | Tests Needed |
+|--------|--------------|
+| data/sensorCRUD.js | Add/Edit/Delete flows |
+| data/satelliteCRUD.js | Add/Edit/Delete flows |
+| ui/modals.js | Modal open/close/submit |
+| ui/controlPanel.js | Section switching |
+| map/interactions.js | Resize handles |
+| init/bootstrap.js | Initialization sequence |
+
+---
+
+## Success Criteria
+
+The test suite is complete when:
+
+1. **Coverage**: All modules have at least 1 test
+2. **Reliability**: Tests pass consistently (no flaky tests)
+3. **Speed**: Full suite runs in <60 seconds
+4. **Persistence**: Results stored and retrievable
+5. **Trends**: Historical comparison available
+6. **Regressions**: Auto-detected and highlighted
+
+---
+
+## Version History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0 | 2025-11-26 | Initial standardized test documentation |
