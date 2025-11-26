@@ -17,14 +17,16 @@ Read the following files in parallel:
 - C:\Users\seanp\Workspace\WA_map\PLAN.md (active work)
 - C:\Users\seanp\Workspace\WA_map\BUGS.md (open issues)
 - C:\Users\seanp\Workspace\WA_map\FEATURES.md (feature status)
+- C:\Users\seanp\Workspace\WA_map\LESSONS.md (known patterns & gotchas)
 
 ### Step 4: Report Session Readiness
 Provide a brief status report:
 1. **Project**: Name and current completion percentage
 2. **Active Work**: What's currently in progress per PLAN.md
 3. **Open Bugs**: Count and highest severity from BUGS.md
-4. **Mandatory Behaviors**: Confirmed (list the 7)
-5. **Ready for**: What type of work you're prepared to assist with
+4. **Known Gotchas**: Key patterns from LESSONS.md to avoid repeating
+5. **Mandatory Behaviors**: Confirmed (list the 7)
+6. **Ready for**: What type of work you're prepared to assist with
 
 ### Reminder
 Key Principle: "Prove before fixing, commit before changing, document before forgetting."

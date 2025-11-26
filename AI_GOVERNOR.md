@@ -61,7 +61,7 @@ All AI assistants must perform these actions without prompting:
 
 ---
 
-**Version**: 2.2.0 | **Last Updated**: 2025-11-26
+**Version**: 2.3.0 | **Last Updated**: 2025-11-26
 
 ---
 
@@ -99,6 +99,11 @@ All AI assistants must perform these actions without prompting:
 ---
 
 ## Changelog
+
+### [2.3.0] - 2025-11-26
+- Added: Knowledge Retention subsection in §10 with structured LESSONS.md template
+- Updated: /wa-init now reads LESSONS.md and reports known gotchas
+- Improved: Knowledge loop closure - deep research findings surface in future sessions
 
 ### [2.2.0] - 2025-11-26
 - Added: §10 Deep Research Protocol for complex/persistent issues
@@ -499,9 +504,22 @@ PHASE 4: SYSTEMATIC ELIMINATION
 PHASE 5: RESOLUTION & PREVENTION
 ├── Implement fix with clear rationale
 ├── Add regression test
-├── Update LESSONS.md with pattern
+├── Update LESSONS.md (see Knowledge Retention below)
 └── Identify similar code at risk
 ```
+
+### Knowledge Retention (Mandatory)
+
+After resolving any deep research issue, update LESSONS.md with:
+
+1. **Pattern Name**: Short, searchable identifier (e.g., "DECKGL-LAYER-VISIBILITY")
+2. **Symptom**: What the bug looked like
+3. **Root Cause**: Proven cause (one sentence)
+4. **Fix Pattern**: The correct approach
+5. **Anti-Pattern**: What NOT to do
+6. **Detection**: How to spot this in code review
+
+This ensures future sessions (via `/wa-init`) are aware of hard-won knowledge before making similar mistakes.
 
 ### Prompt
 
