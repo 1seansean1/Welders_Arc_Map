@@ -215,7 +215,12 @@ class SatelliteState {
         // Private state
         this._state = {
             satellites: [],
-            nextSatelliteId: 19 // Start after default 18 satellites
+            nextSatelliteId: 19, // Start after default 18 satellites
+            activeRowId: null,   // Currently highlighted row (blue background)
+
+            // Sort state
+            currentSortColumn: null,  // null = default order, or column name ('noradId', 'name')
+            currentSortDirection: null  // null = default, 'asc' = ascending, 'desc' = descending
         };
 
         // Initialize with default satellites (deep copy)
@@ -524,6 +529,64 @@ class SatelliteState {
         // NORAD ID is in positions 2-6 of TLE line 1
         const noradStr = tleLine1.substring(2, 7).trim();
         return parseInt(noradStr, 10) || 0;
+    }
+
+    /**
+     * Get editing state (active row for highlighting)
+     * @returns {Object} {activeRowId: number|null}
+     */
+    getEditingState() {
+        return {
+            activeRowId: this._state.activeRowId
+        };
+    }
+
+    /**
+     * Set active (highlighted) row
+     * @param {number|null} rowId - Row ID to highlight, or null
+     */
+    setActiveRow(rowId) {
+        this._state.activeRowId = rowId;
+    }
+
+    /**
+     * Get sort state
+     * @returns {Object} {column: string|null, direction: string|null}
+     */
+    getSortState() {
+        return {
+            column: this._state.currentSortColumn,
+            direction: this._state.currentSortDirection
+        };
+    }
+
+    /**
+     * Set sort state
+     * @param {string|null} column - Column name ('noradId', 'name') or null for default
+     * @param {string|null} direction - 'asc', 'desc', or null for default
+     */
+    setSortState(column, direction) {
+        const validColumns = ['noradId', 'name'];
+        const validDirections = ['asc', 'desc'];
+
+        // Validate column
+        if (column !== null && !validColumns.includes(column)) {
+            logger.log(`Invalid sort column: ${column}`, logger.CATEGORY.ERROR);
+            return;
+        }
+
+        // Validate direction
+        if (direction !== null && !validDirections.includes(direction)) {
+            logger.log(`Invalid sort direction: ${direction}`, logger.CATEGORY.ERROR);
+            return;
+        }
+
+        this._state.currentSortColumn = column;
+        this._state.currentSortDirection = direction;
+
+        logger.log(`Sort state: ${column || 'default'} ${direction || ''}`, logger.CATEGORY.SATELLITE);
+
+        eventBus.emit('satellite:sort:changed', { column, direction });
     }
 }
 

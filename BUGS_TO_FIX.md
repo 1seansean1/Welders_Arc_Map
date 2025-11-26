@@ -66,6 +66,62 @@
 
 ---
 
+### Bug 4: Sensor/Ground Track Flickering During Pan/Zoom/Click
+**Status:** FIXED (implementation complete, pending testing)
+
+**Problem:**
+- Sensors and ground track layers flicker/glitch during:
+  - User clicks on various UI elements
+  - User zooms or pans the map
+  - User resizes panels
+- Layers occasionally disappear and reappear
+
+**Root Cause:**
+Multiple `setProps()` calls from different sources were racing against each other:
+1. `sync:viewState` - Called on every Leaflet move/zoom event
+2. `sync:size-fix` - Called when canvas size mismatch detected
+3. `updateDeckOverlay:layers` - Called when layer data changes
+4. `resizeDeckCanvas:size+viewState` - Called during resize operations
+
+These calls could interleave within a single animation frame, causing Deck.gl to receive conflicting state updates.
+
+**Fix:**
+1. **Batched Update Manager** - Created `DeckGLUpdateManager` class that:
+   - Queues all `setProps()` updates
+   - Combines multiple updates into a single call per animation frame
+   - Uses `requestAnimationFrame` to batch updates at 60 FPS
+   - Merges viewState, layers, and size updates into one atomic operation
+
+2. **Tracked setProps Wrapper** - All setProps calls now go through `trackedSetProps()` which:
+   - Logs call source and timing for debugging
+   - Queues updates for batching by default
+   - Warns about rapid successive calls
+
+3. **Error Handling for Ground Tracks** - Enhanced `calculateGroundTrack()`:
+   - Validates TLE data before processing
+   - Returns empty array (not undefined) on errors
+   - Aborts after 3 consecutive propagation errors
+   - Logs success rate for partial failures
+
+**Debugging Tools Added:**
+```javascript
+// Available in browser console:
+window.deckglDebug.getSetPropsHistory()     // View recent setProps calls
+window.deckglDebug.hasPendingUpdates()      // Check for queued updates
+window.deckglDebug.flushNow()               // Force immediate flush
+window.deckglDebug.getLayerInfo()           // View current layer state
+window.deckglDebug.getUpdateManagerState()  // View batch manager state
+```
+
+**Files Modified:**
+- `static/modules/map/deckgl.js` - Batched update manager, tracked setProps
+- `static/modules/data/propagation.js` - Error handling for ground tracks
+
+**Test File Added:**
+- `static/test-deckgl.html` - Automated and manual test suite
+
+---
+
 ## Technical Notes
 
 ### Deck.gl Layer State Management
@@ -91,3 +147,29 @@ viewState: {
     transitionDuration: 0
 }
 ```
+
+### Batched Updates Pattern
+To prevent race conditions, all Deck.gl `setProps()` calls should go through the batched update manager:
+
+```javascript
+// Instead of direct setProps:
+window.deckgl.setProps({ layers: [...] });  // DON'T DO THIS
+
+// Use the tracked wrapper (batched by default):
+trackedSetProps({ layers: [...] }, 'source-name');  // DO THIS
+
+// For immediate updates (rare, only when batching would cause issues):
+trackedSetProps({ layers: [...] }, 'source-name', { immediate: true });
+```
+
+The batched update manager:
+1. Collects all `setProps()` calls within a single animation frame
+2. Merges overlapping properties (later calls override earlier ones)
+3. Flushes all updates in one atomic `setProps()` call
+4. Logs the combined sources for debugging
+
+### Error Handling Best Practices
+- Always return empty arrays `[]` instead of `undefined` or `null` for array data
+- Validate inputs before processing (TLE strings, dates, coordinates)
+- Use consecutive error tracking to abort early on persistent failures
+- Log success rates for partial failures to aid debugging

@@ -35,10 +35,14 @@ import websocketManager from '../data/websocket.js';
 import { initializeControlPanel, togglePanel } from '../ui/controlPanel.js';
 import { initializeTimeControls, initializeFlatpickr } from '../ui/timeControls.js';
 import { initializeSensorTable } from '../ui/sensorTable.js';
+import { initializeSatelliteTable } from '../ui/satelliteTable.js';
 import { initializeLogPanel } from '../ui/logPanel.js';
 
 // Sensor & Satellite CRUD
 import { initializeSensors, initializeSensorButtons, editSensor } from '../data/sensorCRUD.js';
+
+// Test panel
+import { initTestPanel } from '../ui/testPanel.js';
 import {
     initializeSatellites,
     initializeSatelliteButtons,
@@ -88,6 +92,10 @@ export function init() {
     // Initialize satellite data and controls
     initializeSatellites();
     initializeSatelliteButtons();
+    initializeSatelliteTable({
+        onEdit: editSatellite,
+        onMapUpdate: updateDeckOverlay
+    });
 
     // Initialize Leaflet base map
     const map = initializeLeaflet();
@@ -118,6 +126,9 @@ export function init() {
 
     // Initialize map maximize button
     initializeMapMaximize();
+
+    // Initialize test panel (in Settings section)
+    initTestPanel();
 
     // On mobile, start with panel collapsed
     if (uiState.isMobile()) {

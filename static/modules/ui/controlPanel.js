@@ -213,28 +213,8 @@ export function initializeControlPanel() {
     // Collapse button click listener
     collapseBtn.addEventListener('click', handleCollapseClick);
 
-    // Click outside listener (desktop only)
-    document.addEventListener('click', handleClickOutside);
-
-    // MOBILE: Touch events for click outside
-    if ('ontouchstart' in window) {
-        document.addEventListener('touchstart', (e) => {
-            // Don't collapse panel if touching Flatpickr calendar
-            if (e.target.closest('.flatpickr-calendar')) {
-                return;
-            }
-
-            // Don't collapse panel if a calendar just closed
-            if (calendarJustClosed) {
-                calendarJustClosed = false;
-                return;
-            }
-
-            if (!panel.contains(e.target) && uiState.isPanelExpanded() && !uiState.isMobile()) {
-                togglePanel(false);
-            }
-        }, { passive: true });
-    }
+    // Click outside listener DISABLED - user must use collapse button
+    // document.addEventListener('click', handleClickOutside);
 
     // Navigation button click handlers
     navButtons.forEach(btn => {

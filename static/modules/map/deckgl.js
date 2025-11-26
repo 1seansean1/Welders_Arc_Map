@@ -33,10 +33,270 @@
  */
 
 import logger from '../utils/logger.js';
+import eventBus from '../events/eventBus.js';
 import sensorState from '../state/sensorState.js';
 import satelliteState from '../state/satelliteState.js';
+import timeState from '../state/timeState.js';
 import { calculateFOVCircle } from '../utils/geometry.js';
 import { calculateGroundTrack } from '../data/propagation.js';
+import { diagnostics } from './diagnostics.js';
+import { mapTests } from './automated-tests.js';
+
+// ============================================
+// COORDINATE CONVERSION UTILITIES
+// ============================================
+
+/**
+ * Leaflet to Deck.gl zoom offset constant
+ * Deck.gl MapView uses a different zoom scale than Leaflet.
+ * This constant ensures consistent conversion everywhere.
+ *
+ * CRITICAL: Always use this constant or leafletToDeckglViewState()
+ * Never hardcode zoom - 1 directly.
+ */
+const LEAFLET_TO_DECKGL_ZOOM_OFFSET = -1;
+
+/**
+ * Convert Leaflet map state to Deck.gl viewState
+ * Enforces consistent coordinate conversion across all code paths.
+ *
+ * This function should be used everywhere viewState is created from Leaflet.
+ * It ensures:
+ * - Correct zoom offset (Deck.gl MapView uses zoom - 1)
+ * - Consistent pitch/bearing (always 0 for 2D map)
+ * - No transitions (instant updates)
+ *
+ * @param {L.Map} map - Leaflet map instance
+ * @returns {Object} Deck.gl viewState object
+ */
+function leafletToDeckglViewState(map) {
+    const center = map.getCenter();
+    const zoom = map.getZoom();
+
+    return {
+        longitude: center.lng,
+        latitude: center.lat,
+        zoom: zoom + LEAFLET_TO_DECKGL_ZOOM_OFFSET,
+        pitch: 0,
+        bearing: 0,
+        transitionDuration: 0,
+        transitionInterpolator: null
+    };
+}
+
+// ============================================
+// BATCHED UPDATE MANAGER
+// ============================================
+
+/**
+ * Batched update manager to prevent race conditions
+ * Collects all setProps updates and flushes them in a single call per frame
+ *
+ * This prevents glitching caused by:
+ * - Multiple setProps calls in quick succession
+ * - viewState and layers updates conflicting
+ * - Size updates interfering with layer rendering
+ */
+class DeckGLUpdateManager {
+    constructor() {
+        this.pendingUpdates = {};
+        this.frameRequested = false;
+        this.flushCallbacks = [];
+    }
+
+    /**
+     * Queue an update to be batched with others
+     * @param {Object} updates - Props to update
+     * @param {string} source - Source identifier for debugging
+     */
+    queueUpdate(updates, source) {
+        // Merge updates (later calls override earlier ones for same keys)
+        Object.assign(this.pendingUpdates, updates);
+
+        // Track source for debugging
+        if (!this.pendingUpdates._sources) {
+            this.pendingUpdates._sources = [];
+        }
+        this.pendingUpdates._sources.push(source);
+
+        // Schedule flush if not already scheduled
+        if (!this.frameRequested) {
+            this.frameRequested = true;
+            requestAnimationFrame(() => this.flush());
+        }
+    }
+
+    /**
+     * Flush all pending updates in a single setProps call
+     */
+    flush() {
+        this.frameRequested = false;
+
+        if (Object.keys(this.pendingUpdates).length === 0) {
+            return;
+        }
+
+        // Extract sources for logging, then remove from props
+        const sources = this.pendingUpdates._sources || [];
+        delete this.pendingUpdates._sources;
+
+        const hasLayers = !!this.pendingUpdates.layers;
+        const hasViewState = !!this.pendingUpdates.viewState;
+        const hasSize = !!(this.pendingUpdates.width || this.pendingUpdates.height);
+
+        if (window.deckgl && Object.keys(this.pendingUpdates).length > 0) {
+            // Log the batched update
+            logger.diagnostic('Batched setProps flush', logger.CATEGORY.SYNC, {
+                sources: sources.join(' + '),
+                hasLayers,
+                hasViewState,
+                hasSize
+            });
+
+            // Record for diagnostics (race condition detection)
+            diagnostics.recordSetPropsCall(
+                sources.join('+'),
+                hasViewState,
+                hasLayers,
+                hasSize
+            );
+
+            // Perform the single setProps call
+            window.deckgl.setProps(this.pendingUpdates);
+
+            // Call any registered callbacks
+            this.flushCallbacks.forEach(cb => cb(this.pendingUpdates));
+        }
+
+        // Clear pending updates
+        this.pendingUpdates = {};
+    }
+
+    /**
+     * Force immediate flush (for critical updates)
+     */
+    flushNow() {
+        if (this.frameRequested) {
+            cancelAnimationFrame(this.frameRequested);
+            this.frameRequested = false;
+        }
+        this.flush();
+    }
+
+    /**
+     * Register a callback to be called after each flush
+     * @param {Function} callback
+     */
+    onFlush(callback) {
+        this.flushCallbacks.push(callback);
+    }
+
+    /**
+     * Check if there are pending updates
+     * @returns {boolean}
+     */
+    hasPendingUpdates() {
+        return Object.keys(this.pendingUpdates).length > 0;
+    }
+}
+
+// Create singleton instance
+const updateManager = new DeckGLUpdateManager();
+
+// ============================================
+// DIAGNOSTIC: setProps() TRACKING
+// ============================================
+
+// Track setProps calls for debugging race conditions
+let setPropsCallCount = 0;
+let lastSetPropsTime = 0;
+let setPropsHistory = [];  // Keep last 10 calls for debugging
+const MAX_HISTORY = 10;
+
+/**
+ * Wrapper for setProps that tracks all calls for debugging
+ * Helps identify race conditions and conflicting updates
+ *
+ * @param {Object} props - Props to pass to Deck.gl
+ * @param {string} source - Identifier for the calling function
+ * @param {Object} options - Options
+ * @param {boolean} options.batched - If true, queue update instead of immediate (default: true)
+ * @param {boolean} options.immediate - If true, flush batched updates immediately
+ */
+function trackedSetProps(props, source, options = {}) {
+    if (!window.deckgl) return;
+
+    const { batched = true, immediate = false } = options;
+
+    const now = performance.now();
+    const timeSinceLast = now - lastSetPropsTime;
+    setPropsCallCount++;
+
+    // Build call info
+    const callInfo = {
+        id: setPropsCallCount,
+        source: source,
+        time: now.toFixed(2),
+        timeSinceLast: timeSinceLast.toFixed(2),
+        hasLayers: !!props.layers,
+        hasViewState: !!props.viewState,
+        hasSize: !!(props.width || props.height),
+        layerCount: props.layers ? props.layers.length : 0,
+        batched: batched
+    };
+
+    // Track in history
+    setPropsHistory.push(callInfo);
+    if (setPropsHistory.length > MAX_HISTORY) {
+        setPropsHistory.shift();
+    }
+
+    lastSetPropsTime = now;
+
+    if (batched) {
+        // Queue for batched update (combines with other updates in same frame)
+        updateManager.queueUpdate(props, source);
+
+        if (immediate) {
+            updateManager.flushNow();
+        }
+    } else {
+        // Direct update (legacy behavior, may cause glitches)
+        // Warn if calls are happening very rapidly (< 5ms apart)
+        if (timeSinceLast < 5 && timeSinceLast > 0) {
+            logger.warning('Rapid direct setProps calls detected', logger.CATEGORY.SYNC, {
+                source: source,
+                timeSinceLast: `${timeSinceLast.toFixed(2)}ms`,
+                callCount: setPropsCallCount
+            });
+        }
+
+        // Log significant updates (layers or size changes)
+        if (props.layers || props.width || props.height) {
+            logger.diagnostic(`setProps [${source}] (direct)`, logger.CATEGORY.SYNC, callInfo);
+        }
+
+        // Perform the direct setProps call
+        window.deckgl.setProps(props);
+    }
+}
+
+/**
+ * Get setProps call history for debugging
+ * @returns {Array} Recent setProps calls
+ */
+export function getSetPropsHistory() {
+    return [...setPropsHistory];
+}
+
+/**
+ * Reset setProps tracking (for testing)
+ */
+export function resetSetPropsTracking() {
+    setPropsCallCount = 0;
+    lastSetPropsTime = 0;
+    setPropsHistory = [];
+}
 
 // ============================================
 // INITIALIZATION
@@ -80,7 +340,7 @@ export function initializeDeckGL(map) {
             viewState: {
                 longitude: leafletCenter.lng,
                 latitude: leafletCenter.lat,
-                zoom: leafletZoom,
+                zoom: leafletZoom - 1,  // FIXED H-DRIFT-1: Deck.gl MapView needs zoom - 1 for Leaflet compatibility
                 pitch: 0,
                 bearing: 0,
                 transitionDuration: 0  // No transitions - instant updates
@@ -134,6 +394,9 @@ export function initializeDeckGL(map) {
 
         // Setup canvas positioning
         setupCanvasPositioning(deckgl);
+
+        // Setup time state sync for ground track updates
+        setupTimeStateSync();
 
         logger.success(
             'Deck.gl initialized',
@@ -241,18 +504,15 @@ function setupLeafletSync(deckgl, map) {
                 );
 
                 // CRITICAL: Auto-fix canvas size mismatch by resizing Deck.gl canvas
-                deckgl.setProps({
+                trackedSetProps({
                     width: containerRect.width,
                     height: containerRect.height
-                });
-                logger.diagnostic('Canvas size auto-corrected', logger.CATEGORY.SYNC, {
-                    size: `${containerRect.width.toFixed(0)}×${containerRect.height.toFixed(0)}px`
-                });
+                }, 'sync:size-fix');
             }
         }
 
         // CRITICAL: Set viewState with all transition controls disabled
-        deckgl.setProps({
+        trackedSetProps({
             viewState: {
                 longitude: center.lng,
                 latitude: center.lat,
@@ -262,7 +522,7 @@ function setupLeafletSync(deckgl, map) {
                 transitionDuration: 0,  // No animation
                 transitionInterpolator: null  // Force disable all interpolation
             }
-        });
+        }, 'sync:viewState');
 
         // DIAGNOSTIC: Verify Deck.gl accepted the view state (only check occasionally)
         if (Math.random() < 0.05) { // Check only 5% of the time to reduce overhead
@@ -272,7 +532,10 @@ function setupLeafletSync(deckgl, map) {
                     // Check for drift (relaxed thresholds due to throttling)
                     const lngDrift = Math.abs(deckViewState.longitude - center.lng);
                     const latDrift = Math.abs(deckViewState.latitude - center.lat);
-                    const zoomDrift = Math.abs(deckViewState.zoom - zoom);
+                    const zoomDrift = Math.abs(deckViewState.zoom - (zoom - 1)); // Account for zoom offset
+
+                    // Record for diagnostics
+                    diagnostics.recordSyncDrift(lngDrift, latDrift, zoomDrift);
 
                     // Higher thresholds to account for throttling delay
                     if (lngDrift > 0.01 || latDrift > 0.01 || zoomDrift > 0.01) {
@@ -285,6 +548,11 @@ function setupLeafletSync(deckgl, map) {
                                 zoomDrift: zoomDrift.toFixed(4)
                             }
                         );
+
+                        // Record as potential glitch
+                        diagnostics.recordGlitch('drift', {
+                            lngDrift, latDrift, zoomDrift
+                        });
                     }
                 }
             }, 0);
@@ -333,6 +601,34 @@ function setupCanvasPositioning(deckgl) {
     });
 }
 
+/**
+ * Setup time state synchronization
+ * Updates ground tracks when simulation time changes.
+ *
+ * This ensures ground tracks reflect the simulation time (timeState)
+ * not the wall clock time (new Date()).
+ */
+function setupTimeStateSync() {
+    // Update ground tracks when simulation time changes
+    eventBus.on('time:changed', ({ currentTime }) => {
+        logger.diagnostic('Time changed, updating ground tracks', logger.CATEGORY.SYNC, {
+            time: currentTime.toISOString()
+        });
+        updateDeckOverlay();
+    });
+
+    // Update ground tracks when time range is applied
+    eventBus.on('time:applied', ({ startTime, stopTime }) => {
+        logger.info('Time range applied, updating visualization', logger.CATEGORY.SYNC, {
+            start: startTime?.toISOString().slice(0, 16),
+            stop: stopTime?.toISOString().slice(0, 16)
+        });
+        updateDeckOverlay();
+    });
+
+    logger.diagnostic('Time state sync configured', logger.CATEGORY.SYNC);
+}
+
 // ============================================
 // LAYER UPDATES
 // ============================================
@@ -344,6 +640,8 @@ function setupCanvasPositioning(deckgl) {
  * PERFORMANCE: O(n + m*k) where n = sensors, m = satellites, k = ground track points
  */
 export function updateDeckOverlay() {
+    const perfStart = performance.now();
+
     if (!window.deckgl) {
         logger.warning('Deck.gl not initialized', logger.CATEGORY.SATELLITE);
         return;
@@ -351,6 +649,7 @@ export function updateDeckOverlay() {
 
     // Filter to only SELECTED sensors (checkbox = visibility control)
     const sensorsToRender = sensorState.getSelectedSensors();
+    const perfAfterSensorFetch = performance.now();
 
     // Prepare sensor icon data (donut circles)
     const sensorIconData = sensorsToRender.map(sensor => ({
@@ -451,30 +750,31 @@ export function updateDeckOverlay() {
 
     // Calculate ground tracks for selected satellites
     const satellitesToRender = satelliteState.getSelectedSatellites();
-    const currentTime = new Date();
+    // FIXED: Use simulation time from timeState instead of wall clock
+    // This ensures ground tracks reflect the simulation time, not real time
+    const currentTime = timeState.getCurrentTime();
 
     // Prepare ground track data
-    const groundTrackData = satellitesToRender.map((sat, index) => {
-        // Calculate ground track: 90 minutes forward, 60-second steps
-        const track = calculateGroundTrack(sat.tleLine1, sat.tleLine2, currentTime, 90, 60);
+    // calculateGroundTrack returns array of path segments (split at anti-meridian crossings)
+    // Flatten to one data entry per segment for PathLayer
+    const groundTrackData = [];
+    const GREY = [128, 128, 128];  // Default grey color (conditional coloring in future)
 
-        // Assign different colors to each satellite
-        const colors = [
-            [0, 255, 100],    // Green
-            [255, 100, 0],    // Orange
-            [100, 100, 255],  // Blue
-            [255, 255, 0],    // Yellow
-            [255, 0, 255],    // Magenta
-            [0, 255, 255],    // Cyan
-        ];
-        const color = colors[index % colors.length];
+    satellitesToRender.forEach((sat) => {
+        // Calculate ground track: 90 minutes forward, 20-second steps (default)
+        // Returns array of path segments to handle anti-meridian crossings
+        const segments = calculateGroundTrack(sat.tleLine1, sat.tleLine2, currentTime, 90);
 
-        return {
-            path: track,
-            name: sat.name,
-            color: color,
-            satellite: sat
-        };
+        // Add each segment as a separate path entry
+        segments.forEach((segment, segIndex) => {
+            groundTrackData.push({
+                path: segment,
+                name: sat.name,
+                color: GREY,
+                satellite: sat,
+                segmentIndex: segIndex
+            });
+        });
     });
 
     // Create ground track layer (PathLayer for orbital paths)
@@ -513,11 +813,25 @@ export function updateDeckOverlay() {
         }
     });
 
+    const perfAfterLayerCreation = performance.now();
+
     // CRITICAL: Always include ALL layers to prevent state corruption when other setProps() calls happen
     // Use 'visible' prop on each layer to control rendering instead of conditionally including layers
     // This ensures consistent layer IDs and prevents Deck.gl from losing track of layer state
-    window.deckgl.setProps({
+    trackedSetProps({
         layers: [fovLayer, sensorLayer, groundTrackLayer]
+    }, 'updateDeckOverlay:layers');
+
+    const perfEnd = performance.now();
+
+    // Log performance metrics
+    logger.diagnostic('updateDeckOverlay timing', logger.CATEGORY.SYNC, {
+        total: `${(perfEnd - perfStart).toFixed(2)}ms`,
+        dataFetch: `${(perfAfterSensorFetch - perfStart).toFixed(2)}ms`,
+        layerCreation: `${(perfAfterLayerCreation - perfAfterSensorFetch).toFixed(2)}ms`,
+        setProps: `${(perfEnd - perfAfterLayerCreation).toFixed(2)}ms`,
+        sensors: sensorsToRender.length,
+        satellites: satellitesToRender.length
     });
 
     logger.info(`Map updated: ${sensorsToRender.length} sensor(s), ${satellitesToRender.length} satellite ground track(s)`);
@@ -548,6 +862,9 @@ export function resizeDeckCanvas() {
 
     const rect = mapContainer.getBoundingClientRect();
 
+    // Record resize event for diagnostics
+    diagnostics.recordResize(rect.width, rect.height, 'resizeDeckCanvas');
+
     // CRITICAL: Sync view state along with size to prevent coordinate mismatch
     // Without this, Deck.gl uses stale view state with new dimensions, causing
     // sensors to appear in wrong locations until a zoom/pan event syncs them
@@ -555,7 +872,7 @@ export function resizeDeckCanvas() {
         const center = map.getCenter();
         const zoom = map.getZoom();
 
-        window.deckgl.setProps({
+        trackedSetProps({
             width: rect.width,
             height: rect.height,
             viewState: {
@@ -566,16 +883,91 @@ export function resizeDeckCanvas() {
                 bearing: 0,
                 transitionDuration: 0
             }
-        });
+        }, 'resizeDeckCanvas:size+viewState');
     } else {
         // Fallback if map not available
-        window.deckgl.setProps({
+        trackedSetProps({
             width: rect.width,
             height: rect.height
-        });
+        }, 'resizeDeckCanvas:size-only');
     }
 
     logger.diagnostic('Deck.gl canvas resized', logger.CATEGORY.SATELLITE, {
         size: `${rect.width.toFixed(0)}×${rect.height.toFixed(0)}px`
     });
+}
+
+// ============================================
+// GLOBAL DEBUGGING EXPORTS
+// ============================================
+
+// Make debugging functions available in browser console
+if (typeof window !== 'undefined') {
+    window.deckglDebug = {
+        getSetPropsHistory,
+        resetSetPropsTracking,
+        getLayerInfo: () => {
+            if (!window.deckgl) return null;
+            const layers = window.deckgl.props?.layers || [];
+            return layers.map(l => ({
+                id: l.id,
+                visible: l.props?.visible,
+                dataLength: l.props?.data?.length || 0
+            }));
+        },
+        forceLayerUpdate: () => {
+            updateDeckOverlay();
+            return 'Layer update triggered';
+        },
+        flushNow: () => {
+            updateManager.flushNow();
+            return 'Batched updates flushed';
+        },
+        hasPendingUpdates: () => updateManager.hasPendingUpdates(),
+        getUpdateManagerState: () => ({
+            hasPending: updateManager.hasPendingUpdates(),
+            pendingKeys: Object.keys(updateManager.pendingUpdates).filter(k => k !== '_sources'),
+            frameRequested: updateManager.frameRequested
+        }),
+        // Diagnostics integration
+        validateMapSync: () => diagnostics.validateSync(),
+        startDiagnostics: () => {
+            diagnostics.startRecording();
+            return 'Diagnostics recording started';
+        },
+        stopDiagnostics: () => {
+            const report = diagnostics.stopRecording();
+            console.log('=== DIAGNOSTIC REPORT ===');
+            console.log('Duration:', report.durationFormatted);
+            console.log('\nFRAMES:');
+            console.table(report.frames);
+            console.log('\nSYNC:');
+            console.table(report.sync);
+            console.log('\nSETPROPS CALLS:');
+            console.table(report.setProps);
+            console.log('\nGLITCHES:');
+            console.table(report.glitches);
+            console.log('\nSUMMARY:');
+            console.log('Healthy:', report.summary.healthy);
+            console.log('Issues:', report.summary.issues);
+            return report;
+        },
+        saveBaseline: () => {
+            const report = diagnostics.generateReport();
+            diagnostics.saveAsBaseline(report);
+            return 'Baseline saved';
+        },
+        compareToBaseline: () => {
+            const current = diagnostics.generateReport();
+            return diagnostics.compareToBaseline(current);
+        },
+        // Automated test suite
+        runAllTests: () => mapTests.runAll(),
+        runAblation: () => mapTests.runAblationStudy(),
+        testPanSync: () => mapTests.testPanSync(),
+        testZoomSync: () => mapTests.testZoomSync(),
+        testTimeSync: () => mapTests.testTimeSync(),
+        testRapidPan: () => mapTests.testRapidPan(),
+        testZoomOffset: () => mapTests.testInitialZoomOffset()
+    };
 }

@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deck.gl Layer Test Suite</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #f5f5f5;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 { color: #9dd4ff; }
+        h2 { color: #00ff66; margin-top: 30px; }
+        .test-section {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .test-result {
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        .pass {
+            background: #004400;
+            border-left: 4px solid #00ff66;
+        }
+        .fail {
+            background: #440000;
+            border-left: 4px solid #ff4444;
+        }
+        .skip {
+            background: #444400;
+            border-left: 4px solid #ffff44;
+        }
+        .summary {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+            font-size: 18px;
+        }
+        .pass-count { color: #00ff66; }
+        .fail-count { color: #ff4444; }
+        .skip-count { color: #ffff44; }
+        .info {
+            background: #1a1a2a;
+            border-left: 4px solid #9dd4ff;
+            padding: 10px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Deck.gl Layer Test Suite</h1>
+    <p>Testing Deck.gl module fixes for glitch prevention...</p>
+
+    <div class="info">
+        <strong>Note:</strong> This test suite checks the module structure and logic.
+        Visual tests require running the full application.
+    </div>
+
+    <div id="test-results"></div>
+    <div id="summary" class="summary"></div>
+
+    <script type="module">
+        // Import modules
+        import { calculateGroundTrack, propagateSatellite } from './modules/data/propagation.js';
+        import sensorState from './modules/state/sensorState.js';
+        import satelliteState from './modules/state/satelliteState.js';
+
+        const resultsDiv = document.getElementById('test-results');
+        const summaryDiv = document.getElementById('summary');
+        let passCount = 0;
+        let failCount = 0;
+        let skipCount = 0;
+
+        function addTestResult(category, testName, status, message = '') {
+            if (!document.getElementById(category)) {
+                const section = document.createElement('div');
+                section.className = 'test-section';
+                section.innerHTML = `<h2>${category}</h2><div id="${category}-results"></div>`;
+                resultsDiv.appendChild(section);
+            }
+
+            const statusClass = status === 'pass' ? 'pass' : (status === 'skip' ? 'skip' : 'fail');
+            const statusIcon = status === 'pass' ? '✅' : (status === 'skip' ? '⏭️' : '❌');
+
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${statusClass}`;
+            resultDiv.textContent = `${statusIcon} ${testName}${message ? ': ' + message : ''}`;
+            document.getElementById(category + '-results').appendChild(resultDiv);
+
+            if (status === 'pass') passCount++;
+            else if (status === 'skip') skipCount++;
+            else failCount++;
+        }
+
+        function assertEquals(actual, expected, testName, category) {
+            const passed = actual === expected;
+            const message = passed ? '' : `Expected ${expected}, got ${actual}`;
+            addTestResult(category, testName, passed ? 'pass' : 'fail', message);
+            return passed;
+        }
+
+        function assertTrue(condition, testName, category, message = '') {
+            addTestResult(category, testName, condition ? 'pass' : 'fail', message);
+            return condition;
+        }
+
+        function assertSkip(testName, category, reason) {
+            addTestResult(category, testName, 'skip', reason);
+        }
+
+        // ============================================
+        // PROPAGATION MODULE TESTS
+        // ============================================
+        console.log('Testing Propagation module...');
+
+        // Test 1: calculateGroundTrack returns empty array for null TLE
+        const track1 = calculateGroundTrack(null, null, new Date());
+        assertTrue(
+            Array.isArray(track1) && track1.length === 0,
+            'Returns empty array for null TLE',
+            'Propagation Error Handling'
+        );
+
+        // Test 2: calculateGroundTrack returns empty array for empty strings
+        const track2 = calculateGroundTrack('', '', new Date());
+        assertTrue(
+            Array.isArray(track2) && track2.length === 0,
+            'Returns empty array for empty TLE strings',
+            'Propagation Error Handling'
+        );
+
+        // Test 3: calculateGroundTrack returns empty array for short TLE
+        const track3 = calculateGroundTrack('short', 'short', new Date());
+        assertTrue(
+            Array.isArray(track3) && track3.length === 0,
+            'Returns empty array for TLE too short',
+            'Propagation Error Handling'
+        );
+
+        // Test 4: calculateGroundTrack returns empty array for invalid date
+        const validTLE1 = '1 25544U 98067A   08264.51782528 -.00002182  00000-0 -11606-4 0  2927';
+        const validTLE2 = '2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537';
+        const track4 = calculateGroundTrack(validTLE1, validTLE2, 'not a date');
+        assertTrue(
+            Array.isArray(track4) && track4.length === 0,
+            'Returns empty array for invalid date',
+            'Propagation Error Handling'
+        );
+
+        // Test 5: calculateGroundTrack works with valid TLE (if satellite.js is loaded)
+        if (typeof window.satellite !== 'undefined') {
+            const track5 = calculateGroundTrack(validTLE1, validTLE2, new Date(), 5, 60);
+            assertTrue(
+                Array.isArray(track5) && track5.length > 0,
+                'Returns track points for valid TLE',
+                'Propagation Success',
+                `Got ${track5.length} points`
+            );
+
+            // Test 6: Track points have correct format [lon, lat]
+            if (track5.length > 0) {
+                const point = track5[0];
+                assertTrue(
+                    Array.isArray(point) && point.length === 2 &&
+                    typeof point[0] === 'number' && typeof point[1] === 'number',
+                    'Track points are [lon, lat] arrays',
+                    'Propagation Success',
+                    `Sample: [${point[0].toFixed(2)}, ${point[1].toFixed(2)}]`
+                );
+            }
+
+            // Test 7: propagateSatellite returns position object
+            const position = propagateSatellite(validTLE1, validTLE2, new Date());
+            assertTrue(
+                position && typeof position.lat === 'number' &&
+                typeof position.lon === 'number' && typeof position.alt === 'number',
+                'propagateSatellite returns {lat, lon, alt}',
+                'Propagation Success',
+                `Lat: ${position?.lat?.toFixed(2)}, Lon: ${position?.lon?.toFixed(2)}`
+            );
+        } else {
+            assertSkip('Returns track points for valid TLE', 'Propagation Success', 'satellite.js not loaded');
+            assertSkip('Track points are [lon, lat] arrays', 'Propagation Success', 'satellite.js not loaded');
+            assertSkip('propagateSatellite returns {lat, lon, alt}', 'Propagation Success', 'satellite.js not loaded');
+        }
+
+        // ============================================
+        // SENSOR STATE TESTS
+        // ============================================
+        console.log('Testing Sensor State module...');
+
+        // Test: getSelectedSensors returns array
+        const selectedSensors = sensorState.getSelectedSensors();
+        assertTrue(
+            Array.isArray(selectedSensors),
+            'getSelectedSensors returns array',
+            'Sensor State'
+        );
+
+        // Test: Default sensors have required fields
+        const sensors = sensorState.getAllSensors();
+        if (sensors.length > 0) {
+            const sensor = sensors[0];
+            assertTrue(
+                typeof sensor.id === 'number' &&
+                typeof sensor.name === 'string' &&
+                typeof sensor.lat === 'number' &&
+                typeof sensor.lon === 'number',
+                'Sensors have required fields (id, name, lat, lon)',
+                'Sensor State'
+            );
+        }
+
+        // Test: Selection toggle works
+        const firstSensorId = sensors[0]?.id;
+        if (firstSensorId) {
+            const originalState = sensors[0].selected;
+            sensorState.toggleSensorSelection(firstSensorId);
+            const newSensor = sensorState.getSensorById(firstSensorId);
+            assertTrue(
+                newSensor.selected !== originalState,
+                'toggleSensorSelection changes selection',
+                'Sensor State'
+            );
+            // Restore original state
+            sensorState.toggleSensorSelection(firstSensorId);
+        }
+
+        // ============================================
+        // SATELLITE STATE TESTS
+        // ============================================
+        console.log('Testing Satellite State module...');
+
+        // Test: getSelectedSatellites returns array
+        const selectedSatellites = satelliteState.getSelectedSatellites();
+        assertTrue(
+            Array.isArray(selectedSatellites),
+            'getSelectedSatellites returns array',
+            'Satellite State'
+        );
+
+        // Test: Default satellites have TLE fields
+        const satellites = satelliteState.getAllSatellites();
+        if (satellites.length > 0) {
+            const sat = satellites[0];
+            assertTrue(
+                typeof sat.tleLine1 === 'string' &&
+                typeof sat.tleLine2 === 'string',
+                'Satellites have TLE fields (tleLine1, tleLine2)',
+                'Satellite State',
+                `Line1 length: ${sat.tleLine1?.length}, Line2 length: ${sat.tleLine2?.length}`
+            );
+        }
+
+        // ============================================
+        // DECK.GL MODULE STRUCTURE TESTS
+        // ============================================
+        console.log('Testing Deck.gl module structure...');
+
+        // These tests check if the module loads correctly
+        // Full visual tests require the application running
+
+        // Test: deckglDebug is available
+        if (typeof window.deckglDebug !== 'undefined') {
+            assertTrue(
+                typeof window.deckglDebug.getSetPropsHistory === 'function',
+                'deckglDebug.getSetPropsHistory is a function',
+                'Deck.gl Debug API'
+            );
+
+            assertTrue(
+                typeof window.deckglDebug.resetSetPropsTracking === 'function',
+                'deckglDebug.resetSetPropsTracking is a function',
+                'Deck.gl Debug API'
+            );
+
+            assertTrue(
+                typeof window.deckglDebug.getLayerInfo === 'function',
+                'deckglDebug.getLayerInfo is a function',
+                'Deck.gl Debug API'
+            );
+
+            assertTrue(
+                typeof window.deckglDebug.flushNow === 'function',
+                'deckglDebug.flushNow is a function',
+                'Deck.gl Debug API'
+            );
+
+            assertTrue(
+                typeof window.deckglDebug.hasPendingUpdates === 'function',
+                'deckglDebug.hasPendingUpdates is a function',
+                'Deck.gl Debug API'
+            );
+        } else {
+            assertSkip('Deck.gl debug functions', 'Deck.gl Debug API', 'deckglDebug not loaded (run from main app)');
+        }
+
+        // ============================================
+        // MANUAL TEST CHECKLIST
+        // ============================================
+        const manualTests = [
+            'Load app - sensors visible at correct locations',
+            'Click control panel - sensors don\'t disappear',
+            'Resize panels vertically - sensors stay in place',
+            'Resize panels horizontally - sensors stay in place',
+            'Drag crosshair - sensors don\'t drift',
+            'Deselect all sensors - all icons disappear',
+            'Select all sensors - all icons appear',
+            'Zoom in/out rapidly - no flickering',
+            'Pan across date line - layers render on wrapped world copies',
+            'Maximize map - sensors stay accurate',
+            'Restore map - sensors stay accurate'
+        ];
+
+        const checklistSection = document.createElement('div');
+        checklistSection.className = 'test-section';
+        checklistSection.innerHTML = `
+            <h2>Manual Testing Checklist</h2>
+            <p style="color: #888;">These tests require running the full application:</p>
+            <ul style="list-style: none; padding-left: 0;">
+                ${manualTests.map(test => `
+                    <li style="padding: 5px 0; border-bottom: 1px solid #333;">
+                        <input type="checkbox" style="margin-right: 10px;">
+                        ${test}
+                    </li>
+                `).join('')}
+            </ul>
+        `;
+        resultsDiv.appendChild(checklistSection);
+
+        // ============================================
+        // SUMMARY
+        // ============================================
+        const total = passCount + failCount;
+        const passPercent = total > 0 ? ((passCount / total) * 100).toFixed(1) : 0;
+
+        summaryDiv.innerHTML = `
+            <h2>Test Summary</h2>
+            <p>
+                Total Automated Tests: ${total}<br>
+                <span class="pass-count">Passed: ${passCount}</span><br>
+                <span class="fail-count">Failed: ${failCount}</span><br>
+                <span class="skip-count">Skipped: ${skipCount}</span><br>
+                Success Rate: ${passPercent}%
+            </p>
+            ${failCount === 0 ?
+                '<p style="color: #00ff66; font-size: 24px;">All automated tests passed!</p>' :
+                '<p style="color: #ff4444; font-size: 24px;">Some tests failed. Check results above.</p>'
+            }
+            <p style="color: #888; margin-top: 20px;">
+                <strong>Next Steps:</strong><br>
+                1. Run the full application (index.html)<br>
+                2. Complete the manual testing checklist above<br>
+                3. Check browser console for setProps tracking logs
+            </p>
+        `;
+
+        // Log summary to console
+        console.log('\n' + '='.repeat(50));
+        console.log('DECK.GL TEST SUMMARY');
+        console.log('='.repeat(50));
+        console.log(`Total Tests: ${total}`);
+        console.log(`Passed: ${passCount}`);
+        console.log(`Failed: ${failCount}`);
+        console.log(`Skipped: ${skipCount}`);
+        console.log(`Success Rate: ${passPercent}%`);
+        console.log('='.repeat(50));
+    </script>
+</body>
+</html>

@@ -88,7 +88,7 @@ function createSensorRow(sensor, index) {
         sensorState.setActiveRow(sensor.id);
 
         // Remove blue highlight from all rows
-        const allRows = document.querySelectorAll('.sensor-table tbody tr');
+        const allRows = document.querySelectorAll('#sensor-table tbody tr');
         allRows.forEach(row => row.classList.remove('selected'));
 
         // Add blue highlight to this row
@@ -116,8 +116,8 @@ function createSensorRow(sensor, index) {
     tdSel.className = 'col-sel';
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
-    checkbox.className = 'sensor-checkbox';
     checkbox.checked = sensor.selected;
+    checkbox.style.cursor = 'pointer';
     checkbox.addEventListener('change', (e) => {
         e.stopPropagation(); // Prevent row click
         const newState = sensorState.toggleSensorSelection(sensor.id);
@@ -263,7 +263,7 @@ function handleColumnHeaderClick(columnName) {
  * Shows ▲ for ascending, ▼ for descending
  */
 function updateColumnHeaderIndicators() {
-    const headers = document.querySelectorAll('.sensor-table th');
+    const headers = document.querySelectorAll('#sensor-table th');
     const columnMap = {
         'col-sel': 'sel',
         'col-name': 'name',
@@ -346,7 +346,7 @@ export function initializeSensorTable(options = {}) {
     updateMapCallback = options.onMapUpdate || null;
 
     // Initialize column header click handlers
-    const headers = document.querySelectorAll('.sensor-table th');
+    const headers = document.querySelectorAll('#sensor-table th');
 
     // Map column classes to column names
     const columnMap = {
