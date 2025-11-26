@@ -368,6 +368,46 @@ initializeTrackDurationControls();
 // TIME SLIDER CONTROLS
 // ============================================
 
+// Hold-to-repeat state for step buttons
+let stepRepeatInterval = null;
+const STEP_REPEAT_DELAY = 400;  // ms before repeat starts
+const STEP_REPEAT_RATE = 150;   // ms between repeats
+
+/**
+ * Start hold-to-repeat stepping
+ * @param {number} direction - 1 for forward, -1 for backward
+ */
+function startStepRepeat(direction) {
+    // Clear any existing interval
+    stopStepRepeat();
+
+    // Initial step
+    timeState.stepTime(direction);
+    updateSliderFromState();
+
+    // Start repeat after delay
+    const repeatTimeout = setTimeout(() => {
+        stepRepeatInterval = setInterval(() => {
+            timeState.stepTime(direction);
+            updateSliderFromState();
+        }, STEP_REPEAT_RATE);
+    }, STEP_REPEAT_DELAY);
+
+    // Store timeout ID so we can clear it
+    stepRepeatInterval = repeatTimeout;
+}
+
+/**
+ * Stop hold-to-repeat stepping
+ */
+function stopStepRepeat() {
+    if (stepRepeatInterval) {
+        clearTimeout(stepRepeatInterval);
+        clearInterval(stepRepeatInterval);
+        stepRepeatInterval = null;
+    }
+}
+
 /**
  * Initialize time slider controls
  * Sets up slider, step buttons, and Now button
@@ -384,30 +424,68 @@ function initializeTimeSliderControls() {
         timeState.setTimeStepMinutes(stepMinutes);
     });
 
-    // Step back button handler
-    timeStepBackBtn.addEventListener('click', (e) => {
+    // Step back button - hold-to-repeat
+    timeStepBackBtn.addEventListener('mousedown', (e) => {
         e.stopPropagation();
-        timeState.stepTime(-1);
-        updateSliderFromState();
+        startStepRepeat(-1);
 
         // Visual feedback
         timeStepBackBtn.style.transform = 'scale(0.9)';
-        setTimeout(() => {
-            timeStepBackBtn.style.transform = 'scale(1)';
-        }, 100);
     });
 
-    // Step forward button handler
-    timeStepForwardBtn.addEventListener('click', (e) => {
+    timeStepBackBtn.addEventListener('mouseup', () => {
+        stopStepRepeat();
+        timeStepBackBtn.style.transform = 'scale(1)';
+    });
+
+    timeStepBackBtn.addEventListener('mouseleave', () => {
+        stopStepRepeat();
+        timeStepBackBtn.style.transform = 'scale(1)';
+    });
+
+    // Touch support for mobile
+    timeStepBackBtn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
         e.stopPropagation();
-        timeState.stepTime(1);
-        updateSliderFromState();
+        startStepRepeat(-1);
+        timeStepBackBtn.style.transform = 'scale(0.9)';
+    });
+
+    timeStepBackBtn.addEventListener('touchend', () => {
+        stopStepRepeat();
+        timeStepBackBtn.style.transform = 'scale(1)';
+    });
+
+    // Step forward button - hold-to-repeat
+    timeStepForwardBtn.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        startStepRepeat(1);
 
         // Visual feedback
         timeStepForwardBtn.style.transform = 'scale(0.9)';
-        setTimeout(() => {
-            timeStepForwardBtn.style.transform = 'scale(1)';
-        }, 100);
+    });
+
+    timeStepForwardBtn.addEventListener('mouseup', () => {
+        stopStepRepeat();
+        timeStepForwardBtn.style.transform = 'scale(1)';
+    });
+
+    timeStepForwardBtn.addEventListener('mouseleave', () => {
+        stopStepRepeat();
+        timeStepForwardBtn.style.transform = 'scale(1)';
+    });
+
+    // Touch support for mobile
+    timeStepForwardBtn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        startStepRepeat(1);
+        timeStepForwardBtn.style.transform = 'scale(0.9)';
+    });
+
+    timeStepForwardBtn.addEventListener('touchend', () => {
+        stopStepRepeat();
+        timeStepForwardBtn.style.transform = 'scale(1)';
     });
 
     // Time slider input handler (during drag)

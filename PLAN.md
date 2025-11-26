@@ -27,6 +27,7 @@
 
 | Task | Priority | Completed | Notes |
 |------|----------|-----------|-------|
+| UI/UX Improvements Batch | P2 | 2025-11-26 | Hold-to-repeat, glow fade controls, Tests/Watch List panels, defaults fix |
 | Time Slider with Step Controls | P1 | 2025-11-26 | TIME-011: Slider bar, step buttons, Now button, step size selector |
 | TLE Rendering Features | P1 | 2025-11-26 | Current time display, tail/head controls, gradient fade, chevron icon, equator glow |
 | Settings Panel Completion | P2 | 2025-11-26 | Glow effect enable/disable and intensity controls |
@@ -203,6 +204,7 @@ venv\Scripts\python backend\main.py
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.3 | 2025-11-26 | Added UI/UX Improvements batch: hold-to-repeat, glow fade, Tests/Watch List panels |
 | 1.2 | 2025-11-26 | Added TIME-011: Time Slider with Step Controls to recently completed |
 | 1.1 | 2025-11-26 | Added TLE Rendering Features milestone, updated active tasks |
 | 1.0 | 2025-11-26 | Initial standardized plan document |

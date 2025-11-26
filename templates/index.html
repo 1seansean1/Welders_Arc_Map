@@ -1797,6 +1797,25 @@
                 </span>
                 <span class="nav-label">Logs</span>
             </button>
+            <button class="nav-btn" data-section="tests">
+                <span class="nav-icon">
+                    <!-- Checkmark/test icon -->
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 11 12 14 22 4"></polyline>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                    </svg>
+                </span>
+                <span class="nav-label">Tests</span>
+            </button>
+            <button class="nav-btn" data-section="watchlist">
+                <span class="nav-icon">
+                    <!-- Star icon -->
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                </span>
+                <span class="nav-label">Watch List</span>
+            </button>
             <button class="nav-btn" data-section="settings">
                 <span class="nav-icon">
                     <!-- Settings/gear icon -->
@@ -1956,6 +1975,20 @@
                 <p style="color: var(--text-muted);">Logs coming soon...</p>
             </div>
 
+            <div id="content-tests" style="display: none;">
+                <p style="color: var(--text-muted);">Test panel coming soon...</p>
+                <p style="color: var(--text-secondary); font-size: 10px; margin-top: 8px;">
+                    Use the test page at <a href="/static/test-basic.html" target="_blank" style="color: var(--accent-blue-grey);">/static/test-basic.html</a>
+                </p>
+            </div>
+
+            <div id="content-watchlist" style="display: none;">
+                <p style="color: var(--text-muted);">Watch list coming soon...</p>
+                <p style="color: var(--text-secondary); font-size: 10px; margin-top: 8px;">
+                    Starred satellites will appear here.
+                </p>
+            </div>
+
             <div id="content-settings" style="display: none;">
                 <!-- Glow Effect Settings -->
                 <div class="settings-section">
@@ -1972,6 +2005,12 @@
                         <span class="track-label">Intensity</span>
                         <input type="range" class="track-slider" id="glow-intensity-slider" min="10" max="200" value="100" />
                         <span class="track-input-display" id="glow-intensity-display">1.0</span>
+                    </div>
+
+                    <div class="settings-row">
+                        <span class="track-label">Fade (min)</span>
+                        <input type="range" class="track-slider" id="glow-fade-slider" min="1" max="30" value="5" />
+                        <input type="number" class="track-input" id="glow-fade-input" min="1" max="30" value="5" />
                     </div>
                 </div>
             </div>

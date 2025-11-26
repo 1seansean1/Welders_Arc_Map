@@ -229,19 +229,40 @@ function createChevronAtlas() {
 }
 
 /**
- * Detect equator crossings in a set of track points
- * @param {Array} tailPoints - Tail track points
- * @param {Array} headPoints - Head track points
- * @param {Object} currentPosition - Current satellite position
- * @param {number} glowRangeMinutes - How many minutes before/after equator to show glow
- * @returns {Array} Array of equator crossing data with glow intensity
+ * Detect equator crossings in a set of track points with time-based fade
+ * @param {Array} tailPoints - Tail track points (with timestamp property)
+ * @param {Array} headPoints - Head track points (with timestamp property)
+ * @param {Object} currentPosition - Current satellite position (with timestamp)
+ * @param {Date} currentTime - Current simulation time
+ * @param {number} fadeMinutes - Minutes for fade effect (crossing fades over this range)
+ * @returns {Array} Array of equator crossing data with smooth fade intensity
  */
-function detectEquatorCrossings(tailPoints, headPoints, currentPosition, glowRangeMinutes = 2) {
+function detectEquatorCrossings(tailPoints, headPoints, currentPosition, currentTime, fadeMinutes = 5) {
     const crossings = [];
+    const currentTimeMs = currentTime ? currentTime.getTime() : Date.now();
+    const fadeMs = fadeMinutes * 60 * 1000;
+
+    // Build array with all points including timestamps
     const allPoints = [
-        ...tailPoints.map((p, i) => ({ ...p, isHistory: true, index: i })),
-        ...(currentPosition ? [{ position: [currentPosition.lon, currentPosition.lat], progress: 1, isHistory: false, isCurrent: true }] : []),
-        ...headPoints.map((p, i) => ({ ...p, isHistory: false, index: i }))
+        ...tailPoints.map((p, i) => ({
+            ...p,
+            isHistory: true,
+            index: i,
+            time: p.timestamp ? new Date(p.timestamp).getTime() : null
+        })),
+        ...(currentPosition ? [{
+            position: [currentPosition.lon, currentPosition.lat],
+            progress: 1,
+            isHistory: false,
+            isCurrent: true,
+            time: currentTimeMs
+        }] : []),
+        ...headPoints.map((p, i) => ({
+            ...p,
+            isHistory: false,
+            index: i,
+            time: p.timestamp ? new Date(p.timestamp).getTime() : null
+        }))
     ];
 
     // Detect equator crossings between consecutive points
@@ -259,17 +280,26 @@ function detectEquatorCrossings(tailPoints, headPoints, currentPosition, glowRan
             const t = Math.abs(lat1) / (Math.abs(lat1) + Math.abs(lat2));
             const crossingLon = current.position[0] + t * (next.position[0] - current.position[0]);
 
-            // Calculate how "current" this crossing is
-            // For tail points: older = lower intensity
-            // For head points: further in future = lower intensity
-            let intensity = 1.0;
+            // Interpolate crossing time
+            let crossingTime = currentTimeMs;
+            if (current.time && next.time) {
+                crossingTime = current.time + t * (next.time - current.time);
+            }
 
-            if (current.isHistory) {
-                // Tail: use progress (0 = oldest, 1 = newest/brightest)
-                intensity = current.progress;
-            } else if (!current.isCurrent) {
-                // Head: invert progress (0 = closest to now = brightest, 1 = far future = dimmer)
-                intensity = 1 - current.progress;
+            // Calculate time-based intensity using smooth fade
+            // Distance from current time in ms
+            const timeDelta = Math.abs(crossingTime - currentTimeMs);
+
+            // Smooth fade: full intensity at current time, fading to 0 at fadeMs
+            // Using cosine curve for smooth fade (1 at center, 0 at edges)
+            let intensity = 1.0;
+            if (timeDelta < fadeMs) {
+                // Smooth cosine fade: cos(0) = 1 (at crossing), cos(PI/2) = 0 (at edge)
+                const fadeProgress = timeDelta / fadeMs;
+                intensity = Math.cos(fadeProgress * Math.PI / 2);
+            } else {
+                // Beyond fade range - still show but very dim
+                intensity = 0.1;
             }
 
             // Direction: northbound or southbound
@@ -277,10 +307,11 @@ function detectEquatorCrossings(tailPoints, headPoints, currentPosition, glowRan
 
             crossings.push({
                 position: [crossingLon, 0],
-                intensity: Math.max(0.3, Math.min(1, intensity)), // Clamp between 0.3 and 1
+                intensity: Math.max(0.1, Math.min(1, intensity)),
                 direction,
-                isHistory: current.isHistory,
-                isFuture: !current.isHistory && !current.isCurrent
+                isHistory: crossingTime < currentTimeMs,
+                isFuture: crossingTime > currentTimeMs,
+                timeDelta: timeDelta / 60000 // Minutes from now (for debugging)
             });
         }
     }
@@ -367,6 +398,7 @@ function createLayers() {
     const headMinutes = timeState.getHeadMinutes();
     const glowEnabled = timeState.isGlowEnabled();
     const glowIntensity = timeState.getGlowIntensity();
+    const glowFadeMinutes = timeState.getGlowFadeMinutes();
 
     // Prepare ground track data and satellite position data
     const groundTrackData = [];
@@ -444,7 +476,9 @@ function createLayers() {
         const crossings = detectEquatorCrossings(
             trackResult.tailPoints || [],
             trackResult.headPoints || [],
-            trackResult.currentPosition
+            trackResult.currentPosition,
+            currentTime,
+            glowFadeMinutes
         );
 
         crossings.forEach(crossing => {
@@ -584,7 +618,7 @@ function createLayers() {
             getPosition: d => d.position,
             getIcon: () => 'chevron',
             getSize: 20,
-            getAngle: d => -d.bearing, // Negative because deck.gl rotates counter-clockwise
+            getAngle: d => d.bearing, // Positive = clockwise rotation (bearing 0° = north, 90° = east)
             getColor: [157, 212, 255, 255],
             iconAtlas: createChevronAtlas(),
             iconMapping: {
@@ -643,8 +677,8 @@ function createLayers() {
             },
             updateTriggers: {
                 visible: `${glowEnabled}-${equatorCrossingData.length}`,
-                getRadius: `${tailMinutes}-${headMinutes}-${currentTime.getTime()}-${glowIntensity}`,
-                getFillColor: `${tailMinutes}-${headMinutes}-${currentTime.getTime()}-${glowIntensity}`
+                getRadius: `${tailMinutes}-${headMinutes}-${currentTime.getTime()}-${glowIntensity}-${glowFadeMinutes}`,
+                getFillColor: `${tailMinutes}-${headMinutes}-${currentTime.getTime()}-${glowIntensity}-${glowFadeMinutes}`
             },
             onHover: ({object}) => {
                 if (object) {

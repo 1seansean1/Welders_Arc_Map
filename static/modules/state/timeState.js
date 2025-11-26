@@ -50,12 +50,13 @@ class TimeState {
             lookbackHours: 24, // Default lookback duration
 
             // Ground track tail/head durations (in minutes)
-            tailMinutes: 20,  // How far back to render ground track (default: 20 min)
+            tailMinutes: 45,  // How far back to render ground track (default: 45 min)
             headMinutes: 0,   // How far forward to render ground track (default: 0 min)
 
             // Equator crossing glow settings
             glowEnabled: true,     // Whether to show equator crossing glow
             glowIntensity: 1.0,    // Glow brightness multiplier (0.1 - 2.0)
+            glowFadeMinutes: 5,    // Minutes before/after equator crossing for fade effect (1-30)
 
             // Time slider settings
             timeStepMinutes: 5,    // Step size for < > buttons (1, 5, 15, 30, 60)
@@ -223,7 +224,36 @@ class TimeState {
 
         eventBus.emit('time:glow:changed', {
             glowEnabled: this._state.glowEnabled,
-            glowIntensity: this._state.glowIntensity
+            glowIntensity: this._state.glowIntensity,
+            glowFadeMinutes: this._state.glowFadeMinutes
+        });
+    }
+
+    /**
+     * Get glow fade duration in minutes
+     * @returns {number} Fade duration in minutes (1-30)
+     */
+    getGlowFadeMinutes() {
+        return this._state.glowFadeMinutes;
+    }
+
+    /**
+     * Set glow fade duration in minutes
+     * @param {number} minutes - Fade duration (1-30)
+     */
+    setGlowFadeMinutes(minutes) {
+        if (typeof minutes !== 'number' || minutes < 1 || minutes > 30) {
+            logger.log('setGlowFadeMinutes: must be 1-30 minutes', logger.CATEGORY.ERROR);
+            return;
+        }
+
+        this._state.glowFadeMinutes = minutes;
+        logger.log(`Glow fade duration set: ${minutes} minutes`, logger.CATEGORY.TIME);
+
+        eventBus.emit('time:glow:changed', {
+            glowEnabled: this._state.glowEnabled,
+            glowIntensity: this._state.glowIntensity,
+            glowFadeMinutes: this._state.glowFadeMinutes
         });
     }
 

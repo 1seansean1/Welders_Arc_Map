@@ -85,7 +85,10 @@ Add hypothesis-driven test(s) in `static/modules/test/testRegistry.js`:
 
 ## Phase 7: Run All Tests
 
-- [ ] Open test panel in browser
+Tests are accessible from the **Tests** panel in the Control Panel sidebar, or directly at:
+`http://localhost:8000/static/test-basic.html`
+
+- [ ] Open test page in browser
 - [ ] Run ALL tests (not just new ones)
 - [ ] Report results: X/Y passing
 

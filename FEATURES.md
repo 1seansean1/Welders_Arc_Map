@@ -103,13 +103,15 @@
 | TIME-009 | Current Time Display | P1 | S | DONE | TIME-001 |
 | TIME-010 | Ground Track Tail/Head Controls | P2 | M | DONE | TIME-001, SAT-005 |
 | TIME-011 | Time Slider with Step Controls | P1 | M | DONE | TIME-001 |
+| TIME-012 | Hold-to-Repeat Step Buttons | P2 | S | DONE | TIME-011 |
+| TIME-013 | Glow Fade Duration Control | P2 | S | DONE | UI-010 |
 
 ### Control Panel (UI)
 
 | ID | Feature | Priority | Complexity | Status | Dependencies |
 |----|---------|----------|------------|--------|--------------|
 | UI-001 | Collapsible Panel | P0 | M | DONE | None |
-| UI-002 | 7-Section Navigation | P0 | S | DONE | UI-001 |
+| UI-002 | 9-Section Navigation | P0 | S | DONE | UI-001 |
 | UI-003 | Mobile Overlay Mode | P1 | S | DONE | UI-001 |
 | UI-004 | Click-Outside Collapse | P2 | XS | DONE | UI-001 |
 | UI-005 | Modal System | P0 | M | DONE | None |
@@ -118,6 +120,8 @@
 | UI-008 | Real-time Data Section | P2 | L | PLAN | UI-002, Backend |
 | UI-009 | Settings Section | P2 | M | DONE | UI-002 |
 | UI-010 | Glow Effect Controls | P2 | S | DONE | UI-009, SAT-014 |
+| UI-011 | Tests Panel | P2 | S | DONE | UI-002, TEST-001 |
+| UI-012 | Watch List Panel | P2 | S | DONE | UI-002 |
 
 ### Logging System (LOG)
 
@@ -228,15 +232,15 @@
 | MAP | 10 | 10 | 0 | 0 | 0 |
 | SAT | 14 | 12 | 0 | 1 | 1 |
 | SEN | 9 | 8 | 0 | 0 | 1 |
-| TIME | 11 | 11 | 0 | 0 | 0 |
-| UI | 10 | 8 | 0 | 2 | 0 |
+| TIME | 13 | 13 | 0 | 0 | 0 |
+| UI | 12 | 10 | 0 | 2 | 0 |
 | LOG | 10 | 8 | 0 | 0 | 2 |
 | TEST | 12 | 10 | 0 | 1 | 0 |
 | BACK | 9 | 3 | 0 | 4 | 2 |
 | ARCH | 5 | 5 | 0 | 0 | 0 |
-| **TOTAL** | **90** | **75** | **0** | **8** | **6** |
+| **TOTAL** | **94** | **79** | **0** | **8** | **6** |
 
-**Completion Rate**: 83% (75/90 features complete)
+**Completion Rate**: 84% (79/94 features complete)
 
 ---
 
@@ -244,6 +248,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.3 | 2025-11-26 | Added TIME-012/013, UI-011/012: hold-to-repeat, glow fade, Tests/Watch List panels |
 | 1.2 | 2025-11-26 | Added TIME-011: Time Slider with Step Controls |
 | 1.1 | 2025-11-26 | Added TLE rendering features: SAT-012/013/014, TIME-009/010, UI-009/010 |
 | 1.0 | 2025-11-26 | Initial consolidated feature registry |

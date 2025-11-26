@@ -103,7 +103,7 @@ const defaultSatellites = [
         noradId: 44714,
         tleLine1: '1 44714U 19074B   25328.94319468 -.00000606  00000+0 -21797-4 0  9998',
         tleLine2: '2 44714  53.0556 296.8401 0001385  98.0066 262.1081 15.06385986332966',
-        selected: false,
+        selected: true,
         watchlisted: false
     },
     {

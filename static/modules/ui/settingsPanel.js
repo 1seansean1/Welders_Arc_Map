@@ -8,6 +8,7 @@
  * Features:
  * - Glow effect enable/disable toggle
  * - Glow intensity slider control
+ * - Glow fade duration control (minutes before/after equator crossing)
  */
 
 import timeState from '../state/timeState.js';
@@ -17,6 +18,8 @@ import logger from '../utils/logger.js';
 const glowEnabledCheckbox = document.getElementById('glow-enabled-checkbox');
 const glowIntensitySlider = document.getElementById('glow-intensity-slider');
 const glowIntensityDisplay = document.getElementById('glow-intensity-display');
+const glowFadeSlider = document.getElementById('glow-fade-slider');
+const glowFadeInput = document.getElementById('glow-fade-input');
 
 /**
  * Initialize settings panel controls
@@ -43,6 +46,29 @@ export function initializeSettingsPanel() {
         glowIntensityDisplay.textContent = value.toFixed(1);
         timeState.setGlowIntensity(value);
     });
+
+    // Glow fade duration controls
+    if (glowFadeSlider && glowFadeInput) {
+        // Set initial values
+        glowFadeSlider.value = timeState.getGlowFadeMinutes();
+        glowFadeInput.value = timeState.getGlowFadeMinutes();
+
+        // Slider → input sync
+        glowFadeSlider.addEventListener('input', (e) => {
+            const value = parseInt(e.target.value);
+            glowFadeInput.value = value;
+            timeState.setGlowFadeMinutes(value);
+        });
+
+        // Input → slider sync
+        glowFadeInput.addEventListener('change', (e) => {
+            let value = parseInt(e.target.value) || 5;
+            value = Math.max(1, Math.min(30, value));
+            glowFadeInput.value = value;
+            glowFadeSlider.value = value;
+            timeState.setGlowFadeMinutes(value);
+        });
+    }
 
     logger.diagnostic('Settings panel initialized', logger.CATEGORY.UI);
 }

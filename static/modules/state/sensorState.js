@@ -46,18 +46,18 @@ import { validateSensor } from '../utils/validation.js';
  * All sensors start selected with 500km FOV altitude
  */
 const defaultSensors = [
-    { id: 1, name: 'Tokyo', lat: 35.7, lon: 139.7, alt: 40, selected: true, fovAltitude: 500, iconType: 'donut' },
+    { id: 1, name: 'Tokyo', lat: 35.7, lon: 139.7, alt: 40, selected: false, fovAltitude: 500, iconType: 'donut' },
     { id: 2, name: 'New York', lat: 40.7, lon: -74.0, alt: 10, selected: true, fovAltitude: 500, iconType: 'donut' },
-    { id: 3, name: 'London', lat: 51.5, lon: -0.1, alt: 11, selected: true, fovAltitude: 500, iconType: 'donut' },
-    { id: 4, name: 'Paris', lat: 48.9, lon: 2.4, alt: 35, selected: true, fovAltitude: 500, iconType: 'donut' },
-    { id: 5, name: 'Beijing', lat: 39.9, lon: 116.4, alt: 43, selected: true, fovAltitude: 500, iconType: 'donut' },
+    { id: 3, name: 'London', lat: 51.5, lon: -0.1, alt: 11, selected: false, fovAltitude: 500, iconType: 'donut' },
+    { id: 4, name: 'Paris', lat: 48.9, lon: 2.4, alt: 35, selected: false, fovAltitude: 500, iconType: 'donut' },
+    { id: 5, name: 'Beijing', lat: 39.9, lon: 116.4, alt: 43, selected: false, fovAltitude: 500, iconType: 'donut' },
     { id: 6, name: 'Sydney', lat: -33.9, lon: 151.2, alt: 58, selected: true, fovAltitude: 500, iconType: 'donut' },
-    { id: 7, name: 'Dubai', lat: 25.3, lon: 55.3, alt: 5, selected: true, fovAltitude: 500, iconType: 'donut' },
-    { id: 8, name: 'Mumbai', lat: 19.1, lon: 72.9, alt: 14, selected: true, fovAltitude: 500, iconType: 'donut' },
-    { id: 9, name: 'São Paulo', lat: -23.5, lon: -46.6, alt: 760, selected: true, fovAltitude: 500, iconType: 'donut' },
-    { id: 10, name: 'Moscow', lat: 55.8, lon: 37.6, alt: 156, selected: true, fovAltitude: 500, iconType: 'donut' },
-    { id: 11, name: 'Cairo', lat: 30.0, lon: 31.2, alt: 23, selected: true, fovAltitude: 500, iconType: 'donut' },
-    { id: 12, name: 'Singapore', lat: 1.3, lon: 103.8, alt: 15, selected: true, fovAltitude: 500, iconType: 'donut' }
+    { id: 7, name: 'Dubai', lat: 25.3, lon: 55.3, alt: 5, selected: false, fovAltitude: 500, iconType: 'donut' },
+    { id: 8, name: 'Mumbai', lat: 19.1, lon: 72.9, alt: 14, selected: false, fovAltitude: 500, iconType: 'donut' },
+    { id: 9, name: 'São Paulo', lat: -23.5, lon: -46.6, alt: 760, selected: false, fovAltitude: 500, iconType: 'donut' },
+    { id: 10, name: 'Moscow', lat: 55.8, lon: 37.6, alt: 156, selected: false, fovAltitude: 500, iconType: 'donut' },
+    { id: 11, name: 'Cairo', lat: 30.0, lon: 31.2, alt: 23, selected: false, fovAltitude: 500, iconType: 'donut' },
+    { id: 12, name: 'Singapore', lat: 1.3, lon: 103.8, alt: 15, selected: false, fovAltitude: 500, iconType: 'donut' }
 ];
 
 /**
