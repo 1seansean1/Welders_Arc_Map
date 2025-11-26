@@ -54,7 +54,7 @@ All AI assistants must perform these actions without prompting:
 | 1 | Read AI_GOVERNOR.md | Before any work | §Document Authority |
 | 2 | Add bugs to BUGS.md (BUG-XXX format) | User reports bug | §Bug Tracking Protocol |
 | 3 | Commit with `<type>(<scope>): <summary>` | Any code/doc change | §Git Commit Protocol |
-| 4 | Answer Four Questions | Before any work | §Codebase Stewardship |
+| 4 | Answer Four Mandatory Questions | Before any work | §Codebase Stewardship |
 | 5 | Pass all Quality Gates | Before marking done | §Quality Gates |
 | 6 | Update referenced docs | After work completion | §Maintenance Obligation |
 | 7 | Flag outdated info, propose additions | Continuously | §Maintenance Obligation |
@@ -288,7 +288,7 @@ Every line of code is a future maintenance burden. We write only what is necessa
 5. **Incremental Over Monolithic**: Small steps with verification.
 6. **Prevention Over Cure**: Make bugs impossible, not just fixable.
 
-### The Four Questions
+### The Four Mandatory Questions
 
 Before any work, answer:
 1. **What exists now?** (Current state, measured)
