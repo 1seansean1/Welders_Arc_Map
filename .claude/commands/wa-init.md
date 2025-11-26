@@ -19,16 +19,28 @@ Read the following files in parallel:
 - C:\Users\seanp\Workspace\WA_map\FEATURES.md (feature status)
 - C:\Users\seanp\Workspace\WA_map\LESSONS.md (known patterns & gotchas)
 
-### Step 4: Report Session Readiness
+### Step 4: Check Git Status
+Run git commands to check repository sync status:
+```bash
+git -C "C:/Users/seanp/Workspace/WA_map" fetch origin
+git -C "C:/Users/seanp/Workspace/WA_map" status
+```
+
+Report:
+- **Uncommitted changes**: Yes/No (list modified files if any)
+- **Sync with origin**: Up to date / Ahead by X / Behind by X / Diverged
+
+### Step 5: Report Session Readiness
 Provide a brief status report:
 1. **Project**: Name and current completion percentage
 2. **Active Work**: What's currently in progress per PLAN.md
 3. **Open Bugs**: Count and highest severity from BUGS.md
 4. **Known Gotchas**: Key patterns from LESSONS.md to avoid repeating
-5. **Mandatory Behaviors**: Confirmed (list the 7)
-6. **Ready for**: What type of work you're prepared to assist with
+5. **Git Status**: Sync status with GitHub (from Step 4)
+6. **Mandatory Behaviors**: Confirmed (list the 7)
+7. **Ready for**: What type of work you're prepared to assist with
 
-### Step 5: List Available Commands
+### Step 6: List Available Commands
 Report all available slash commands for this project:
 
 **Workflow Commands**:
