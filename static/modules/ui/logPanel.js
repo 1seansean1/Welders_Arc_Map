@@ -26,6 +26,43 @@ import logger from '../utils/logger.js';
 // LOG PANEL RESIZE
 // ============================================
 
+// Module-level references for enforceLogPanelConstraints
+let _bottomLeftPane = null;
+let _contentArea = null;
+let _logArea = null;
+let _currentLogHeight = 50;
+
+// Shared constraints (exported for use by interactions.js)
+export const MIN_LOG_HEIGHT_PX = 50;  // Minimum pixels for log panel (1 row visible)
+export const MIN_CONTENT_HEIGHT_PX = 50;  // Minimum pixels for content area above log panel
+
+/**
+ * Enforce log panel constraints after external resize (e.g., grid crosshair drag)
+ * Shrinks log panel if current height exceeds available space
+ *
+ * Called by interactions.js after grid resize to prevent log panel from
+ * overflowing the bottom pane.
+ */
+export function enforceLogPanelConstraints() {
+    if (!_bottomLeftPane || !_logArea || !_contentArea) return;
+
+    const paneRect = _bottomLeftPane.getBoundingClientRect();
+    const maxLogHeight = paneRect.height - MIN_CONTENT_HEIGHT_PX;
+
+    // If current log height exceeds available space, shrink it
+    if (_currentLogHeight > maxLogHeight) {
+        _currentLogHeight = Math.max(MIN_LOG_HEIGHT_PX, maxLogHeight);
+        _logArea.style.flex = `0 0 ${_currentLogHeight}px`;
+        _contentArea.style.flex = `1 1 auto`;
+
+        logger.diagnostic(
+            'Log panel auto-shrunk',
+            logger.CATEGORY.PANEL,
+            { height: `${_currentLogHeight.toFixed(0)}px`, paneHeight: `${paneRect.height.toFixed(0)}px` }
+        );
+    }
+}
+
 /**
  * Initialize log panel vertical resizer
  *
@@ -52,8 +89,14 @@ export function initializeLogPanel() {
         return;
     }
 
+    // Store references for enforceLogPanelConstraints
+    _bottomLeftPane = bottomLeftPane;
+    _contentArea = contentArea;
+    _logArea = logArea;
+
     let isDragging = false;
     let currentLogHeight = 50; // Start at 50px (minimized)
+    _currentLogHeight = currentLogHeight;
 
     // Constraints for usable layouts
     const MIN_LOG_HEIGHT_PX = 50;  // Minimum pixels for log panel (1 row visible)
@@ -107,6 +150,7 @@ export function initializeLogPanel() {
 
         // Update log area with fixed pixel height
         currentLogHeight = logHeightPx;
+        _currentLogHeight = logHeightPx; // Sync module-level for enforceLogPanelConstraints
         logArea.style.flex = `0 0 ${logHeightPx}px`;
         // Content area takes remaining space
         contentArea.style.flex = `1 1 auto`;

@@ -370,9 +370,11 @@ export function updateDeckOverlay() {
     });
 
     // Create sensor icon layer (donut circles)
+    // CRITICAL: Always include layer with 'visible' prop to prevent state corruption
     const sensorLayer = new deck.ScatterplotLayer({
         id: 'sensor-icons',
         data: sensorIconData,
+        visible: sensorsToRender.length > 0,  // Hide when no sensors selected
         coordinateSystem: deck.COORDINATE_SYSTEM.LNGLAT,  // CRITICAL: Explicit WGS84 → Web Mercator
         wrapLongitude: true,  // CRITICAL: Render on all wrapped world copies
         pickable: true,
@@ -402,6 +404,7 @@ export function updateDeckOverlay() {
         },
         // Update triggers: only recreate when sensor data actually changes
         updateTriggers: {
+            visible: sensorsToRender.length,
             getPosition: sensorsToRender.map(s => `${s.id}-${s.lon}-${s.lat}`).join(','),
             getFillColor: sensorsToRender.map(s => `${s.id}-${s.iconType}`).join(',')
         },
@@ -417,9 +420,11 @@ export function updateDeckOverlay() {
     });
 
     // Create FOV polygon layer
+    // CRITICAL: Always include layer with 'visible' prop to prevent state corruption
     const fovLayer = new deck.PolygonLayer({
         id: 'sensor-fov',
         data: fovPolygonData,
+        visible: sensorsToRender.length > 0,  // Hide when no sensors selected
         coordinateSystem: deck.COORDINATE_SYSTEM.LNGLAT,  // CRITICAL: Explicit WGS84 → Web Mercator
         wrapLongitude: true,  // CRITICAL: Render on all wrapped world copies
         pickable: false,
@@ -439,6 +444,7 @@ export function updateDeckOverlay() {
         },
         // Update triggers: only recreate when FOV data actually changes
         updateTriggers: {
+            visible: sensorsToRender.length,
             getPolygon: sensorsToRender.map(s => `${s.id}-${s.lat}-${s.lon}-${s.fovAltitude}`).join(',')
         }
     });
@@ -472,9 +478,11 @@ export function updateDeckOverlay() {
     });
 
     // Create ground track layer (PathLayer for orbital paths)
+    // CRITICAL: Always include layer with 'visible' prop to prevent state corruption
     const groundTrackLayer = new deck.PathLayer({
         id: 'satellite-ground-tracks',
         data: groundTrackData,
+        visible: satellitesToRender.length > 0,  // Hide when no satellites selected
         coordinateSystem: deck.COORDINATE_SYSTEM.LNGLAT,
         wrapLongitude: true,
         pickable: true,
@@ -492,6 +500,7 @@ export function updateDeckOverlay() {
         },
         // Update triggers
         updateTriggers: {
+            visible: satellitesToRender.length,
             getPath: satellitesToRender.map(s => `${s.id}-${s.tleLine1}`).join(',')
         },
         onHover: ({object}) => {
@@ -504,7 +513,9 @@ export function updateDeckOverlay() {
         }
     });
 
-    // Update Deck.gl overlay with all layers
+    // CRITICAL: Always include ALL layers to prevent state corruption when other setProps() calls happen
+    // Use 'visible' prop on each layer to control rendering instead of conditionally including layers
+    // This ensures consistent layer IDs and prevents Deck.gl from losing track of layer state
     window.deckgl.setProps({
         layers: [fovLayer, sensorLayer, groundTrackLayer]
     });
@@ -523,18 +534,46 @@ export function getDeckGL() {
 /**
  * Resize Deck.gl canvas to match container
  * Call after container size changes (pane resize, maximize, etc.)
+ *
+ * CRITICAL: Must also sync view state with Leaflet to prevent coordinate mismatch
+ * When the canvas resizes, Deck.gl needs updated dimensions AND view state
+ * to correctly transform lat/lng to screen coordinates
  */
 export function resizeDeckCanvas() {
     if (!window.deckgl) return;
 
     const mapContainer = document.getElementById('map-container');
+    const map = window.leafletMap;
     if (!mapContainer) return;
 
     const rect = mapContainer.getBoundingClientRect();
-    window.deckgl.setProps({
-        width: rect.width,
-        height: rect.height
-    });
+
+    // CRITICAL: Sync view state along with size to prevent coordinate mismatch
+    // Without this, Deck.gl uses stale view state with new dimensions, causing
+    // sensors to appear in wrong locations until a zoom/pan event syncs them
+    if (map) {
+        const center = map.getCenter();
+        const zoom = map.getZoom();
+
+        window.deckgl.setProps({
+            width: rect.width,
+            height: rect.height,
+            viewState: {
+                longitude: center.lng,
+                latitude: center.lat,
+                zoom: zoom - 1,  // Deck.gl MapView needs zoom - 1 for Leaflet compatibility
+                pitch: 0,
+                bearing: 0,
+                transitionDuration: 0
+            }
+        });
+    } else {
+        // Fallback if map not available
+        window.deckgl.setProps({
+            width: rect.width,
+            height: rect.height
+        });
+    }
 
     logger.diagnostic('Deck.gl canvas resized', logger.CATEGORY.SATELLITE, {
         size: `${rect.width.toFixed(0)}×${rect.height.toFixed(0)}px`

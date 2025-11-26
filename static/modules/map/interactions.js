@@ -29,6 +29,7 @@
 
 import logger from '../utils/logger.js';
 import { resizeDeckCanvas } from './deckgl.js';
+import { enforceLogPanelConstraints } from '../ui/logPanel.js';
 
 // ============================================
 // PANE RESIZER
@@ -258,12 +259,28 @@ export function initializePaneResizer() {
             horizontalPercent = Math.max(MIN_PERCENT, Math.min(MAX_PERCENT, horizontalPercent));
             currentHorizontalPercent = horizontalPercent;
             mainContainer.style.gridTemplateColumns = `${horizontalPercent}% ${100 - horizontalPercent}%`;
+
+            // CRITICAL: Keep Leaflet and Deck.gl synced during horizontal resize
+            if (window.leafletMap) {
+                window.leafletMap.invalidateSize({ animate: false });
+            }
+            resizeDeckCanvas();
         } else if (activeHandle === 'horizontal') {
             // Horizontal handle controls vertical split
             let verticalPercent = (relativeY / containerRect.height) * 100;
             verticalPercent = Math.max(MIN_PERCENT, Math.min(MAX_PERCENT, verticalPercent));
             currentVerticalPercent = verticalPercent;
             mainContainer.style.gridTemplateRows = `${verticalPercent}% ${100 - verticalPercent}%`;
+
+            // Dynamically shrink log panel if needed during drag
+            enforceLogPanelConstraints();
+
+            // CRITICAL: Keep Leaflet and Deck.gl synced during vertical resize
+            // Without this, sensors disappear or appear at wrong locations
+            if (window.leafletMap) {
+                window.leafletMap.invalidateSize({ animate: false });
+            }
+            resizeDeckCanvas();
         } else if (activeHandle === 'crosshair') {
             // Crosshair controls both splits simultaneously
             let horizontalPercent = (relativeX / containerRect.width) * 100;
@@ -274,6 +291,16 @@ export function initializePaneResizer() {
             currentVerticalPercent = verticalPercent;
             mainContainer.style.gridTemplateColumns = `${horizontalPercent}% ${100 - horizontalPercent}%`;
             mainContainer.style.gridTemplateRows = `${verticalPercent}% ${100 - verticalPercent}%`;
+
+            // Dynamically shrink log panel if needed during drag
+            enforceLogPanelConstraints();
+
+            // CRITICAL: Keep Leaflet and Deck.gl synced during resize
+            // Without this, sensors disappear or appear at wrong locations
+            if (window.leafletMap) {
+                window.leafletMap.invalidateSize({ animate: false });
+            }
+            resizeDeckCanvas();
         }
 
         // Update handle positions
@@ -301,6 +328,10 @@ export function initializePaneResizer() {
                 optimizeMapView();
             }, 50);
         }
+
+        // Enforce log panel constraints after grid resize
+        // This shrinks the log panel if the bottom pane got too small
+        enforceLogPanelConstraints();
 
         logger.diagnostic(
             'Grid resized',
