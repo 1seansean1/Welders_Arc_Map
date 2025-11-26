@@ -43,7 +43,13 @@ User reports bug → immediately add to BUGS.md using template. Assign sequentia
 
 ### Git Commit Protocol (Mandatory)
 
-Any change to code or documentation → commit to GitHub immediately after completion. Commit message format: `<type>(<scope>): <summary>`. Types: feat|fix|docs|refactor|test|chore|perf. Push after commit. No prompt required—this is default behavior.
+Any change to code or documentation:
+1. **Commit** immediately after completion
+2. **Push** to origin immediately after commit
+
+Commit message format: `<type>(<scope>): <summary>`. Types: feat|fix|docs|refactor|test|chore|perf.
+
+No prompt required—this is default behavior. Do not accumulate unpushed commits.
 
 ### Mandatory Behaviors (Quick Reference)
 
@@ -53,7 +59,7 @@ All AI assistants must perform these actions without prompting:
 |---|----------|---------|-----------|
 | 1 | Read AI_GOVERNOR.md | Before any work | §Document Authority |
 | 2 | Add bugs to BUGS.md (BUG-XXX format) | User reports bug | §Bug Tracking Protocol |
-| 3 | Commit with `<type>(<scope>): <summary>` | Any code/doc change | §Git Commit Protocol |
+| 3 | Commit AND push to origin | Any code/doc change | §Git Commit Protocol |
 | 4 | Answer Four Mandatory Questions | Before any work | §Codebase Stewardship |
 | 5 | Pass all Quality Gates | Before marking done | §Quality Gates |
 | 6 | Update referenced docs | After work completion | §Maintenance Obligation |
