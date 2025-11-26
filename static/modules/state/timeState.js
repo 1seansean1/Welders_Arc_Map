@@ -49,6 +49,14 @@ class TimeState {
             stopTime: null,
             lookbackHours: 24, // Default lookback duration
 
+            // Ground track tail/head durations (in minutes)
+            tailMinutes: 20,  // How far back to render ground track (default: 20 min)
+            headMinutes: 0,   // How far forward to render ground track (default: 0 min)
+
+            // Equator crossing glow settings
+            glowEnabled: true,     // Whether to show equator crossing glow
+            glowIntensity: 1.0,    // Glow brightness multiplier (0.1 - 2.0)
+
             // Pending changes tracking
             hasPendingChanges: false,
             committedStartTime: null,
@@ -104,6 +112,114 @@ class TimeState {
      */
     getLookbackHours() {
         return this._state.lookbackHours;
+    }
+
+    /**
+     * Get ground track tail duration (minutes)
+     * @returns {number} Tail duration in minutes
+     */
+    getTailMinutes() {
+        return this._state.tailMinutes;
+    }
+
+    /**
+     * Get ground track head duration (minutes)
+     * @returns {number} Head duration in minutes
+     */
+    getHeadMinutes() {
+        return this._state.headMinutes;
+    }
+
+    /**
+     * Set ground track tail duration (minutes)
+     * @param {number} minutes - Tail duration in minutes (0-90)
+     */
+    setTailMinutes(minutes) {
+        if (typeof minutes !== 'number' || minutes < 0 || minutes > 90) {
+            logger.log('setTailMinutes: must be 0-90 minutes', logger.CATEGORY.ERROR);
+            return;
+        }
+
+        this._state.tailMinutes = minutes;
+        logger.log(`Tail duration set: ${minutes} minutes`, logger.CATEGORY.TIME);
+
+        eventBus.emit('time:track:changed', {
+            tailMinutes: this._state.tailMinutes,
+            headMinutes: this._state.headMinutes
+        });
+    }
+
+    /**
+     * Set ground track head duration (minutes)
+     * @param {number} minutes - Head duration in minutes (0-90)
+     */
+    setHeadMinutes(minutes) {
+        if (typeof minutes !== 'number' || minutes < 0 || minutes > 90) {
+            logger.log('setHeadMinutes: must be 0-90 minutes', logger.CATEGORY.ERROR);
+            return;
+        }
+
+        this._state.headMinutes = minutes;
+        logger.log(`Head duration set: ${minutes} minutes`, logger.CATEGORY.TIME);
+
+        eventBus.emit('time:track:changed', {
+            tailMinutes: this._state.tailMinutes,
+            headMinutes: this._state.headMinutes
+        });
+    }
+
+    /**
+     * Get glow enabled state
+     * @returns {boolean} True if glow is enabled
+     */
+    isGlowEnabled() {
+        return this._state.glowEnabled;
+    }
+
+    /**
+     * Get glow intensity multiplier
+     * @returns {number} Glow intensity (0.1 - 2.0)
+     */
+    getGlowIntensity() {
+        return this._state.glowIntensity;
+    }
+
+    /**
+     * Set glow enabled state
+     * @param {boolean} enabled - True to enable glow
+     */
+    setGlowEnabled(enabled) {
+        if (typeof enabled !== 'boolean') {
+            logger.log('setGlowEnabled: must be boolean', logger.CATEGORY.ERROR);
+            return;
+        }
+
+        this._state.glowEnabled = enabled;
+        logger.log(`Glow effect ${enabled ? 'enabled' : 'disabled'}`, logger.CATEGORY.TIME);
+
+        eventBus.emit('time:glow:changed', {
+            glowEnabled: this._state.glowEnabled,
+            glowIntensity: this._state.glowIntensity
+        });
+    }
+
+    /**
+     * Set glow intensity multiplier
+     * @param {number} intensity - Glow intensity (0.1 - 2.0)
+     */
+    setGlowIntensity(intensity) {
+        if (typeof intensity !== 'number' || intensity < 0.1 || intensity > 2.0) {
+            logger.log('setGlowIntensity: must be 0.1-2.0', logger.CATEGORY.ERROR);
+            return;
+        }
+
+        this._state.glowIntensity = intensity;
+        logger.log(`Glow intensity set: ${intensity}`, logger.CATEGORY.TIME);
+
+        eventBus.emit('time:glow:changed', {
+            glowEnabled: this._state.glowEnabled,
+            glowIntensity: this._state.glowIntensity
+        });
     }
 
     /**

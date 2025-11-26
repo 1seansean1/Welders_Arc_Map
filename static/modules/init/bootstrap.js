@@ -37,6 +37,8 @@ import { initializeTimeControls, initializeFlatpickr } from '../ui/timeControls.
 import { initializeSensorTable } from '../ui/sensorTable.js';
 import { initializeSatelliteTable } from '../ui/satelliteTable.js';
 import { initializeLogPanel } from '../ui/logPanel.js';
+import { initializeCurrentTimeDisplay } from '../ui/currentTimeDisplay.js';
+import { initializeSettingsPanel } from '../ui/settingsPanel.js';
 
 // Sensor & Satellite CRUD
 import { initializeSensors, initializeSensorButtons, editSensor } from '../data/sensorCRUD.js';

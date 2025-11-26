@@ -41,6 +41,12 @@ const timeActionsDiv = document.getElementById('time-actions');
 const timeCancelBtn = document.getElementById('time-cancel-btn');
 const timeApplyBtn = document.getElementById('time-apply-btn');
 
+// Track duration controls
+const trackTailSlider = document.getElementById('track-tail-slider');
+const trackTailInput = document.getElementById('track-tail-input');
+const trackHeadSlider = document.getElementById('track-head-slider');
+const trackHeadInput = document.getElementById('track-head-input');
+
 // ============================================
 // STATE
 // ============================================
@@ -298,3 +304,54 @@ function initializeEventHandlers() {
 
 // Auto-initialize event handlers when module loads
 initializeEventHandlers();
+
+// ============================================
+// TRACK DURATION CONTROLS
+// ============================================
+
+/**
+ * Initialize track duration slider/input synchronization
+ */
+function initializeTrackDurationControls() {
+    if (!trackTailSlider || !trackTailInput || !trackHeadSlider || !trackHeadInput) {
+        logger.warning('Track duration controls not found', logger.CATEGORY.UI);
+        return;
+    }
+
+    // Tail slider → input sync
+    trackTailSlider.addEventListener('input', (e) => {
+        const value = parseInt(e.target.value);
+        trackTailInput.value = value;
+        timeState.setTailMinutes(value);
+    });
+
+    // Tail input → slider sync
+    trackTailInput.addEventListener('change', (e) => {
+        let value = parseInt(e.target.value) || 0;
+        value = Math.max(0, Math.min(90, value));
+        trackTailInput.value = value;
+        trackTailSlider.value = value;
+        timeState.setTailMinutes(value);
+    });
+
+    // Head slider → input sync
+    trackHeadSlider.addEventListener('input', (e) => {
+        const value = parseInt(e.target.value);
+        trackHeadInput.value = value;
+        timeState.setHeadMinutes(value);
+    });
+
+    // Head input → slider sync
+    trackHeadInput.addEventListener('change', (e) => {
+        let value = parseInt(e.target.value) || 0;
+        value = Math.max(0, Math.min(90, value));
+        trackHeadInput.value = value;
+        trackHeadSlider.value = value;
+        timeState.setHeadMinutes(value);
+    });
+
+    logger.diagnostic('Track duration controls initialized', logger.CATEGORY.UI);
+}
+
+// Auto-initialize track duration controls when module loads
+initializeTrackDurationControls();

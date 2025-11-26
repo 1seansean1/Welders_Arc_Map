@@ -70,6 +70,9 @@
 | SAT-009 | Satellite Selection Sync | P1 | S | DONE | SAT-001, MAP-003 |
 | SAT-010 | Real-time TLE Updates | P2 | L | PLAN | SAT-001, Backend |
 | SAT-011 | Satellite Search/Filter | P2 | M | IDEA | SAT-004 |
+| SAT-012 | Ground Track Gradient Fade | P2 | M | DONE | SAT-005 |
+| SAT-013 | Chevron Satellite Icon | P2 | M | DONE | SAT-005 |
+| SAT-014 | Equator Crossing Glow | P2 | M | DONE | SAT-005 |
 
 ### Sensor Management (SEN)
 
@@ -97,6 +100,8 @@
 | TIME-006 | Pending State Tracking | P1 | S | DONE | TIME-001 |
 | TIME-007 | Apply/Cancel Buttons | P1 | S | DONE | TIME-006 |
 | TIME-008 | Time-based Ground Tracks | P1 | M | DONE | TIME-001, SAT-005 |
+| TIME-009 | Current Time Display | P1 | S | DONE | TIME-001 |
+| TIME-010 | Ground Track Tail/Head Controls | P2 | M | DONE | TIME-001, SAT-005 |
 
 ### Control Panel (UI)
 
@@ -110,7 +115,8 @@
 | UI-006 | Confirmation Dialogs | P1 | S | DONE | UI-005 |
 | UI-007 | Analysis Section | P2 | L | PLAN | UI-002 |
 | UI-008 | Real-time Data Section | P2 | L | PLAN | UI-002, Backend |
-| UI-009 | Settings Section | P2 | M | WIP | UI-002 |
+| UI-009 | Settings Section | P2 | M | DONE | UI-002 |
+| UI-010 | Glow Effect Controls | P2 | S | DONE | UI-009, SAT-014 |
 
 ### Logging System (LOG)
 
@@ -219,17 +225,17 @@
 | Category | Total | DONE | WIP | PLAN | IDEA |
 |----------|-------|------|-----|------|------|
 | MAP | 10 | 10 | 0 | 0 | 0 |
-| SAT | 11 | 9 | 0 | 1 | 1 |
+| SAT | 14 | 12 | 0 | 1 | 1 |
 | SEN | 9 | 8 | 0 | 0 | 1 |
-| TIME | 8 | 8 | 0 | 0 | 0 |
-| UI | 9 | 6 | 1 | 2 | 0 |
+| TIME | 10 | 10 | 0 | 0 | 0 |
+| UI | 10 | 8 | 0 | 2 | 0 |
 | LOG | 10 | 8 | 0 | 0 | 2 |
 | TEST | 12 | 10 | 0 | 1 | 0 |
 | BACK | 9 | 3 | 0 | 4 | 2 |
 | ARCH | 5 | 5 | 0 | 0 | 0 |
-| **TOTAL** | **83** | **67** | **1** | **8** | **6** |
+| **TOTAL** | **89** | **74** | **0** | **8** | **6** |
 
-**Completion Rate**: 81% (67/83 features complete)
+**Completion Rate**: 83% (74/89 features complete)
 
 ---
 
@@ -237,4 +243,5 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.1 | 2025-11-26 | Added TLE rendering features: SAT-012/013/014, TIME-009/010, UI-009/010 |
 | 1.0 | 2025-11-26 | Initial consolidated feature registry |

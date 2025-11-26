@@ -1,0 +1,55 @@
+/**
+ * Settings Panel Module - Handles glow effect and other visualization settings
+ *
+ * DEPENDENCIES:
+ * - timeState: Glow settings state management
+ * - logger: Diagnostic logging
+ *
+ * Features:
+ * - Glow effect enable/disable toggle
+ * - Glow intensity slider control
+ */
+
+import timeState from '../state/timeState.js';
+import logger from '../utils/logger.js';
+
+// DOM Elements
+const glowEnabledCheckbox = document.getElementById('glow-enabled-checkbox');
+const glowIntensitySlider = document.getElementById('glow-intensity-slider');
+const glowIntensityDisplay = document.getElementById('glow-intensity-display');
+
+/**
+ * Initialize settings panel controls
+ */
+export function initializeSettingsPanel() {
+    if (!glowEnabledCheckbox || !glowIntensitySlider || !glowIntensityDisplay) {
+        logger.warning('Settings panel controls not found', logger.CATEGORY.UI);
+        return;
+    }
+
+    // Set initial values from state
+    glowEnabledCheckbox.checked = timeState.isGlowEnabled();
+    glowIntensitySlider.value = timeState.getGlowIntensity() * 100;
+    glowIntensityDisplay.textContent = timeState.getGlowIntensity().toFixed(1);
+
+    // Glow enabled checkbox handler
+    glowEnabledCheckbox.addEventListener('change', (e) => {
+        timeState.setGlowEnabled(e.target.checked);
+    });
+
+    // Glow intensity slider handler
+    glowIntensitySlider.addEventListener('input', (e) => {
+        const value = parseInt(e.target.value) / 100; // Convert from 10-200 to 0.1-2.0
+        glowIntensityDisplay.textContent = value.toFixed(1);
+        timeState.setGlowIntensity(value);
+    });
+
+    logger.diagnostic('Settings panel initialized', logger.CATEGORY.UI);
+}
+
+// Auto-initialize when module loads
+initializeSettingsPanel();
+
+export default {
+    initializeSettingsPanel
+};

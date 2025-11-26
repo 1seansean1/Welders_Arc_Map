@@ -103,13 +103,14 @@ export function propagateSatellite(tleLine1, tleLine2, date) {
  *
  * @param {string} tleLine1 - TLE line 1
  * @param {string} tleLine2 - TLE line 2
- * @param {Date} startTime - Start time for ground track
- * @param {number} durationMinutes - How many minutes of orbit to calculate (default: 90)
+ * @param {Date} currentTime - Current time (satellite position)
+ * @param {number} tailMinutes - How many minutes back to render (default: 20)
+ * @param {number} headMinutes - How many minutes forward to render (default: 0)
  * @param {number} stepSeconds - Time step between points (default: 20 seconds for smooth curves)
- * @returns {Array} - Array of path segments, each is [[lon, lat], ...] (empty array if error)
+ * @returns {Object} - { segments: Array of path segments, currentPosition: {lon, lat} | null }
  *
  * ERROR HANDLING:
- * - Returns empty array for invalid TLE data
+ * - Returns empty segments for invalid TLE data
  * - Aborts after 3 consecutive propagation errors
  * - Logs warnings for partial failures
  *
@@ -119,19 +120,19 @@ export function propagateSatellite(tleLine1, tleLine2, date) {
  * - Each segment can be rendered as a separate path to avoid wrap artifacts
  *
  * PERFORMANCE: O(n) where n = number of points
- * TYPICAL: 270 points for 90-minute orbit with 20-second steps
+ * TYPICAL: 60 points for 20-minute tail with 20-second steps
  */
-export function calculateGroundTrack(tleLine1, tleLine2, startTime, durationMinutes = 90, stepSeconds = 20) {
+export function calculateGroundTrack(tleLine1, tleLine2, currentTime, tailMinutes = 20, headMinutes = 0, stepSeconds = 20) {
     // Validate inputs
     if (!tleLine1 || !tleLine2) {
         logger.error('Ground track calculation failed: Missing TLE data', logger.CATEGORY.SATELLITE);
-        return [];
+        return { segments: [], currentPosition: null, tailPoints: [], headPoints: [] };
     }
 
     // Basic TLE format validation (lines should be 69 characters)
     if (typeof tleLine1 !== 'string' || typeof tleLine2 !== 'string') {
         logger.error('Ground track calculation failed: TLE must be strings', logger.CATEGORY.SATELLITE);
-        return [];
+        return { segments: [], currentPosition: null, tailPoints: [], headPoints: [] };
     }
 
     // TLE lines can have trailing whitespace stripped, so be lenient (min 68 chars)
@@ -141,59 +142,103 @@ export function calculateGroundTrack(tleLine1, tleLine2, startTime, durationMinu
             line2Length: tleLine2.length,
             expected: 69
         });
-        return [];
+        return { segments: [], currentPosition: null, tailPoints: [], headPoints: [] };
     }
 
-    // Validate startTime
-    if (!(startTime instanceof Date) || isNaN(startTime.getTime())) {
-        logger.error('Ground track calculation failed: Invalid startTime', logger.CATEGORY.SATELLITE);
-        return [];
+    // Validate currentTime
+    if (!(currentTime instanceof Date) || isNaN(currentTime.getTime())) {
+        logger.error('Ground track calculation failed: Invalid currentTime', logger.CATEGORY.SATELLITE);
+        return { segments: [], currentPosition: null, tailPoints: [], headPoints: [] };
     }
 
-    const allPoints = [];
-    const steps = Math.floor((durationMinutes * 60) / stepSeconds);
+    const tailPoints = [];
+    const headPoints = [];
+    let currentPosition = null;
 
     // Track consecutive errors to detect persistent failures
     let consecutiveErrors = 0;
     const MAX_CONSECUTIVE_ERRORS = 3;
     let totalErrors = 0;
 
-    for (let i = 0; i <= steps; i++) {
-        const time = new Date(startTime.getTime() + i * stepSeconds * 1000);
-        const position = propagateSatellite(tleLine1, tleLine2, time);
+    // Calculate start time (tail) and end time (head)
+    const startTime = new Date(currentTime.getTime() - tailMinutes * 60 * 1000);
+    const endTime = new Date(currentTime.getTime() + headMinutes * 60 * 1000);
+    const totalDuration = tailMinutes + headMinutes;
+    const totalSteps = Math.floor((totalDuration * 60) / stepSeconds);
 
-        if (position) {
-            allPoints.push([position.lon, position.lat]);
-            consecutiveErrors = 0;  // Reset on success
-        } else {
-            consecutiveErrors++;
-            totalErrors++;
+    // Get current position first
+    currentPosition = propagateSatellite(tleLine1, tleLine2, currentTime);
 
-            // Abort if too many consecutive errors (likely bad TLE)
-            if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
-                logger.warning('Ground track calculation aborted: Too many consecutive errors', logger.CATEGORY.SATELLITE, {
-                    consecutiveErrors: consecutiveErrors,
-                    totalErrors: totalErrors,
-                    pointsCalculated: allPoints.length,
-                    pointsExpected: steps + 1
+    // Calculate tail (backward from current time)
+    if (tailMinutes > 0) {
+        const tailSteps = Math.floor((tailMinutes * 60) / stepSeconds);
+        for (let i = tailSteps; i >= 0; i--) {
+            const time = new Date(currentTime.getTime() - i * stepSeconds * 1000);
+            const position = propagateSatellite(tleLine1, tleLine2, time);
+
+            if (position) {
+                tailPoints.push({
+                    position: [position.lon, position.lat],
+                    // Progress from 0 (oldest) to 1 (current) for gradient
+                    progress: (tailSteps - i) / tailSteps
                 });
-                break;
+                consecutiveErrors = 0;
+            } else {
+                consecutiveErrors++;
+                totalErrors++;
+                if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) break;
             }
         }
     }
+
+    // Calculate head (forward from current time)
+    if (headMinutes > 0) {
+        consecutiveErrors = 0;  // Reset for head calculation
+        const headSteps = Math.floor((headMinutes * 60) / stepSeconds);
+        for (let i = 1; i <= headSteps; i++) {  // Start from 1 (skip current position)
+            const time = new Date(currentTime.getTime() + i * stepSeconds * 1000);
+            const position = propagateSatellite(tleLine1, tleLine2, time);
+
+            if (position) {
+                headPoints.push({
+                    position: [position.lon, position.lat],
+                    // Progress from 0 (current) to 1 (furthest) for gradient
+                    progress: i / headSteps
+                });
+                consecutiveErrors = 0;
+            } else {
+                consecutiveErrors++;
+                totalErrors++;
+                if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) break;
+            }
+        }
+    }
+
+    // Combine all points for path rendering
+    const allPoints = [
+        ...tailPoints.map(p => p.position),
+        ...(currentPosition ? [[currentPosition.lon, currentPosition.lat]] : []),
+        ...headPoints.map(p => p.position)
+    ];
+
+    // Split path at anti-meridian crossings
+    const segments = splitPathAtAntimeridian(allPoints);
 
     // Log if there were any errors
     if (totalErrors > 0 && allPoints.length > 0) {
         logger.diagnostic('Ground track calculated with errors', logger.CATEGORY.SATELLITE, {
             points: allPoints.length,
-            expected: steps + 1,
             errors: totalErrors,
-            successRate: `${((allPoints.length / (steps + 1)) * 100).toFixed(1)}%`
+            successRate: `${((allPoints.length / (totalSteps + 1)) * 100).toFixed(1)}%`
         });
     }
 
-    // Split path at anti-meridian crossings to prevent wrap artifacts
-    return splitPathAtAntimeridian(allPoints);
+    return {
+        segments,
+        currentPosition: currentPosition ? { lon: currentPosition.lon, lat: currentPosition.lat } : null,
+        tailPoints,
+        headPoints
+    };
 }
 
 /**

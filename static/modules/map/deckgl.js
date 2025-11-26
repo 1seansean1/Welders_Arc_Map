@@ -148,7 +148,185 @@ function setupTimeStateSync() {
         updateDeckOverlay();
     });
 
+    // Update ground tracks when tail/head duration changes
+    eventBus.on('time:track:changed', ({ tailMinutes, headMinutes }) => {
+        logger.info('Track duration changed, updating visualization', logger.CATEGORY.SYNC, {
+            tail: `${tailMinutes} min`,
+            head: `${headMinutes} min`
+        });
+        updateDeckOverlay();
+    });
+
+    // Update glow effect when settings change
+    eventBus.on('time:glow:changed', ({ glowEnabled, glowIntensity }) => {
+        logger.info('Glow settings changed, updating visualization', logger.CATEGORY.SYNC, {
+            enabled: glowEnabled,
+            intensity: glowIntensity
+        });
+        updateDeckOverlay();
+    });
+
     logger.diagnostic('Time state sync configured', logger.CATEGORY.SYNC);
+}
+
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
+
+// Cached chevron atlas canvas
+let chevronAtlasCanvas = null;
+
+/**
+ * Create a canvas with a chevron/arrow icon for IconLayer
+ * The chevron points up (north) by default, rotation is applied via getAngle
+ * @returns {HTMLCanvasElement} Canvas with chevron icon
+ */
+function createChevronAtlas() {
+    // Return cached canvas if available
+    if (chevronAtlasCanvas) {
+        return chevronAtlasCanvas;
+    }
+
+    const size = 64;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+
+    // Clear background (transparent)
+    ctx.clearRect(0, 0, size, size);
+
+    // Draw chevron pointing UP (north)
+    // Narrow delta/chevron shape
+    ctx.beginPath();
+
+    // Chevron vertices (pointing up)
+    const centerX = size / 2;
+    const tipY = 8;           // Top point
+    const baseY = size - 12;   // Bottom points
+    const wingWidth = 14;      // Half width of the wings
+    const notchDepth = 16;     // How deep the notch goes
+
+    // Draw the chevron shape
+    ctx.moveTo(centerX, tipY);                    // Top tip
+    ctx.lineTo(centerX + wingWidth, baseY);       // Right wing bottom
+    ctx.lineTo(centerX, baseY - notchDepth);      // Center notch
+    ctx.lineTo(centerX - wingWidth, baseY);       // Left wing bottom
+    ctx.closePath();
+
+    // Fill with white (mask mode will tint it)
+    ctx.fillStyle = 'white';
+    ctx.fill();
+
+    // Add thin outline for visibility
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Cache and return
+    chevronAtlasCanvas = canvas;
+    return canvas;
+}
+
+/**
+ * Detect equator crossings in a set of track points
+ * @param {Array} tailPoints - Tail track points
+ * @param {Array} headPoints - Head track points
+ * @param {Object} currentPosition - Current satellite position
+ * @param {number} glowRangeMinutes - How many minutes before/after equator to show glow
+ * @returns {Array} Array of equator crossing data with glow intensity
+ */
+function detectEquatorCrossings(tailPoints, headPoints, currentPosition, glowRangeMinutes = 2) {
+    const crossings = [];
+    const allPoints = [
+        ...tailPoints.map((p, i) => ({ ...p, isHistory: true, index: i })),
+        ...(currentPosition ? [{ position: [currentPosition.lon, currentPosition.lat], progress: 1, isHistory: false, isCurrent: true }] : []),
+        ...headPoints.map((p, i) => ({ ...p, isHistory: false, index: i }))
+    ];
+
+    // Detect equator crossings between consecutive points
+    for (let i = 0; i < allPoints.length - 1; i++) {
+        const current = allPoints[i];
+        const next = allPoints[i + 1];
+
+        // Get latitudes
+        const lat1 = current.position[1];
+        const lat2 = next.position[1];
+
+        // Check if equator crossed (sign change in latitude)
+        if ((lat1 >= 0 && lat2 < 0) || (lat1 < 0 && lat2 >= 0)) {
+            // Interpolate exact crossing point
+            const t = Math.abs(lat1) / (Math.abs(lat1) + Math.abs(lat2));
+            const crossingLon = current.position[0] + t * (next.position[0] - current.position[0]);
+
+            // Calculate how "current" this crossing is
+            // For tail points: older = lower intensity
+            // For head points: further in future = lower intensity
+            let intensity = 1.0;
+
+            if (current.isHistory) {
+                // Tail: use progress (0 = oldest, 1 = newest/brightest)
+                intensity = current.progress;
+            } else if (!current.isCurrent) {
+                // Head: invert progress (0 = closest to now = brightest, 1 = far future = dimmer)
+                intensity = 1 - current.progress;
+            }
+
+            // Direction: northbound or southbound
+            const direction = lat2 > lat1 ? 'north' : 'south';
+
+            crossings.push({
+                position: [crossingLon, 0],
+                intensity: Math.max(0.3, Math.min(1, intensity)), // Clamp between 0.3 and 1
+                direction,
+                isHistory: current.isHistory,
+                isFuture: !current.isHistory && !current.isCurrent
+            });
+        }
+    }
+
+    return crossings;
+}
+
+/**
+ * Calculate bearing (heading direction) from tail points to current position
+ * @param {Array} tailPoints - Array of tail point objects with position
+ * @param {Object} currentPosition - Current position {lon, lat}
+ * @returns {number} Bearing in degrees (0-360, 0 = North)
+ */
+function calculateBearing(tailPoints, currentPosition) {
+    // Need at least one tail point to calculate bearing
+    if (!tailPoints || tailPoints.length === 0 || !currentPosition) {
+        return 0; // Default to North if we can't calculate
+    }
+
+    // Get the most recent tail point (last one before current)
+    const prevPoint = tailPoints[tailPoints.length - 1];
+    if (!prevPoint || !prevPoint.position) {
+        return 0;
+    }
+
+    const [lon1, lat1] = prevPoint.position;
+    const lon2 = currentPosition.lon;
+    const lat2 = currentPosition.lat;
+
+    // Convert to radians
+    const toRad = Math.PI / 180;
+    const lat1Rad = lat1 * toRad;
+    const lat2Rad = lat2 * toRad;
+    const dLon = (lon2 - lon1) * toRad;
+
+    // Calculate bearing
+    const x = Math.sin(dLon) * Math.cos(lat2Rad);
+    const y = Math.cos(lat1Rad) * Math.sin(lat2Rad) -
+              Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(dLon);
+
+    let bearing = Math.atan2(x, y) * (180 / Math.PI);
+
+    // Normalize to 0-360
+    bearing = (bearing + 360) % 360;
+
+    return bearing;
 }
 
 // ============================================
@@ -185,20 +363,99 @@ function createLayers() {
     // Calculate ground tracks for selected satellites
     const satellitesToRender = satelliteState.getSelectedSatellites();
     const currentTime = timeState.getCurrentTime();
+    const tailMinutes = timeState.getTailMinutes();
+    const headMinutes = timeState.getHeadMinutes();
+    const glowEnabled = timeState.isGlowEnabled();
+    const glowIntensity = timeState.getGlowIntensity();
 
-    // Prepare ground track data
+    // Prepare ground track data and satellite position data
     const groundTrackData = [];
+    const satellitePositionData = [];
+    const equatorCrossingData = [];
     const GREY = [128, 128, 128];
 
     satellitesToRender.forEach((sat) => {
-        const segments = calculateGroundTrack(sat.tleLine1, sat.tleLine2, currentTime, 90);
-        segments.forEach((segment, segIndex) => {
-            groundTrackData.push({
-                path: segment,
+        const trackResult = calculateGroundTrack(sat.tleLine1, sat.tleLine2, currentTime, tailMinutes, headMinutes);
+
+        // Create gradient segments from tail points
+        // Each segment is a short path with its own opacity based on progress
+        if (trackResult.tailPoints && trackResult.tailPoints.length >= 2) {
+            for (let i = 0; i < trackResult.tailPoints.length - 1; i++) {
+                const startPoint = trackResult.tailPoints[i];
+                const endPoint = trackResult.tailPoints[i + 1];
+
+                // Check for anti-meridian crossing (skip segment if crossing detected)
+                const lonDiff = Math.abs(endPoint.position[0] - startPoint.position[0]);
+                if (lonDiff > 300) continue;
+
+                // Calculate opacity based on progress (older = more transparent)
+                // progress goes from 0 (oldest) to 1 (newest)
+                const avgProgress = (startPoint.progress + endPoint.progress) / 2;
+                const alpha = Math.floor(avgProgress * 200 + 55); // Range: 55-255
+
+                groundTrackData.push({
+                    path: [startPoint.position, endPoint.position],
+                    name: sat.name,
+                    color: [...GREY, alpha],
+                    satellite: sat,
+                    segmentIndex: i,
+                    isTail: true
+                });
+            }
+        }
+
+        // Add head segments (full opacity, or could also gradient)
+        if (trackResult.headPoints && trackResult.headPoints.length >= 2) {
+            for (let i = 0; i < trackResult.headPoints.length - 1; i++) {
+                const startPoint = trackResult.headPoints[i];
+                const endPoint = trackResult.headPoints[i + 1];
+
+                // Check for anti-meridian crossing
+                const lonDiff = Math.abs(endPoint.position[0] - startPoint.position[0]);
+                if (lonDiff > 300) continue;
+
+                // Head uses lighter color and decreasing opacity into future
+                const avgProgress = (startPoint.progress + endPoint.progress) / 2;
+                const alpha = Math.floor((1 - avgProgress) * 150 + 80); // Fade into future
+
+                groundTrackData.push({
+                    path: [startPoint.position, endPoint.position],
+                    name: sat.name,
+                    color: [180, 200, 255, alpha], // Lighter blue for head
+                    satellite: sat,
+                    segmentIndex: i,
+                    isHead: true
+                });
+            }
+        }
+
+        // Add current position for satellite icon
+        if (trackResult.currentPosition) {
+            satellitePositionData.push({
+                position: [trackResult.currentPosition.lon, trackResult.currentPosition.lat],
                 name: sat.name,
-                color: GREY,
                 satellite: sat,
-                segmentIndex: segIndex
+                // Calculate bearing for chevron direction (from previous point)
+                bearing: calculateBearing(trackResult.tailPoints, trackResult.currentPosition)
+            });
+        }
+
+        // Detect equator crossings for glow effect
+        const crossings = detectEquatorCrossings(
+            trackResult.tailPoints || [],
+            trackResult.headPoints || [],
+            trackResult.currentPosition
+        );
+
+        crossings.forEach(crossing => {
+            equatorCrossingData.push({
+                position: crossing.position,
+                intensity: crossing.intensity,
+                direction: crossing.direction,
+                satellite: sat,
+                name: sat.name,
+                isHistory: crossing.isHistory,
+                isFuture: crossing.isFuture
             });
         });
     });
@@ -278,7 +535,7 @@ function createLayers() {
             }
         }),
 
-        // Ground track layer
+        // Ground track layer (with gradient fade)
         new deck.PathLayer({
             id: 'satellite-ground-tracks',
             data: groundTrackData,
@@ -290,7 +547,7 @@ function createLayers() {
             widthMinPixels: 2,
             widthMaxPixels: 3,
             getPath: d => d.path,
-            getColor: d => [...d.color, 180],
+            getColor: d => d.color, // Use per-segment RGBA color with alpha gradient
             getWidth: 2,
             transitions: {
                 getPath: 0,
@@ -299,13 +556,102 @@ function createLayers() {
             },
             updateTriggers: {
                 visible: satellitesToRender.length,
-                getPath: satellitesToRender.map(s => `${s.id}-${s.tleLine1}`).join(',')
+                getPath: `${satellitesToRender.map(s => `${s.id}-${s.tleLine1}`).join(',')}-${tailMinutes}-${headMinutes}-${currentTime.getTime()}`,
+                getColor: `${tailMinutes}-${headMinutes}-${currentTime.getTime()}`
             },
             onHover: ({object}) => {
                 if (object) {
                     logger.diagnostic('Satellite ground track hover', logger.CATEGORY.SATELLITE, {
                         name: object.name,
                         noradId: object.satellite.noradId
+                    });
+                }
+            }
+        }),
+
+        // Satellite position icon layer (chevron pointing in direction of travel)
+        new deck.IconLayer({
+            id: 'satellite-positions',
+            data: satellitePositionData,
+            visible: satellitesToRender.length > 0,
+            coordinateSystem: deck.COORDINATE_SYSTEM.LNGLAT,
+            wrapLongitude: true,
+            pickable: true,
+            billboard: false, // Keep icon flat on map, not facing camera
+            sizeScale: 1,
+            sizeMinPixels: 12,
+            sizeMaxPixels: 24,
+            getPosition: d => d.position,
+            getIcon: () => 'chevron',
+            getSize: 20,
+            getAngle: d => -d.bearing, // Negative because deck.gl rotates counter-clockwise
+            getColor: [157, 212, 255, 255],
+            iconAtlas: createChevronAtlas(),
+            iconMapping: {
+                chevron: {
+                    x: 0,
+                    y: 0,
+                    width: 64,
+                    height: 64,
+                    anchorY: 32, // Center vertically
+                    mask: true // Allows color tinting
+                }
+            },
+            updateTriggers: {
+                visible: satellitesToRender.length,
+                getPosition: `${satellitesToRender.map(s => s.id).join(',')}-${currentTime.getTime()}`,
+                getAngle: `${satellitesToRender.map(s => s.id).join(',')}-${currentTime.getTime()}`
+            },
+            onHover: ({object}) => {
+                if (object) {
+                    logger.diagnostic('Satellite position hover', logger.CATEGORY.SATELLITE, {
+                        name: object.name,
+                        noradId: object.satellite.noradId,
+                        bearing: object.bearing?.toFixed(1)
+                    });
+                }
+            }
+        }),
+
+        // Equator crossing glow layer
+        new deck.ScatterplotLayer({
+            id: 'equator-crossings',
+            data: equatorCrossingData,
+            visible: glowEnabled && equatorCrossingData.length > 0,
+            coordinateSystem: deck.COORDINATE_SYSTEM.LNGLAT,
+            wrapLongitude: true,
+            pickable: true,
+            opacity: 1,
+            stroked: false,
+            filled: true,
+            radiusScale: glowIntensity, // Apply intensity as size multiplier
+            radiusMinPixels: 4 * glowIntensity,
+            radiusMaxPixels: 20 * glowIntensity,
+            getPosition: d => d.position,
+            getRadius: d => 20000 * d.intensity,
+            getFillColor: d => {
+                // Blue-white glow color based on intensity
+                const alpha = Math.floor(d.intensity * 200 * glowIntensity + 55);
+                // Past crossings: grey-blue, Future crossings: white-blue
+                if (d.isHistory) {
+                    return [150, 180, 220, Math.min(255, alpha)];
+                } else if (d.isFuture) {
+                    return [200, 220, 255, Math.min(255, alpha)];
+                }
+                // Current/near: bright white-blue
+                return [220, 240, 255, Math.min(255, alpha)];
+            },
+            updateTriggers: {
+                visible: `${glowEnabled}-${equatorCrossingData.length}`,
+                getRadius: `${tailMinutes}-${headMinutes}-${currentTime.getTime()}-${glowIntensity}`,
+                getFillColor: `${tailMinutes}-${headMinutes}-${currentTime.getTime()}-${glowIntensity}`
+            },
+            onHover: ({object}) => {
+                if (object) {
+                    logger.diagnostic('Equator crossing hover', logger.CATEGORY.SATELLITE, {
+                        name: object.name,
+                        direction: object.direction,
+                        intensity: object.intensity?.toFixed(2)
                     });
                 }
             }

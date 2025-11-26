@@ -19,8 +19,7 @@
 
 | Task | Priority | Status | Notes |
 |------|----------|--------|-------|
-| Test Coverage Expansion | P2 | IN PROGRESS | Add tests for UI and data modules |
-| Settings Panel Completion | P2 | PLANNED | Finish Settings section UI |
+| Test Coverage Expansion | P2 | PLANNED | Add tests for UI and data modules |
 
 ---
 
@@ -28,11 +27,24 @@
 
 | Task | Priority | Completed | Notes |
 |------|----------|-----------|-------|
+| TLE Rendering Features | P1 | 2025-11-26 | Current time display, tail/head controls, gradient fade, chevron icon, equator glow |
+| Settings Panel Completion | P2 | 2025-11-26 | Glow effect enable/disable and intensity controls |
 | Documentation Standardization | P1 | 2025-11-26 | Created FEATURES, BUGS, LESSONS, TESTS, PLAN |
 
 ---
 
 ## Completed Milestones
+
+### Milestone: TLE Rendering Features (2025-11-26)
+**Result**: SUCCESS
+
+- Current time display overlay on map
+- Ground track tail/head duration controls (0-90 min)
+- Gradient fade effect for ground tracks
+- Chevron satellite icon with direction-aware rotation
+- Equator crossing glow effect
+- Settings panel with glow enable/intensity controls
+- 7 new features added to FEATURES.md
 
 ### Milestone: Modularization Complete (2025-11-25)
 **Result**: SUCCESS
@@ -190,4 +202,5 @@ venv\Scripts\python backend\main.py
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.1 | 2025-11-26 | Added TLE Rendering Features milestone, updated active tasks |
 | 1.0 | 2025-11-26 | Initial standardized plan document |
