@@ -27,18 +27,18 @@ import logger from '../utils/logger.js';
 const TEST_HYPOTHESES = {
     'H-DRIFT-1': {
         id: 'H-DRIFT-1',
-        name: 'Initial Zoom Offset',
-        hypothesis: 'Missing -1 zoom offset on init causes Deck.gl/Leaflet position mismatch',
+        name: 'LeafletLayer Integration',
+        hypothesis: 'deck.gl-leaflet integration handles sync automatically',
         symptom: 'Sensors appear in wrong position on initial load',
-        prediction: 'Deck.gl zoom should equal Leaflet zoom minus 1',
-        nullPrediction: 'Zoom values would match exactly (no offset)',
-        threshold: { zoomDiff: 0.01 },
+        prediction: 'LeafletLayer should be added to map with layers rendering',
+        nullPrediction: 'LeafletLayer missing or not rendering',
+        threshold: { layerCount: 0 },
         causalChain: [
             'SYMPTOM: Position drift on initial load',
-            'PROXIMATE: Deck.gl viewState zoom != Leaflet zoom - 1',
-            'ROOT: Line 299 missing zoom offset',
-            'MECHANISM: Deck.gl MapView uses different zoom scale',
-            'FIX: Apply LEAFLET_TO_DECKGL_ZOOM_OFFSET constant'
+            'PROXIMATE: Manual sync was error-prone',
+            'ROOT: Using deck.gl-leaflet LeafletLayer integration',
+            'MECHANISM: LeafletLayer handles all sync automatically',
+            'FIX: Verify LeafletLayer is initialized and has layers'
         ]
     },
     'H-TIME-1': {
@@ -107,18 +107,18 @@ const TEST_HYPOTHESES = {
     },
     'H-BATCH-1': {
         id: 'H-BATCH-1',
-        name: 'setProps Batching',
-        hypothesis: 'Unbatched setProps calls may cause race conditions',
+        name: 'LeafletLayer Internal Sync',
+        hypothesis: 'LeafletLayer handles setProps internally without manual batching',
         symptom: 'Intermittent visual glitches or state inconsistency',
-        prediction: 'Combined viewState+layers calls should exist',
-        nullPrediction: 'All calls would be viewState-only',
+        prediction: 'LeafletLayer manages sync internally (no manual calls needed)',
+        nullPrediction: 'Would need manual setProps calls',
         threshold: { viewStateOnlyRatio: 0.95 },
         causalChain: [
-            'SYMPTOM: Intermittent glitches',
-            'PROXIMATE: Multiple setProps in same frame',
-            'ROOT: Separate calls for viewState and layers',
-            'MECHANISM: Race between viewState and layer updates',
-            'FIX: Combine updates into single setProps call'
+            'SYMPTOM: Intermittent glitches with manual sync',
+            'PROXIMATE: Multiple setProps calls in same frame',
+            'ROOT: Manual sync was error-prone',
+            'MECHANISM: LeafletLayer handles sync internally',
+            'FIX: Using deck.gl-leaflet integration eliminates race conditions'
         ]
     }
 };
@@ -335,15 +335,15 @@ class AutomatedMapTests {
         this._logMeasurement('Drift events', report.sync.driftEvents, 0, hyp.threshold.driftEvents);
         this._logMeasurement('Max drift', maxDrift, 0, hyp.threshold.maxDrift);
 
-        // 4. VALIDATE
-        const passed = report.sync.driftEvents === 0 &&
-                       (syncValid.valid || syncValid.errors?.length === 0);
-        this._logValidation(hyp, passed, { driftEvents: report.sync.driftEvents });
+        // 4. VALIDATE - With LeafletLayer, drift should be zero (handled automatically)
+        // Note: syncValid may not apply with LeafletLayer since it handles sync internally
+        const passed = report.sync.driftEvents === 0 && maxDrift <= hyp.threshold.maxDrift;
+        this._logValidation(hyp, passed, { driftEvents: report.sync.driftEvents, maxDrift });
 
         return this._recordResult(hyp, passed, {
             driftEvents: report.sync.driftEvents,
             maxDrift,
-            finalSyncValid: syncValid.valid
+            integration: 'LeafletLayer handles sync automatically'
         });
     }
 
@@ -410,18 +410,24 @@ class AutomatedMapTests {
         const report = diagnostics.stopRecording();
 
         // 3. MEASURE
-        const droppedRate = report.frames.droppedFrameRate || 0;
+        // droppedFrameRate is already a string like "5.0%" from diagnostics
+        const droppedRate = report.frames.droppedFrameRate || '0%';
+        const droppedFrames = report.frames.droppedFrames || 0;
+        const totalFrames = report.frames.count || 1;
+        const droppedRatio = droppedFrames / totalFrames;
+
         this._logMeasurement('Glitches', report.glitches.count, 0, hyp.threshold.glitches);
-        this._logMeasurement('Dropped frame rate', droppedRate.toFixed(2), 0, hyp.threshold.droppedFrameRate);
+        this._logMeasurement('Dropped frame rate', droppedRate, '<10%', hyp.threshold.droppedFrameRate);
 
         // 4. VALIDATE
-        const passed = report.glitches.count === 0 &&
-                       report.frames.droppedFrames < report.frames.count * hyp.threshold.droppedFrameRate;
+        const passed = report.glitches.count === 0 && droppedRatio < hyp.threshold.droppedFrameRate;
         this._logValidation(hyp, passed, { glitches: report.glitches.count, droppedRate });
 
         return this._recordResult(hyp, passed, {
             glitches: report.glitches.count,
             droppedFrameRate: droppedRate,
+            droppedFrames,
+            totalFrames,
             avgFrameTime: report.frames.avg?.toFixed(2) + 'ms'
         });
     }
@@ -484,8 +490,8 @@ class AutomatedMapTests {
     }
 
     /**
-     * Test: Initial zoom offset (H-DRIFT-1 regression test)
-     * Verifies zoom offset is correctly applied on initialization
+     * Test: LeafletLayer integration (H-DRIFT-1)
+     * Verifies deck.gl-leaflet LeafletLayer is properly initialized
      */
     async testInitialZoomOffset() {
         const hyp = this.hypotheses['H-DRIFT-1'];
@@ -497,37 +503,41 @@ class AutomatedMapTests {
         this._logPrediction(hyp);
 
         const map = window.leafletMap;
-        const deckgl = window.deckgl;
+        const deckLayer = window.deckLayer;
 
-        if (!map || !deckgl) {
-            return this._recordResult(hyp, false, { error: 'Map or Deck.gl not initialized' });
+        if (!map) {
+            return this._recordResult(hyp, false, { error: 'Leaflet map not initialized' });
         }
 
-        // 3. MEASURE
-        const leafletZoom = map.getZoom();
-        const deckViewState = deckgl.viewState || deckgl.props?.viewState;
-        const deckZoom = deckViewState?.zoom;
-        const expectedDeckZoom = leafletZoom - 1;
-        const zoomDiff = Math.abs(deckZoom - expectedDeckZoom);
+        if (!deckLayer) {
+            return this._recordResult(hyp, false, { error: 'LeafletLayer not initialized' });
+        }
 
-        this._logMeasurement('Leaflet zoom', leafletZoom, leafletZoom, 0);
-        this._logMeasurement('Deck.gl zoom', deckZoom, expectedDeckZoom, hyp.threshold.zoomDiff);
+        // 3. MEASURE - Check LeafletLayer is added to map and has layers
+        const isAddedToMap = map.hasLayer(deckLayer);
+        const layerProps = deckLayer.props || {};
+        const hasLayers = layerProps.layers && layerProps.layers.length > 0;
+        const layerCount = layerProps.layers?.length || 0;
 
-        // 4. VALIDATE
-        const passed = zoomDiff < hyp.threshold.zoomDiff;
-        this._logValidation(hyp, passed, { zoomDiff });
+        this._logMeasurement('LeafletLayer added to map', isAddedToMap, true, 0);
+        this._logMeasurement('Has rendering layers', hasLayers, true, 0);
+        this._logMeasurement('Layer count', layerCount, '>0', 0);
+
+        // 4. VALIDATE - LeafletLayer is working if added to map and has layers
+        const passed = isAddedToMap && hasLayers;
+        this._logValidation(hyp, passed, { isAddedToMap, hasLayers, layerCount });
 
         return this._recordResult(hyp, passed, {
-            leafletZoom,
-            deckZoom,
-            expectedDeckZoom,
-            difference: zoomDiff
+            isAddedToMap,
+            hasLayers,
+            layerCount,
+            integration: 'deck.gl-leaflet@1.3.1'
         });
     }
 
     /**
-     * Test: setProps batching
-     * Verifies updates are batched properly (no race conditions)
+     * Test: LeafletLayer internal sync (H-BATCH-1)
+     * With LeafletLayer, sync is handled internally - no manual setProps needed
      */
     async testSetPropsBatching() {
         const hyp = this.hypotheses['H-BATCH-1'];
@@ -538,27 +548,29 @@ class AutomatedMapTests {
         // 2. PREDICT
         this._logPrediction(hyp);
 
-        // 3. EXPERIMENT
+        // 3. EXPERIMENT - With LeafletLayer, we don't manually call setProps for sync
+        // The integration handles it internally. Test that no manual calls are needed.
         diagnostics.startRecording();
         await this.simulatePan(5, 5, 10, 200);
         const report = diagnostics.stopRecording();
 
-        // 3. MEASURE
-        const viewStateOnlyRatio = report.setProps.totalCalls > 0 ?
-            report.setProps.viewStateOnlyCalls / report.setProps.totalCalls : 0;
+        // 3. MEASURE - With LeafletLayer, we expect ZERO manual setProps calls
+        // because the integration handles sync internally
+        const totalCalls = report.setProps.totalCalls || 0;
+        const noManualCalls = totalCalls === 0;
 
-        this._logMeasurement('Total setProps calls', report.setProps.totalCalls, 'N/A', 'N/A');
-        this._logMeasurement('ViewState-only ratio', (viewStateOnlyRatio * 100).toFixed(1) + '%', '<95%', hyp.threshold.viewStateOnlyRatio);
+        this._logMeasurement('Manual setProps calls', totalCalls, 0, 0);
+        this._logMeasurement('LeafletLayer handles sync', noManualCalls, true, 0);
 
-        // 4. VALIDATE - At least some combined calls should exist
-        const passed = viewStateOnlyRatio < hyp.threshold.viewStateOnlyRatio;
-        this._logValidation(hyp, passed, { viewStateOnlyRatio });
+        // 4. VALIDATE - Pass if no manual setProps calls (LeafletLayer handles internally)
+        // This is the opposite of the old test - we WANT zero manual calls now
+        const passed = noManualCalls;
+        this._logValidation(hyp, passed, { totalCalls, internalSync: true });
 
         return this._recordResult(hyp, passed, {
-            totalCalls: report.setProps.totalCalls,
-            viewStateOnly: report.setProps.viewStateOnlyCalls,
-            combined: report.setProps.combinedCalls,
-            viewStateOnlyRatio: (viewStateOnlyRatio * 100).toFixed(1) + '%'
+            manualSetPropsCalls: totalCalls,
+            internalSync: noManualCalls,
+            integration: 'LeafletLayer handles sync automatically'
         });
     }
 

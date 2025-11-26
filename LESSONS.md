@@ -22,6 +22,7 @@ This document captures debugging knowledge, integration patterns, and hard-won i
 | LL-003 | Property Name Mapping at Boundaries | Data Flow | 2025-11-25 |
 | LL-004 | Test State Pollution | Testing | 2025-11-25 |
 | LL-005 | Deck.gl Layer State Corruption | Rendering | 2025-11-26 |
+| LL-006 | deck.gl-leaflet Integration vs Manual Sync | Architecture | 2025-11-26 |
 
 ---
 
@@ -256,6 +257,116 @@ layers.push(new ScatterplotLayer({
 2. Always include all layers with consistent IDs
 3. Use `visible` prop for conditional rendering
 4. Include `visible` in `updateTriggers`
+
+---
+
+## LL-006: deck.gl-leaflet Integration vs Manual Sync
+
+**Date**: 2025-11-26
+**Category**: Architecture
+**Status**: RESOLVED
+
+### Problem
+
+Multiple rendering issues when using manual Deck.gl overlay on Leaflet:
+1. Layers lagging behind base map during pan/zoom
+2. World wrapping issues at anti-meridian
+3. Sensor/satellite position errors when zoomed all the way out
+4. Flickering during canvas resize
+5. Complex manual sync code prone to race conditions
+
+### Root Cause
+
+Manual overlay architecture creates two separate rendering contexts that must stay perfectly synchronized:
+
+```
+User Interaction (pan/zoom/resize)
+       ↓
+Leaflet (handles input, updates its own view)
+       ↓
+[MANUAL SYNC POINT - error-prone]
+       ↓
+Deck.gl standalone instance (separate canvas, separate viewState)
+       ↓
+Symptoms: lag, drift, flickering, wrapping issues
+```
+
+Problems with manual sync:
+- Zoom offset (-1) must be applied in multiple places
+- Canvas positioning must be kept in sync manually
+- Resize events create race conditions
+- Two separate rendering contexts drift during rapid interactions
+
+### Solution
+
+Replace manual sync with `deck.gl-leaflet` integration library:
+
+```javascript
+// OLD: Manual standalone Deck instance
+const deck = new Deck({
+    parent: container,
+    viewState: getLeafletViewState(),
+    // Many sync handlers required...
+});
+
+// NEW: LeafletLayer integration (handles ALL sync automatically)
+import { LeafletLayer } from 'deck.gl-leaflet';
+
+const deckLayer = new DeckGlLeaflet.LeafletLayer({
+    views: [new deck.MapView({ repeat: true })],
+    layers: [...],
+});
+map.addLayer(deckLayer);  // Integration handles everything
+```
+
+### Key Findings from Research
+
+1. **No official @deck.gl/leaflet package** - Use community `deck.gl-leaflet` by zakjan
+2. **Global export name**: `DeckGlLeaflet` (lowercase 'l' in 'Gl')
+3. **CDN path**: `unpkg.com/deck.gl-leaflet@1.3.1/dist/deck.gl-leaflet.umd.min.js`
+4. **For high-performance**: Consider MapLibre GL JS + deck.gl interleaved mode
+
+### What LeafletLayer Handles Automatically
+
+- Canvas positioning
+- View state synchronization on pan/zoom
+- Coordinate system conversion (zoom offset)
+- Resize handling
+- World wrapping
+
+### Prevention
+
+1. **Prefer integration libraries** over manual sync between rendering contexts
+2. **Research before implementing** - check if community solutions exist
+3. **Two canvas overlay is inherently complex** - single canvas solutions (MapLibre) are more robust
+4. **Document library global names** - CDN bundles may use unexpected names
+
+### Anti-Pattern
+
+Manual sync between two separate rendering contexts:
+```javascript
+// DON'T: Manual sync with many edge cases
+map.on('move', () => {
+    deck.setProps({
+        viewState: {
+            longitude: map.getCenter().lng,
+            latitude: map.getCenter().lat,
+            zoom: map.getZoom() - 1,  // Easy to forget!
+            // ...
+        }
+    });
+});
+```
+
+### Good Pattern
+
+Use integration library that handles sync internally:
+```javascript
+// DO: Let the library handle sync
+const deckLayer = new DeckGlLeaflet.LeafletLayer({ layers });
+map.addLayer(deckLayer);
+// No manual sync code needed!
+```
 
 ---
 
