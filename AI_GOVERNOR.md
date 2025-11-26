@@ -61,7 +61,7 @@ All AI assistants must perform these actions without prompting:
 
 ---
 
-**Version**: 2.1.0 | **Last Updated**: 2025-11-26
+**Version**: 2.2.0 | **Last Updated**: 2025-11-26
 
 ---
 
@@ -76,6 +76,7 @@ All AI assistants must perform these actions without prompting:
 7. [Lessons Learned & Reflection Prompt](#7-lessons-learned--reflection-prompt)
 8. [Growth & Future Vision Prompt](#8-growth--future-vision-prompt)
 9. [Deployment & User Adoption Prompt](#9-deployment--user-adoption-prompt)
+10. [Deep Research Protocol](#10-deep-research-protocol)
 
 ---
 
@@ -98,6 +99,11 @@ All AI assistants must perform these actions without prompting:
 ---
 
 ## Changelog
+
+### [2.2.0] - 2025-11-26
+- Added: §10 Deep Research Protocol for complex/persistent issues
+- Added: 5-phase research framework (Scope → Domain → Hypothesis → Elimination → Resolution)
+- Added: Slash command recommendations for governance workflows
 
 ### [2.1.0] - 2025-11-26
 - Added: Mandatory Behaviors (Quick Reference) table consolidating all required AI behaviors
@@ -448,6 +454,79 @@ I need to plan **[DEPLOYMENT WORK]**. Create structured analysis:
 2. Deployment strategy
 3. Rollback procedures
 4. Success criteria
+
+---
+
+## 10. Deep Research Protocol
+
+Use when facing complex issues requiring systematic investigation: persistent bugs with unknown root causes, performance anomalies, integration mysteries, or domain-specific technical challenges.
+
+### When to Invoke
+
+- Bug persists after 2+ fix attempts
+- Multiple symptoms may share unknown common cause
+- Issue requires domain expertise (orbital mechanics, WebGL, async timing)
+- Behavior contradicts documentation or expected patterns
+- "It works sometimes" scenarios
+
+### Research Framework
+
+```
+PHASE 1: SCOPE DEFINITION
+├── Symptom catalog (all observed manifestations)
+├── Reproduction conditions (when it happens/doesn't)
+├── Timeline (when did it start, what changed)
+└── Affected components (trace the dependency chain)
+
+PHASE 2: DOMAIN DEEP-DIVE
+├── Gather authoritative sources (official docs, specs, RFCs)
+├── Identify domain constraints (math, physics, protocol rules)
+├── Map assumptions vs. verified facts
+└── Document knowledge gaps
+
+PHASE 3: HYPOTHESIS TREE
+├── List all plausible root causes
+├── Rank by: likelihood × testability × impact
+├── Design minimal experiments for top 3
+└── Predict specific outcomes for each hypothesis
+
+PHASE 4: SYSTEMATIC ELIMINATION
+├── Test one variable at a time
+├── Document: hypothesis → prediction → result → conclusion
+├── Update hypothesis rankings after each test
+└── Stop when root cause is PROVEN, not suspected
+
+PHASE 5: RESOLUTION & PREVENTION
+├── Implement fix with clear rationale
+├── Add regression test
+├── Update LESSONS.md with pattern
+└── Identify similar code at risk
+```
+
+### Prompt
+
+I'm encountering a **[PERSISTENT/COMPLEX ISSUE]** that requires deep investigation.
+
+**Symptoms observed**:
+- [List all manifestations]
+
+**Investigation so far**:
+- [What's been tried, what was learned]
+
+**Domain context**:
+- [Relevant technical area: SGP4, Deck.gl, WebSocket, etc.]
+
+Execute the Deep Research Protocol. Do not attempt fixes until Phase 4 completes with a proven root cause.
+
+### Output Requirements
+
+1. **Research Log**: Timestamped investigation notes
+2. **Hypothesis Matrix**: Ranked causes with test results
+3. **Root Cause Statement**: Single sentence, proven not guessed
+4. **Fix Specification**: What to change and why it works
+5. **Prevention Pattern**: How to avoid this class of bug
+
+**Update LESSONS.md with findings. Update BUGS.md if new issues discovered.**
 
 ---
 
