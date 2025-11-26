@@ -19,9 +19,16 @@
 
 | Task | Priority | Status | Notes |
 |------|----------|--------|-------|
-| Documentation Standardization | P1 | IN PROGRESS | Creating FEATURES, BUGS, LESSONS, TESTS, PLAN |
-| Test Coverage Expansion | P2 | PLANNED | Add tests for UI and data modules |
+| Test Coverage Expansion | P2 | IN PROGRESS | Add tests for UI and data modules |
 | Settings Panel Completion | P2 | PLANNED | Finish Settings section UI |
+
+---
+
+## Recently Completed
+
+| Task | Priority | Completed | Notes |
+|------|----------|-----------|-------|
+| Documentation Standardization | P1 | 2025-11-26 | Created FEATURES, BUGS, LESSONS, TESTS, PLAN |
 
 ---
 
