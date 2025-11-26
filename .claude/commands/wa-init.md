@@ -28,6 +28,21 @@ Provide a brief status report:
 5. **Mandatory Behaviors**: Confirmed (list the 7)
 6. **Ready for**: What type of work you're prepared to assist with
 
+### Step 5: List Available Commands
+Report all available slash commands for this project:
+
+**Workflow Commands**:
+| Command | Purpose |
+|---------|---------|
+| `/wa-init` | Initialize session with governance compliance |
+| `/wa-plan` | Create implementation plan before coding (§4) |
+| `/wa-debug` | Hypothesis-driven bug investigation (§5) |
+| `/wa-commit` | Documentation & Git workflow after changes (§6) |
+| `/wa-reflect` | Lessons learned & structured reflection (§7) |
+| `/wa-research` | Deep Research Protocol for complex issues (§10) |
+| `/wa-bug` | Quick bug registration to BUGS.md |
+| `/wa-feature-complete` | Complete feature with all mandatory actions |
+
 ### Reminder
 Key Principle: "Prove before fixing, commit before changing, document before forgetting."
 
