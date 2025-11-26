@@ -1,195 +1,196 @@
 ---
-description: Complete feature implementation with all AI Governor mandatory actions
+description: Complete feature implementation with all AI Governor mandatory actions (user)
 ---
 
-## Feature Completion Protocol
+# Feature Implementation Workflow
 
-Complete a feature with full AI Governor compliance: gather details, build, test, debug, document, commit.
+Complete end-to-end feature workflow: gather requirements → plan → implement → test → document → commit.
 
-### Step 1: Gather Feature Details
+---
 
-**Ask the user:**
-1. **Feature name/ID**: What feature was implemented? (e.g., SAT-015, TIME-011)
-2. **Description**: Brief summary of what was built
-3. **Files changed**: Which files were modified/created?
-4. **Known issues**: Any concerns or edge cases to test?
+## Phase 1: Gather Requirements (INTERACTIVE)
 
-**Wait for user response before proceeding.**
+**Ask the user the following questions** (wait for responses):
 
-### Step 2: Verify Build
+1. **What feature do you want?** Describe what it should do.
+2. **Where should it appear?** (UI location, module, API endpoint, etc.)
+3. **Any specific requirements?** (constraints, dependencies, edge cases)
+4. **Priority?** (P0=critical, P1=high, P2=medium, P3=low)
 
-Execute build/server startup to ensure no syntax errors:
-
-```bash
-cd C:\Users\seanp\Workspace\WA_map
-venv\Scripts\python backend\main.py
+After gathering responses, summarize back to the user:
+```
+Feature: [name]
+Description: [what it does]
+Location: [where it lives]
+Priority: [P0-P3]
 ```
 
-**Check for:**
-- [ ] Server starts without errors
-- [ ] No import/syntax errors in console
+**Ask**: "Does this capture your intent? (yes/adjust)"
+
+---
+
+## Phase 2: Answer Four Mandatory Questions (AI Governor §3)
+
+Before implementation, explicitly answer:
+
+| Question | Answer |
+|----------|--------|
+| 1. What exists now? | [Current state of affected code/UI] |
+| 2. What should exist? | [Target state after implementation] |
+| 3. How will we know we're done? | [Testable success criteria] |
+| 4. How do we undo this? | [Rollback plan - git revert, feature flag, etc.] |
+
+---
+
+## Phase 3: Plan Implementation
+
+Read relevant existing code first, then create implementation plan:
+
+1. **Files to modify**: List each file and what changes
+2. **Files to create**: Any new modules/components
+3. **Dependencies**: What this feature depends on
+4. **Risks**: What could go wrong
+
+---
+
+## Phase 4: Implement Feature
+
+Execute the implementation plan:
+- [ ] Create/modify files as planned
+- [ ] Follow existing code patterns
+- [ ] No TODO/FIXME left unaddressed
+- [ ] Self-review for obvious issues
+
+---
+
+## Phase 5: Verify Build/Server
+
+- [ ] Start server: `venv\Scripts\python backend\main.py`
+- [ ] Confirm no startup errors
 - [ ] App loads at http://localhost:8000
 
-**If build fails**: Stop and fix errors before proceeding.
+---
 
-### Step 3: Run Automated Tests
+## Phase 6: Create Tests
 
-Open test page and run all tests:
-- URL: http://localhost:8000/static/test-runner.html (or test-*.html)
-- Execute all hypothesis-driven tests
-- Capture results
+Add hypothesis-driven test(s) in `static/modules/test/testRegistry.js`:
 
-**Report:**
-- Total tests: X
-- Passing: X
-- Failing: X
-- Test names and status
+```javascript
+{
+    id: 'FEAT-XXX',
+    hypothesis: 'If [condition], then [expected behavior]',
+    category: '[category]',
+    steps: [
+        { action: '...', expected: '...' }
+    ],
+    validate: async () => { /* return true/false */ }
+}
+```
 
-### Step 4: Evaluate Test Results
+---
 
-**Decision point based on test outcomes:**
+## Phase 7: Run All Tests
 
-#### If ALL tests pass:
-- [ ] Proceed to Step 6 (Documentation)
-- [ ] Capture test summary for commit message
+- [ ] Open test panel in browser
+- [ ] Run ALL tests (not just new ones)
+- [ ] Report results: X/Y passing
 
-#### If tests FAIL:
-- [ ] Identify failing test(s) and symptoms
-- [ ] Attempt quick fix (< 5 minutes)
-- [ ] Re-run tests
+**If ANY test fails**:
+1. Stop and fix the issue
+2. Use `/wa-research` if bug is complex
+3. Re-run tests until ALL pass
 
-#### If failure persists after 2+ attempts:
-**Trigger Deep Research Protocol:**
-- Report to user: "Tests failing after multiple attempts. Recommending /wa-research"
-- Ask user: "Should I execute the Deep Research Protocol for systematic debugging?"
-- If yes → Execute `/wa-research` command
-- If no → Document known issues and proceed with user guidance
+**Do NOT proceed until all tests pass.**
 
-### Step 5: Add Feature Tests (if missing)
+---
 
-If the new feature lacks test coverage:
-- [ ] Add hypothesis-driven test to `static/modules/test/testRegistry.js`
-- [ ] Test format:
-  ```javascript
-  {
-      id: 'FEATURE-XXX',
-      hypothesis: 'If [condition], then [expected behavior]',
-      category: 'feature',
-      test: async () => { /* validation logic */ }
-  }
-  ```
-- [ ] Run new test to verify it passes
+## Phase 8: Update Documentation
 
-### Step 6: Update Documentation
-
-Read and update all applicable docs:
-
-**6a. FEATURES.md**
-- [ ] Add/update feature entry with status=DONE
-- [ ] Update Summary Statistics
+### 8a. FEATURES.md
+- [ ] Add feature entry with ID, name, priority, complexity, status=DONE
+- [ ] Update Summary Statistics (totals and completion %)
 - [ ] Update Version History
 
-**6b. PLAN.md**
-- [ ] Move task to "Recently Completed"
+### 8b. PLAN.md
+- [ ] Move to "Recently Completed" if it was in Active Tasks
 - [ ] Add milestone entry if significant
-- [ ] Update active tasks
 
-**6c. BUGS.md** (if applicable)
-- [ ] Add any new bugs discovered (BUG-XXX format)
-- [ ] Close any bugs fixed by this feature
+### 8c. BUGS.md (if applicable)
+- [ ] Add any bugs found (BUG-XXX format)
+- [ ] Close any bugs fixed
 
-**6d. LESSONS.md** (if applicable)
+### 8d. LESSONS.md (if applicable)
 - [ ] Document debugging insights
 - [ ] Add prevention patterns
 
-### Step 7: Re-Read AI Governor & Verify Compliance
+---
 
-Read C:\Users\seanp\Workspace\WA_map\AI_GOVERNOR.md
-
-**Verify all 7 mandatory behaviors:**
-
-| # | Behavior | Status |
-|---|----------|--------|
-| 1 | Read AI_GOVERNOR.md | [ ] |
-| 2 | Add bugs to BUGS.md (BUG-XXX format) | [ ] N/A or Done |
-| 3 | Commit AND push to origin | [ ] Pending |
-| 4 | Answer Four Mandatory Questions | [ ] |
-| 5 | Pass all Quality Gates | [ ] |
-| 6 | Update referenced docs | [ ] |
-| 7 | Flag outdated info, propose additions | [ ] N/A or Done |
-
-**Answer Four Mandatory Questions:**
-1. What exists now? [Current state]
-2. What should exist? [Target state - achieved]
-3. How will we know we're done? [Test results]
-4. How do we undo this? [git revert <commit>]
-
-### Step 8: Quality Gates Checklist
+## Phase 9: Quality Gates Checklist
 
 ```
 GATE 1: Code Complete
   [ ] Implementation finished
   [ ] Self-review complete
-  [ ] No TODO/FIXME left unaddressed
+  [ ] No TODO/FIXME remaining
 
 GATE 2: Tested
-  [ ] New tests added for feature
-  [ ] All tests pass (X/Y passing)
-  [ ] Manual verification complete
+  [ ] New tests added
+  [ ] All tests pass
+  [ ] Manual verification done
 
 GATE 3: Documented
   [ ] FEATURES.md updated
   [ ] PLAN.md updated
-  [ ] BUGS.md updated (if applicable)
-  [ ] LESSONS.md updated (if applicable)
+  [ ] Other docs as needed
 
-GATE 4: Committed
-  [ ] Atomic commit with clear message
-  [ ] Pushed to remote
-```
-
-### Step 9: Git Commit AND Push
-
-Execute commit workflow:
-
-```bash
-git -C "C:/Users/seanp/Workspace/WA_map" add -A
-git -C "C:/Users/seanp/Workspace/WA_map" status
-git -C "C:/Users/seanp/Workspace/WA_map" commit -m "<type>(<scope>): <summary>"
-git -C "C:/Users/seanp/Workspace/WA_map" push
-```
-
-Commit message format: `feat(<scope>): <summary>`
-Types: feat | fix | docs | refactor | test | chore | perf
-
-### Step 10: Final Report
-
-Present completion summary:
-
-```
-## Feature Completion Report
-
-**Feature**: [ID] - [Name]
-**Status**: COMPLETE
-
-### Test Results
-- Total: X tests
-- Passing: X/X (100%)
-- New tests added: [count]
-
-### Documentation Updated
-- [x] FEATURES.md
-- [x] PLAN.md
-- [ ] BUGS.md (N/A)
-- [ ] LESSONS.md (N/A)
-
-### Git
-- Commit: [hash]
-- Pushed: Yes
-
-### Mandatory Behaviors: 7/7 Confirmed
+GATE 4: Ready to Commit
+  [ ] All gates passed
 ```
 
 ---
 
-**Key Principle**: "Prove before fixing, commit before changing, document before forgetting."
+## Phase 10: Git Commit AND Push
+
+```bash
+git -C "C:/Users/seanp/Workspace/WA_map" add -A
+git -C "C:/Users/seanp/Workspace/WA_map" commit -m "<type>(<scope>): <summary>"
+git -C "C:/Users/seanp/Workspace/WA_map" push
+```
+
+Commit types: feat | fix | docs | refactor | test | chore | perf
+
+---
+
+## Phase 11: Final Report
+
+Provide completion summary:
+
+```
+## Feature Complete: [Feature Name]
+
+**Implementation**:
+- Files modified: [list]
+- Files created: [list]
+
+**Tests**: X/Y passing (including N new tests)
+
+**Documentation Updated**:
+- [x] FEATURES.md
+- [x] PLAN.md
+- [ ] BUGS.md (if applicable)
+- [ ] LESSONS.md (if applicable)
+
+**Git**: Committed and pushed to origin/main
+
+**Mandatory Behaviors**: All 7 confirmed
+```
+
+---
+
+## Execution Mode
+
+**Phase 1 is INTERACTIVE** - wait for user input before proceeding.
+**Phases 2-11 execute sequentially** - report progress at each phase.
+**Stop on test failure** - do not skip to documentation if tests fail.
+
+**Start now: Ask the Phase 1 questions.**
