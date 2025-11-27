@@ -334,14 +334,16 @@ function handleWheelJog(e) {
     // Only activate when Ctrl key is held
     if (!e.ctrlKey) return;
 
-    // Throttle wheel events to prevent overwhelming
+    // IMPORTANT: Prevent map zoom immediately when Ctrl is held
+    // Must happen BEFORE throttle check to prevent Leaflet from zooming
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Throttle wheel events to prevent overwhelming time updates
+    // (event is already blocked from reaching Leaflet above)
     const now = Date.now();
     if (now - lastWheelTime < WHEEL_THROTTLE_MS) return;
     lastWheelTime = now;
-
-    // Prevent map zoom when jogging
-    e.preventDefault();
-    e.stopPropagation();
 
     // Stop real-time mode when jogging
     if (isRealTime) {
@@ -361,7 +363,9 @@ function handleWheelJog(e) {
 function initializeWheelJog() {
     const mapContainer = document.getElementById('map-container');
     if (mapContainer) {
-        mapContainer.addEventListener('wheel', handleWheelJog, { passive: false });
+        // Use capture phase to intercept event BEFORE Leaflet's handlers
+        // This ensures Ctrl+wheel for time jog is processed before map zoom
+        mapContainer.addEventListener('wheel', handleWheelJog, { passive: false, capture: true });
         logger.diagnostic('Wheel jog enabled (Ctrl+wheel to scrub time)', logger.CATEGORY.UI);
     }
 }

@@ -1813,6 +1813,90 @@ const TIME_HYPOTHESES = {
                 }
             };
         }
+    },
+    'H-TIME-12': {
+        id: 'H-TIME-12',
+        name: 'Ctrl+Wheel Jog Control',
+        category: 'time',
+        hypothesis: 'Ctrl+wheel over map scrubs time without causing map zoom',
+        symptom: 'Ctrl+wheel causes map zoom instead of time scrub, or does both',
+        prediction: 'Wheel handler uses capture phase, prevents default immediately when Ctrl held',
+        nullPrediction: 'Wheel events would reach Leaflet and cause zoom',
+        threshold: { handlerExists: true, usesCapture: true, preventsDefault: true },
+        causalChain: [
+            'SYMPTOM: Ctrl+wheel sometimes zooms map instead of scrubbing time',
+            'PROXIMATE: Event not stopped before reaching Leaflet',
+            'ROOT: preventDefault() called after throttle check, allowing event through',
+            'MECHANISM: When throttled, function returned early without blocking event',
+            'FIX: Call preventDefault/stopPropagation immediately when Ctrl detected, use capture phase'
+        ],
+        testFn: async () => {
+            const mapContainer = document.getElementById('map-container');
+            if (!mapContainer) {
+                return { passed: false, details: { error: 'map-container not found' } };
+            }
+
+            // Check that wheel handler exists on map container
+            // We can't directly inspect event listeners, but we can verify the handler is wired
+            // by checking that mapTimeBar module exposes the expected behavior
+
+            // Get event listeners (Chrome DevTools API - may not be available)
+            // Instead, verify the implementation by checking module exports
+            const mapTimeBar = window.mapTimeBar;
+            const handlerExists = !!mapTimeBar;
+
+            // Verify the wheel jog is documented as enabled by checking log output
+            // The handler logs 'Wheel jog enabled' during init
+
+            // Since we can't directly test event capture phase from JS,
+            // we verify the fix is in place by simulating a synthetic wheel event
+            // and checking that time changes (indicating handler fired)
+
+            // Get current time
+            const timeState = window.SatelliteApp?.timeState || window.timeState;
+            if (!timeState) {
+                return { passed: false, details: { error: 'timeState not available' } };
+            }
+
+            // Stop real-time first
+            mapTimeBar?.stopRealTime?.();
+            await new Promise(r => setTimeout(r, 50));
+
+            const initialTime = timeState.getCurrentTime().getTime();
+
+            // Create and dispatch a synthetic Ctrl+wheel event
+            const wheelEvent = new WheelEvent('wheel', {
+                deltaY: -100, // Scroll up = forward
+                ctrlKey: true,
+                bubbles: true,
+                cancelable: true
+            });
+
+            // Dispatch to map container
+            const defaultPrevented = !mapContainer.dispatchEvent(wheelEvent);
+
+            // Small delay for event processing
+            await new Promise(r => setTimeout(r, 100));
+
+            const afterTime = timeState.getCurrentTime().getTime();
+            const timeChanged = afterTime !== initialTime;
+
+            // The event should have been prevented (defaultPrevented = true)
+            // and time should have changed (jog occurred)
+            const passed = defaultPrevented && timeChanged;
+
+            return {
+                passed,
+                details: {
+                    handlerExists,
+                    defaultPrevented,
+                    timeChanged,
+                    initialTime: new Date(initialTime).toISOString(),
+                    afterTime: new Date(afterTime).toISOString(),
+                    note: 'Verifies Ctrl+wheel blocks default and triggers time step'
+                }
+            };
+        }
     }
 };
 

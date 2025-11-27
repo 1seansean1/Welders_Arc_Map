@@ -27,9 +27,9 @@ All tests follow a **hypothesis-driven** approach inspired by the scientific met
 | Event | H-EVENT-* | 2 | Event bus functionality |
 | UI | H-UI-* | 3 | User interface components |
 | Validation | H-VALID-* | 2 | Input validation |
-| Time | H-TIME-* | 7 | Time control functionality |
+| Time | H-TIME-* | 8 | Time control functionality |
 | List | H-LIST-* | 4 | User list functionality |
-| **Total** | | **28** | |
+| **Total** | | **29** | |
 
 ---
 
@@ -89,6 +89,7 @@ All tests follow a **hypothesis-driven** approach inspired by the scientific met
 | H-TIME-9 | DateTime Inputs Sync with State | PENDING | Inputs update when presets applied (compact MM/DD format) |
 | H-TIME-10 | Stop Button Halts Animation | PENDING | Stop (■) button exists and is visible |
 | H-TIME-11 | Compact Time Bar with Flatpickr | PENDING | Flatpickr replaces native datetime, compact layout |
+| H-TIME-12 | Ctrl+Wheel Jog Control | PENDING | Ctrl+wheel scrubs time, blocks map zoom |
 
 ### List Tests (H-LIST-*)
 
@@ -318,6 +319,7 @@ The test suite is complete when:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.7 | 2025-11-27 | Added H-TIME-12 (Ctrl+wheel jog control fix test); updated count to 29 |
 | 1.6 | 2025-11-27 | Added H-LIST-1 to H-LIST-4 (User List tests); updated category count to 28 |
 | 1.5 | 2025-11-27 | Added H-TIME-11 (compact time bar with Flatpickr); updated H-TIME-9 for compact date format |
 | 1.4 | 2025-11-27 | Changed H-PERF-1 to ADVISORY (stress test too environment-sensitive for pass/fail) |
