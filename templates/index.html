@@ -1769,6 +1769,18 @@
         .col-lon { width: 40px; }
         .col-alt { width: 35px; }
 
+        /* Satellite table specific column widths */
+        #satellite-table th.col-norad { width: 45px; }
+        #satellite-table th.col-name { width: 55px; }
+        #satellite-table th.col-star { width: 24px; text-align: center; }
+        #satellite-table th.col-list { width: 40px; text-align: center; }
+        /* Apply to td via nth-child since JS doesn't add classes to cells */
+        #satellite-table td:nth-child(2) { width: 45px; } /* NORAD */
+        #satellite-table td:nth-child(3) { width: 55px; max-width: 55px; overflow: hidden; text-overflow: ellipsis; } /* Name */
+        #satellite-table td:nth-child(4) { width: 24px; } /* Star */
+        #satellite-table td:nth-child(5) { width: 40px; max-width: 40px; overflow: hidden; } /* List */
+        #satellite-table td:nth-child(5) select { max-width: 36px; font-size: 8px; }
+
         /* Checkbox styling */
         .sensor-checkbox {
             width: 12px;

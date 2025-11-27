@@ -19,6 +19,7 @@
 
 import satelliteState from '../state/satelliteState.js';
 import listState from '../state/listState.js';
+import eventBus from '../events/eventBus.js';
 import logger from '../utils/logger.js';
 
 // ============================================
@@ -183,7 +184,7 @@ function createSatelliteRow(sat, index) {
     } else {
         // Show dropdown to add to list
         const listSelect = document.createElement('select');
-        listSelect.style.cssText = 'padding: 1px 2px; font-size: 9px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--text-muted); border-radius: 2px; cursor: pointer; max-width: 50px;';
+        listSelect.style.cssText = 'padding: 1px 2px; font-size: 8px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--text-muted); border-radius: 2px; cursor: pointer;';
 
         // Placeholder option
         const placeholder = document.createElement('option');
@@ -405,6 +406,11 @@ export function initializeSatelliteTable(options = {}) {
 
     // Initial render
     renderSatelliteTable();
+
+    // Listen for list changes to update the dropdown options
+    eventBus.on('list:changed', () => {
+        renderSatelliteTable();
+    });
 
     logger.success('Satellite table initialized', logger.CATEGORY.SATELLITE);
 }
