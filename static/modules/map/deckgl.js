@@ -676,10 +676,10 @@ function createLayers() {
             wrapLongitude: true,
             pickable: false,
             widthScale: 1,
-            widthMinPixels: 1,
-            widthMaxPixels: 1,
+            widthMinPixels: 2,
+            widthMaxPixels: 2,
             getPath: d => d.path,
-            getColor: [100, 120, 140, 60],  // Subtle blue-gray
+            getColor: [100, 120, 140, 150],  // Subtle blue-gray
             getWidth: 1
         }),
 
