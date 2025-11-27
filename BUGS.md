@@ -66,14 +66,17 @@ Created test-basic.html as a test dashboard that runs all registered hypothesis 
 **Date Closed**: 2025-11-26
 
 **Symptoms**:
-- All satellite chevrons point north (up)
-- Direction of travel not reflected in chevron orientation
+- All satellite chevrons point north (bearing=0.0)
+- Console logs showed bearing=0.0 for ALL satellites regardless of direction
 
 **Root Cause**:
-Deck.gl IconLayer `getAngle` uses counter-clockwise rotation by default. Bearing was passed as positive, but needed to be negated for clockwise rotation.
+Two issues:
+1. `getAngle` needed negation for clockwise rotation
+2. `calculateBearing()` used `tailPoints[length-1]` which was at currentTime (same as currentPosition), so bearing between identical points = 0
 
 **Solution**:
-Changed `getAngle: d => d.bearing` to `getAngle: d => -d.bearing` in deckgl.js IconLayer.
+1. Changed `getAngle: d => d.bearing` to `getAngle: d => -d.bearing`
+2. Changed to use `tailPoints[length-3]` (~60 seconds back) for meaningful direction
 
 **Files Modified**:
 - static/modules/map/deckgl.js
@@ -90,13 +93,13 @@ Changed `getAngle: d => d.bearing` to `getAngle: d => -d.bearing` in deckgl.js I
 **Symptoms**:
 - Equator crossing glow points always visible
 - Should fade in/out within specified minutes of crossing
-- Crossings beyond fade range still showing at 0.1 intensity
+- Crossings beyond fade range still showing due to radiusMinPixels
 
 **Root Cause**:
-The detectEquatorCrossings() function set intensity=0.1 for crossings beyond the fade range instead of intensity=0.
+Even with intensity=0, ScatterplotLayer radiusMinPixels (4px) and alpha calculation (intensity*200+55) kept points visible with 55 alpha.
 
 **Solution**:
-Changed `intensity = 0.1` to `intensity = 0` in the else clause for crossings beyond fade range.
+Filter out zero-intensity crossings at data level: `if (intensity > 0) { crossings.push(...) }`
 
 **Files Modified**:
 - static/modules/map/deckgl.js
@@ -112,16 +115,21 @@ Changed `intensity = 0.1` to `intensity = 0` in the else clause for crossings be
 
 **Symptoms**:
 - Bottom of TIME control panel content appears cut off
-- Last element (Head slider) may be partially visible
+- Half-visible button at panel bottom
+- Settings glow controls not visible (test panel overwrote them)
 
 **Root Cause**:
-The track-duration-section didn't have bottom padding, causing the last element to be at the very edge of the scrollable area.
+Two issues:
+1. content-section had only 8px bottom padding
+2. testPanel.js targeted content-settings instead of content-tests, overwriting glow controls
 
 **Solution**:
-Added padding-bottom: 16px to .track-duration-section CSS.
+1. Increased content-section bottom padding to 24px
+2. Changed testPanel.js to target content-tests
 
 **Files Modified**:
 - templates/index.html
+- static/modules/ui/testPanel.js
 
 ---
 
@@ -133,14 +141,14 @@ Added padding-bottom: 16px to .track-duration-section CSS.
 **Date Closed**: 2025-11-26
 
 **Symptoms**:
-- No tests for satellites, orbits, chevrons, or equator crossings in the UI test panel
-- Only map, state, event, ui, and validation tests existed
+- Test panel showed only 17 tests (map, state, event, ui, validation)
+- Satellite tests existed in testRegistry.js but not shown in UI
 
 **Root Cause**:
-SATELLITE_HYPOTHESES were never added to testRegistry.js.
+TEST_LIST array in testPanel.js was hardcoded and didn't include satellite tests.
 
 **Solution**:
-Added SATELLITE_HYPOTHESES with 7 new tests:
+Added 6 satellite tests to TEST_LIST in testPanel.js:
 - H-SAT-1: Satellite Selection
 - H-SAT-2: Ground Track Propagation
 - H-CHEV-1: Chevron Direction Calculation
@@ -149,7 +157,7 @@ Added SATELLITE_HYPOTHESES with 7 new tests:
 - H-GLOW-3: Glow Enable Toggle
 
 **Files Modified**:
-- static/modules/test/testRegistry.js
+- static/modules/ui/testPanel.js
 
 ---
 
