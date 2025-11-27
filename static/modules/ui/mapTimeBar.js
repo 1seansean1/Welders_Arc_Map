@@ -64,7 +64,8 @@ const WHEEL_THROTTLE_MS = 50;   // Minimum ms between wheel jog events
 // ============================================
 
 /**
- * Start real-time mode - update time every second
+ * Start real-time mode - resume time progression from current position
+ * Does NOT reset to NOW - just starts advancing time from where it is
  */
 function startRealTime() {
     // Stop any animation first
@@ -77,18 +78,23 @@ function startRealTime() {
         clearInterval(realTimeInterval);
     }
 
-    // Update to current time now
-    timeState.setCurrentTime(new Date());
+    // Track the offset between sim time and wall time
+    // so we can maintain it while advancing
+    const simTime = timeState.getCurrentTime();
+    const wallTime = new Date();
+    const offsetMs = simTime.getTime() - wallTime.getTime();
 
-    // Start interval for 1-second updates
+    // Start interval for 1-second updates - maintain offset from wall time
     realTimeInterval = setInterval(() => {
-        timeState.setCurrentTime(new Date());
+        const now = new Date();
+        const newSimTime = new Date(now.getTime() + offsetMs);
+        timeState.setCurrentTime(newSimTime);
     }, REAL_TIME_UPDATE_MS);
 
     // Update button appearance
     updatePlayButtonState();
 
-    logger.info('Real-time mode started', logger.CATEGORY.TIME);
+    logger.info('Real-time mode started (from current position)', logger.CATEGORY.TIME);
 }
 
 /**
@@ -422,7 +428,10 @@ function updateTimeFromSlider() {
  * Reset to current UTC time (NOW)
  */
 function resetToNow() {
-    startRealTime();  // This sets current time to now and starts updates
+    // Explicitly set time to NOW first
+    timeState.setCurrentTime(new Date());
+    // Then start real-time mode (which will maintain offset of 0)
+    startRealTime();
 }
 
 // ============================================
@@ -558,6 +567,20 @@ function initializeFlatpickr() {
     }
 
     logger.diagnostic('Flatpickr initialized for map time bar', logger.CATEGORY.UI);
+
+    // Add document-level double-click handler to close any open Flatpickr calendars
+    document.addEventListener('dblclick', (e) => {
+        // Don't close if double-clicking inside a calendar
+        if (e.target.closest('.flatpickr-calendar')) return;
+
+        // Close all open Flatpickr instances
+        if (startPicker && startPicker.isOpen) {
+            startPicker.close();
+        }
+        if (stopPicker && stopPicker.isOpen) {
+            stopPicker.close();
+        }
+    });
 }
 
 /**

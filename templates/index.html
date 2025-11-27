@@ -2454,15 +2454,8 @@
                 </button>
                 <!-- Map Time Bar (bottom of map) - Compact Responsive Design -->
                 <div id="map-time-bar" class="map-time-bar">
-                    <!-- Group 1: Time Window -->
+                    <!-- Group 1: Time Range -->
                     <div class="mtb-group mtb-window-group">
-                        <select class="mtb-select" id="map-time-preset-select" title="Time window centered on NOW">
-                            <option value="" disabled selected>Win</option>
-                            <option value="win-1h">±30m</option>
-                            <option value="win-6h">±3h</option>
-                            <option value="win-24h">±12h</option>
-                            <option value="win-48h">±24h</option>
-                        </select>
                         <input type="text" class="mtb-datetime" id="map-time-start" title="Start time (UTC)" placeholder="Start" readonly />
                         <input type="text" class="mtb-datetime" id="map-time-stop" title="Stop time (UTC)" placeholder="Stop" readonly />
                     </div>
@@ -2499,8 +2492,7 @@
                         <button class="mtb-btn mtb-step-btn" id="map-time-step-forward" title="Step forward">›</button>
                         <button class="mtb-btn mtb-now" id="map-time-now-btn" title="Now">⦿</button>
                     </div>
-                    <!-- Ctrl+wheel hint -->
-                    <span class="mtb-hint" style="font-size: 8px; color: #666; margin-left: 4px; white-space: nowrap;">Ctrl+⌽ jog</span>
+
                 </div>
             </div>
         </div>

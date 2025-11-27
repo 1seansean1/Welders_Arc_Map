@@ -1,7 +1,7 @@
 # WA_map Feature Registry
 
 > **Document Type**: FEATURES
-> **Version**: 3.3
+> **Version**: 3.4
 > **Last Updated**: 2025-11-27
 > **Maintainer**: AI Governor System
 
@@ -149,6 +149,9 @@
 | TIME-029 | Compact Time Bar with Flatpickr | P1 | M | DONE | TIME-027, TIME-003 |
 | TIME-030 | Map Time Bar Calendar Popups | P1 | S | DONE | TIME-029, TIME-003 |
 | TIME-031 | Play/Pause Toggle (Remove Stop) | P2 | XS | DONE | TIME-016 |
+| TIME-032 | Play Button Maintains Offset | P1 | S | DONE | TIME-016 |
+| TIME-033 | Clock Format DDMMMYYYY UTC | P2 | XS | DONE | TIME-018 |
+| TIME-034 | Double-Click Close Pickers | P2 | XS | DONE | TIME-029 |
 
 ### Control Panel (UI)
 
@@ -286,18 +289,18 @@
 | MAP | 15 | 15 | 0 | 0 | 0 |
 | SAT | 23 | 21 | 0 | 1 | 1 |
 | SEN | 9 | 8 | 0 | 0 | 1 |
-| TIME | 31 | 31 | 0 | 0 | 0 |
-| UI | 19 | 17 | 0 | 2 | 0 |
+| TIME | 34 | 34 | 0 | 0 | 0 |
+| UI | 21 | 19 | 0 | 2 | 0 |
 | LOG | 10 | 8 | 0 | 0 | 2 |
 | TEST | 15 | 13 | 0 | 1 | 0 |
 | BACK | 9 | 3 | 0 | 4 | 2 |
 | ARCH | 5 | 5 | 0 | 0 | 0 |
 | LIST | 6 | 6 | 0 | 0 | 0 |
-| **TOTAL** | **142** | **127** | **0** | **8** | **6** |
+| **TOTAL** | **147** | **132** | **0** | **8** | **6** |
 
 *Note: MAP-013 REMOVED (superseded by MAP-012+MAP-016), MAP-016 added - net zero change*
 
-**Completion Rate**: 89% (127/142 features complete)
+**Completion Rate**: 90% (132/147 features complete)
 
 ---
 
@@ -305,6 +308,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 3.4 | 2025-11-27 | TIME-032/033/034, UI-020/021 DONE: Play button preserves time offset, DDMMMYYYY UTC clock format, double-click close pickers, remove time window dropdown and Ctrl+wheel hint |
 | 3.3 | 2025-11-27 | SAT-023 DONE: Apex Tick Pulse Controls - independent controls for apex latitude tick marks with horizontal pulse animation |
 | 3.2 | 2025-11-27 | SAT-022 DONE: EventDetector module for decoupled event detection |
 | 3.1 | 2025-11-27 | MAP-013 REMOVED (fit-view-btn), MAP-016 DONE (fit button maximized mode fix) |

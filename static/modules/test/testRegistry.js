@@ -1042,6 +1042,197 @@ const UI_HYPOTHESES = {
                 details: { wrapperCount: wrappers.length, allMeetThreshold, results }
             };
         }
+    },
+    'H-UI-10': {
+        id: 'H-UI-10',
+        name: 'Play Button Does Not Reset Time',
+        category: 'ui',
+        hypothesis: 'Play button toggles time progression without resetting to NOW',
+        symptom: 'Clicking play button resets simulation time to current time',
+        prediction: 'When time is offset from NOW, play button resumes without changing time',
+        nullPrediction: 'Play button would reset time to wall clock',
+        threshold: { timePreserved: true },
+        causalChain: [
+            'SYMPTOM: Play button resets time to NOW',
+            'PROXIMATE: startRealTime() calls setCurrentTime(new Date())',
+            'ROOT: startRealTime designed to sync to wall clock',
+            'MECHANISM: Play should just start interval, not reset time',
+            'FIX: Calculate offset and maintain it during playback'
+        ],
+        testFn: async () => {
+            const timeState = window.SatelliteApp?.timeState || window.timeState;
+            if (!timeState) return { passed: false, error: 'timeState not available' };
+            const mapTimeBar = window.mapTimeBar;
+            if (!mapTimeBar) return { passed: false, error: 'mapTimeBar not available' };
+
+            // Stop real-time and set time to 1 hour in the past
+            mapTimeBar.stopRealTime?.();
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            const offsetMs = -60 * 60 * 1000; // 1 hour in past
+            const testTime = new Date(Date.now() + offsetMs);
+            timeState.setCurrentTime(testTime);
+
+            await new Promise(resolve => setTimeout(resolve, 50));
+
+            const beforeStart = timeState.getCurrentTime();
+            const beforeOffset = beforeStart.getTime() - Date.now();
+
+            // Start real-time mode (should NOT reset to NOW)
+            mapTimeBar.startRealTime?.();
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            const afterStart = timeState.getCurrentTime();
+            const afterOffset = afterStart.getTime() - Date.now();
+
+            // Stop to clean up
+            mapTimeBar.stopRealTime?.();
+
+            // The offset should be preserved (within some tolerance)
+            // Allow 3 second tolerance for timing variations
+            const offsetPreserved = Math.abs(beforeOffset - afterOffset) < 3000;
+            const didNotResetToNow = Math.abs(afterOffset) > 30000; // Still more than 30s from NOW
+
+            return {
+                passed: offsetPreserved && didNotResetToNow,
+                details: {
+                    beforeOffset: Math.round(beforeOffset / 1000) + 's',
+                    afterOffset: Math.round(afterOffset / 1000) + 's',
+                    offsetDiff: Math.round(Math.abs(beforeOffset - afterOffset) / 1000) + 's',
+                    offsetPreserved,
+                    didNotResetToNow
+                }
+            };
+        }
+    },
+    'H-UI-11': {
+        id: 'H-UI-11',
+        name: 'Clock Format DDMMMYYYY UTC',
+        category: 'ui',
+        hypothesis: 'Time display shows format DDMMMYYYY HH:MM:SS UTC',
+        symptom: 'Time shown in different format like MM/DD HH:MM:SS',
+        prediction: 'UTC time display matches pattern like "27NOV2025 14:30:00 UTC"',
+        nullPrediction: 'Display would show MM/DD format without UTC label',
+        threshold: { formatCorrect: true },
+        causalChain: [
+            'SYMPTOM: Clock shows wrong date format',
+            'PROXIMATE: formatTimeCompact() returns old format',
+            'ROOT: Date formatting uses month/day order',
+            'MECHANISM: Need DDMMMYYYY order with month abbreviation',
+            'FIX: Update formatTimeCompact() to use new format'
+        ],
+        testFn: async () => {
+            const utcDisplay = document.getElementById('utc-time-value');
+            if (!utcDisplay) return { passed: false, error: 'UTC time display not found' };
+
+            const displayText = utcDisplay.textContent || '';
+
+            // Format should be DDMMMYYYY HH:MM:SS UTC
+            // Examples: "27NOV2025 14:30:00 UTC", "01JAN2024 00:00:00 UTC"
+            const pattern = /^\d{2}[A-Z]{3}\d{4} \d{2}:\d{2}:\d{2} UTC$/;
+            const formatCorrect = pattern.test(displayText);
+
+            // Also verify month is valid 3-letter abbreviation
+            const monthMatch = displayText.match(/\d{2}([A-Z]{3})\d{4}/);
+            const validMonths = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+            const validMonth = monthMatch ? validMonths.includes(monthMatch[1]) : false;
+
+            return {
+                passed: formatCorrect && validMonth,
+                details: {
+                    displayText,
+                    formatCorrect,
+                    validMonth,
+                    expectedPattern: 'DDMMMYYYY HH:MM:SS UTC'
+                }
+            };
+        }
+    },
+    'H-UI-12': {
+        id: 'H-UI-12',
+        name: 'Time Window Dropdown Removed',
+        category: 'ui',
+        hypothesis: 'Time window preset dropdown has been removed from UI',
+        symptom: 'Time window dropdown still visible in map time bar',
+        prediction: 'No select element with id map-time-preset-select in DOM',
+        nullPrediction: 'Dropdown would still exist in DOM',
+        threshold: { dropdownRemoved: true },
+        causalChain: [
+            'SYMPTOM: Time window dropdown still present',
+            'PROXIMATE: HTML not updated',
+            'ROOT: Select element not removed from index.html',
+            'MECHANISM: DOM still contains old elements',
+            'FIX: Remove select from index.html'
+        ],
+        testFn: async () => {
+            const dropdown = document.getElementById('map-time-preset-select');
+            const dropdownRemoved = dropdown === null;
+
+            return {
+                passed: dropdownRemoved,
+                details: {
+                    dropdownRemoved,
+                    elementFound: dropdown !== null
+                }
+            };
+        }
+    },
+    'H-UI-13': {
+        id: 'H-UI-13',
+        name: 'Now Button Resets to Current Time',
+        category: 'ui',
+        hypothesis: 'Now button (⦿) resets simulation time to wall clock',
+        symptom: 'Now button does not reset time to current time',
+        prediction: 'After clicking Now, sim time matches wall time within 2 seconds',
+        nullPrediction: 'Time would remain at offset position',
+        threshold: { resetToNow: true },
+        causalChain: [
+            'SYMPTOM: Now button does not reset to current time',
+            'PROXIMATE: resetToNow() not setting current time',
+            'ROOT: Function relies on startRealTime which no longer resets',
+            'MECHANISM: Need explicit setCurrentTime(new Date()) call',
+            'FIX: Call setCurrentTime before startRealTime'
+        ],
+        testFn: async () => {
+            const timeState = window.SatelliteApp?.timeState || window.timeState;
+            if (!timeState) return { passed: false, error: 'timeState not available' };
+            const mapTimeBar = window.mapTimeBar;
+            if (!mapTimeBar) return { passed: false, error: 'mapTimeBar not available' };
+
+            // Set time to 1 hour in the past
+            mapTimeBar.stopRealTime?.();
+            await new Promise(resolve => setTimeout(resolve, 50));
+
+            const pastTime = new Date(Date.now() - 60 * 60 * 1000);
+            timeState.setCurrentTime(pastTime);
+
+            // Click the Now button (simulate by calling resetToNow on mapTimeBar)
+            const nowBtn = document.getElementById('map-time-now-btn');
+            if (nowBtn) {
+                nowBtn.click();
+            }
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            const afterNow = timeState.getCurrentTime();
+            const wallTime = new Date();
+            const diffMs = Math.abs(afterNow.getTime() - wallTime.getTime());
+
+            // Should be within 2 seconds of wall time
+            const resetToNow = diffMs < 2000;
+
+            // Clean up
+            mapTimeBar.stopRealTime?.();
+
+            return {
+                passed: resetToNow,
+                details: {
+                    simTime: afterNow.toISOString(),
+                    wallTime: wallTime.toISOString(),
+                    diffMs,
+                    resetToNow
+                }
+            };
+        }
     }
 };
 

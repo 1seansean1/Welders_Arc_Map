@@ -25,23 +25,26 @@ const simTimeElement = document.getElementById('sim-time-value');
 let utcUpdateInterval = null;
 
 /**
- * Format time for compact display (HH:MM:SS)
+ * Format time for compact display
+ * Format: DDMMMYYYY HH:MM:SS UTC (e.g., "27NOV2025 14:30:00 UTC")
  * @param {Date} date - Date to format
  * @returns {string} Formatted time string
  */
 function formatTimeCompact(date, includeDate = false) {
     if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
-        return includeDate ? '---/-- --:--:--' : '--:--:--';
+        return includeDate ? '---------- --:--:-- UTC' : '--:--:--';
     }
 
-    const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
+    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
     const day = date.getUTCDate().toString().padStart(2, '0');
+    const month = months[date.getUTCMonth()];
+    const year = date.getUTCFullYear();
     const hours = date.getUTCHours().toString().padStart(2, '0');
     const minutes = date.getUTCMinutes().toString().padStart(2, '0');
     const seconds = date.getUTCSeconds().toString().padStart(2, '0');
 
     if (includeDate) {
-        return `${month}/${day} ${hours}:${minutes}:${seconds}`;
+        return `${day}${month}${year} ${hours}:${minutes}:${seconds} UTC`;
     }
     return `${hours}:${minutes}:${seconds}`;
 }
