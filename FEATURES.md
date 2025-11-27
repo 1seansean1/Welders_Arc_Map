@@ -122,6 +122,12 @@
 | TIME-020 | Time Bar Button Reorder | P2 | XS | DONE | TIME-015 |
 | TIME-021 | Full-Width Time Bar | P2 | XS | DONE | TIME-015 |
 | TIME-022 | Clock with Date + T+Offset | P2 | S | DONE | TIME-001 |
+| TIME-023 | Variable Playback Rate | P1 | S | PLAN | TIME-015 |
+| TIME-024 | Mouse Wheel Jog Control | P2 | S | PLAN | TIME-023 |
+| TIME-025 | Seek Points System (Stub) | P3 | XS | PLAN | TIME-001 |
+| TIME-026 | Time Window Presets | P1 | S | PLAN | TIME-001 |
+| TIME-027 | Analysis Window Panel UI | P1 | M | PLAN | TIME-026 |
+| TIME-028 | Analysis Window Day Steppers | P1 | S | PLAN | TIME-027 |
 
 ### Control Panel (UI)
 
@@ -257,15 +263,15 @@
 | MAP | 13 | 13 | 0 | 0 | 0 |
 | SAT | 18 | 16 | 0 | 1 | 1 |
 | SEN | 9 | 8 | 0 | 0 | 1 |
-| TIME | 22 | 22 | 0 | 0 | 0 |
+| TIME | 28 | 22 | 0 | 6 | 0 |
 | UI | 17 | 15 | 0 | 2 | 0 |
 | LOG | 10 | 8 | 0 | 0 | 2 |
 | TEST | 15 | 13 | 0 | 1 | 0 |
 | BACK | 9 | 3 | 0 | 4 | 2 |
 | ARCH | 5 | 5 | 0 | 0 | 0 |
-| **TOTAL** | **119** | **104** | **0** | **8** | **6** |
+| **TOTAL** | **125** | **104** | **0** | **14** | **6** |
 
-**Completion Rate**: 87% (104/119 features complete)
+**Completion Rate**: 83% (104/125 features complete)
 
 ---
 
@@ -273,6 +279,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.6 | 2025-11-27 | Added TIME-023 to TIME-028: Playback rate, jog wheel, seek stubs, presets, analysis window (PLAN) |
 | 2.5 | 2025-11-26 | Added SAT-019: Watch List Color Assignment (table + chevron/track coloring) |
 | 2.4 | 2025-11-26 | Added MAP-013: Fit View Button, H-MAP-7 test, fixed grid state sync |
 | 2.3 | 2025-11-26 | Added UI-017: Table height consistency, H-UI-9 test |

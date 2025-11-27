@@ -19,7 +19,393 @@
 
 | Task | Priority | Status | Notes |
 |------|----------|--------|-------|
+| Time Control Enhancements (TIME-023 to TIME-028) | P1 | ACTIVE | Playback rate, jog wheel, presets, analysis window |
 | Test Coverage Expansion | P2 | PLANNED | Add tests for UI and data modules |
+
+---
+
+## TIME CONTROL ENHANCEMENTS PLAN
+
+**Phase**: Advanced Time Navigation
+**Status**: PLANNING → READY FOR IMPLEMENTATION
+**Created**: 2025-11-27
+**Features**: TIME-023 through TIME-028
+
+### Four Mandatory Questions
+
+**1. What exists now?**
+- Map time bar with: Play/Stop, RW/FF (1x only), Step <>, Step size selector (1s-1h), Slider, Now button
+- timeState.js with: currentTime, startTime, stopTime, playbackSpeed (unused), isRealTime
+- mapTimeBar.js with: hold-to-repeat stepping, basic animation at fixed 1x rate
+
+**2. What should exist?**
+- Variable playback rate selector (0.5x to 600x) affecting RW/FF and hold-to-repeat
+- Mouse wheel time scrubbing when hovering over map (with modifier key)
+- Seek points system (stub for future bookmark/event navigation)
+- Quick window presets (Last 1h, 6h, 24h, Next 6h, 24h)
+- Expandable Analysis Window panel with start/stop pickers, calendar, day steppers
+
+**3. How will we know we're done?**
+- [ ] Speed selector visible, changes actual playback rate
+- [ ] Mouse wheel scrubs time when Ctrl+wheel over map
+- [ ] Hold < or > steps at selected rate × speed multiplier
+- [ ] Preset buttons set analysis window bounds instantly
+- [ ] Start/Stop pickers expand from time bar, work with calendar
+- [ ] All controls interact coherently (no conflicting states)
+- [ ] 6 hypothesis tests pass (H-TIME-5 through H-TIME-10)
+
+**4. How do we undo this?**
+- Git: `git revert HEAD` or `git checkout HEAD~1 -- <files>`
+- Files: timeState.js, mapTimeBar.js, index.html (CSS + HTML)
+- No database changes, no external dependencies
+
+---
+
+### Implementation Phases
+
+#### PHASE 1: Playback Rate System (TIME-023)
+**Complexity**: S (2-8 hours)
+**Dependencies**: None
+
+```
+STEP 1.1: Add Playback Rate State
+Status: [ ]  |  Dependencies: None
+Context: timeState._state.playbackSpeed exists but unused
+Tasks:
+  [ ] Add getPlaybackRate() / setPlaybackRate() methods
+  [ ] Add valid rates: [0.5, 1, 2, 4, 8, 16, 60, 600]
+  [ ] Emit 'time:playback:changed' event
+Verify: timeState.setPlaybackRate(4); timeState.getPlaybackRate() === 4
+Rollback: git checkout HEAD -- static/modules/state/timeState.js
+
+STEP 1.2: Add Speed Selector UI
+Status: [ ]  |  Dependencies: 1.1
+Context: map-time-bar has step-select, add speed-select after FF button
+Tasks:
+  [ ] Add <select id="map-time-speed-select"> to index.html
+  [ ] Options: 0.5x, 1x, 2x, 4x, 8x, 16x, 60x, 600x
+  [ ] Style consistent with step-select
+  [ ] Default: 1x
+Verify: Speed selector visible, styled correctly
+Rollback: git checkout HEAD -- templates/index.html
+
+STEP 1.3: Wire Speed to Animation
+Status: [ ]  |  Dependencies: 1.1, 1.2
+Context: mapTimeBar.js startAnimation() uses fixed ANIMATION_UPDATE_MS
+Tasks:
+  [ ] Read speed from selector on animation start
+  [ ] Calculate effective step: stepMinutes × speedMultiplier
+  [ ] Update animation interval to apply speed
+  [ ] Update tooltip to show effective rate
+Verify: Set speed=4x, step=5m, FF shows "20min/sec" in log
+Rollback: git checkout HEAD -- static/modules/ui/mapTimeBar.js
+
+STEP 1.4: Wire Speed to Hold-to-Repeat
+Status: [ ]  |  Dependencies: 1.3
+Context: startStepRepeat() uses fixed STEP_REPEAT_RATE
+Tasks:
+  [ ] Calculate repeat rate based on speed: baseRate / speedMultiplier
+  [ ] Clamp minimum to 50ms to prevent browser overload
+  [ ] Apply to both < and > buttons
+Verify: Set speed=8x, hold >, observe 8 steps/sec (not 1 step/sec)
+Rollback: git checkout HEAD -- static/modules/ui/mapTimeBar.js
+```
+
+**Phase 1 Deliverable**: Speed selector that multiplies both animation and stepping rates
+
+---
+
+#### PHASE 2: Mouse Wheel Jog Control (TIME-024)
+**Complexity**: S (2-8 hours)
+**Dependencies**: Phase 1
+
+```
+STEP 2.1: Add Jog State
+Status: [ ]  |  Dependencies: None
+Context: Need to track jog mode enable/disable
+Tasks:
+  [ ] Add _state.jogEnabled = false to timeState
+  [ ] Add isJogEnabled() / setJogEnabled() methods
+  [ ] Jog uses same step size as step buttons
+Verify: timeState.isJogEnabled() returns boolean
+Rollback: git checkout HEAD -- static/modules/state/timeState.js
+
+STEP 2.2: Add Wheel Event Handler
+Status: [ ]  |  Dependencies: 2.1
+Context: Map container needs wheel listener when jog enabled
+Tasks:
+  [ ] In mapTimeBar.js or interactions.js, add wheel handler to map-container
+  [ ] Condition: Ctrl key held (or configurable modifier)
+  [ ] Wheel up = step forward, wheel down = step backward
+  [ ] Debounce/throttle to 50ms minimum
+  [ ] preventDefault() to stop map zoom
+Verify: Ctrl+wheel over map changes sim time, map doesn't zoom
+Rollback: git checkout HEAD -- static/modules/ui/mapTimeBar.js
+
+STEP 2.3: Visual Jog Indicator
+Status: [ ]  |  Dependencies: 2.2
+Context: User needs feedback that jog mode is active
+Tasks:
+  [ ] Show subtle indicator when Ctrl held over map
+  [ ] Consider cursor change or overlay text
+  [ ] Optional: jog toggle button in time bar
+Verify: Visual feedback appears when Ctrl held over map
+Rollback: git checkout HEAD -- templates/index.html, mapTimeBar.js
+```
+
+**Phase 2 Deliverable**: Ctrl+wheel scrubs time forward/backward
+
+---
+
+#### PHASE 3: Seek Points System - STUB (TIME-025)
+**Complexity**: XS (< 2 hours)
+**Dependencies**: None
+
+```
+STEP 3.1: Define Seek Point Interface
+Status: [ ]  |  Dependencies: None
+Context: Future feature - jumping to named points in time
+Tasks:
+  [ ] Add to timeState: _state.seekPoints = []
+  [ ] Add addSeekPoint(name, time), removeSeekPoint(name), getSeekPoints()
+  [ ] Add seekToPoint(name) - sets currentTime to point's time
+  [ ] Add seekNext() / seekPrevious() - navigate chronologically
+Verify: Can add/retrieve seek points programmatically
+Rollback: git checkout HEAD -- static/modules/state/timeState.js
+
+STEP 3.2: Document Future Use Cases
+Status: [ ]  |  Dependencies: 3.1
+Context: Seek points will be populated by future features
+Tasks:
+  [ ] Add JSDoc comments describing intended uses:
+      - Satellite pass start/end (AOS/LOS)
+      - Conjunction events
+      - User-defined bookmarks
+      - Analysis window bounds
+  [ ] No UI implementation (future phase)
+Verify: Code review confirms clear documentation
+Rollback: N/A (documentation only)
+```
+
+**Phase 3 Deliverable**: API stub for seek points, no UI yet
+
+---
+
+#### PHASE 4: Time Presets (TIME-026)
+**Complexity**: S (2-8 hours)
+**Dependencies**: Phase 1 (uses analysis window)
+
+```
+STEP 4.1: Add Preset Dropdown UI
+Status: [ ]  |  Dependencies: None
+Context: Quick access to common analysis windows
+Tasks:
+  [ ] Add <select id="map-time-preset-select"> to time bar
+  [ ] Options: "Window ▼", "Last 1h", "Last 6h", "Last 24h", "Next 6h", "Next 24h"
+  [ ] First option is placeholder/label
+  [ ] Position: after Now button or before slider
+Verify: Dropdown visible, styled consistently
+Rollback: git checkout HEAD -- templates/index.html
+
+STEP 4.2: Implement Preset Logic
+Status: [ ]  |  Dependencies: 4.1
+Context: Selecting preset sets start/stop times
+Tasks:
+  [ ] On change: calculate start/stop based on current UTC
+  [ ] "Last Xh": start = now - X hours, stop = now
+  [ ] "Next Xh": start = now, stop = now + X hours
+  [ ] Call timeState.setTimeRange(start, stop)
+  [ ] Auto-apply (no pending state for presets)
+  [ ] Update slider range
+  [ ] Reset dropdown to placeholder after selection
+Verify: Select "Last 6h", slider range updates, sim time clamped
+Rollback: git checkout HEAD -- static/modules/ui/mapTimeBar.js
+
+STEP 4.3: Sync Preset with Real-time Toggle
+Status: [ ]  |  Dependencies: 4.2
+Context: Preset should exit real-time mode
+Tasks:
+  [ ] Selecting preset calls stopRealTime()
+  [ ] Set current time to end of window (for "Last") or start (for "Next")
+  [ ] Log preset selection
+Verify: In real-time mode, select preset, real-time stops
+Rollback: git checkout HEAD -- static/modules/ui/mapTimeBar.js
+```
+
+**Phase 4 Deliverable**: Dropdown with 5 presets that instantly configure analysis window
+
+---
+
+#### PHASE 5: Analysis Window Panel (TIME-027, TIME-028)
+**Complexity**: M (1-3 days)
+**Dependencies**: Phase 4
+
+```
+STEP 5.1: Design Expandable Panel
+Status: [ ]  |  Dependencies: None
+Context: Full datetime pickers need more space than time bar allows
+Tasks:
+  [ ] Design expandable panel that appears ABOVE time bar
+  [ ] Triggered by "⚙" or "Window" button in time bar
+  [ ] Contains: Start picker, End picker, duration display
+  [ ] Collapsible back to single button
+Verify: Wireframe/design approved
+Rollback: N/A (design only)
+
+STEP 5.2: Add Analysis Window Toggle Button
+Status: [ ]  |  Dependencies: 5.1
+Context: Button to expand/collapse the panel
+Tasks:
+  [ ] Add <button id="map-time-window-btn">⚙</button> to time bar
+  [ ] Position: end of time bar or after presets
+  [ ] Toggle visibility of analysis window panel
+Verify: Button visible, click toggles panel
+Rollback: git checkout HEAD -- templates/index.html
+
+STEP 5.3: Create Analysis Window Panel HTML
+Status: [ ]  |  Dependencies: 5.2
+Context: Panel structure with all controls
+Tasks:
+  [ ] Add <div id="analysis-window-panel"> inside map-container
+  [ ] Structure:
+      - Start row: Label, Input, Calendar btn, -1d, Now, +1d
+      - End row: Label, Input, Calendar btn, -1d, Now, +1d
+      - Duration display (auto-calculated)
+      - Apply / Cancel buttons
+  [ ] Hidden by default (display: none)
+Verify: Panel HTML present, hidden initially
+Rollback: git checkout HEAD -- templates/index.html
+
+STEP 5.4: Style Analysis Window Panel
+Status: [ ]  |  Dependencies: 5.3
+Context: Match existing dark theme
+Tasks:
+  [ ] Position: absolute, bottom: 50px (above time bar)
+  [ ] Background: rgba(10, 10, 10, 0.95)
+  [ ] Border, border-radius matching time bar
+  [ ] Flatpickr integration for calendar popups
+  [ ] Day stepper buttons styled as map-time-btn
+Verify: Panel appears styled correctly above time bar
+Rollback: git checkout HEAD -- templates/index.html
+
+STEP 5.5: Wire Start/End Inputs
+Status: [ ]  |  Dependencies: 5.4
+Context: Inputs need to read/write timeState
+Tasks:
+  [ ] Initialize Flatpickr on both datetime inputs
+  [ ] On input change: update timeState pending values
+  [ ] Show duration between start/end (auto-calculated)
+  [ ] Validate start < end
+Verify: Change start time, duration updates, pending state marked
+Rollback: git checkout HEAD -- static/modules/ui/mapTimeBar.js
+
+STEP 5.6: Wire Day Stepper Buttons
+Status: [ ]  |  Dependencies: 5.5
+Context: -1d/+1d buttons adjust date by 24 hours
+Tasks:
+  [ ] -1d button: subtract 24h from respective datetime
+  [ ] +1d button: add 24h to respective datetime
+  [ ] Now button: set to current UTC
+  [ ] Update Flatpickr display after change
+Verify: Click -1d on start, start moves back 24h
+Rollback: git checkout HEAD -- static/modules/ui/mapTimeBar.js
+
+STEP 5.7: Wire Apply/Cancel
+Status: [ ]  |  Dependencies: 5.6
+Context: Commit or revert pending window changes
+Tasks:
+  [ ] Apply: call timeState.applyTimeChanges(), collapse panel
+  [ ] Cancel: call timeState.cancelTimeChanges(), collapse panel
+  [ ] Update slider range on apply
+  [ ] Exit real-time mode on apply
+Verify: Set window, apply, slider range matches window
+Rollback: git checkout HEAD -- static/modules/ui/mapTimeBar.js
+
+STEP 5.8: Panel Open/Close Animation
+Status: [ ]  |  Dependencies: 5.7
+Context: Smooth expand/collapse
+Tasks:
+  [ ] CSS transition for height/opacity
+  [ ] Toggle class 'expanded' on panel
+  [ ] Keyboard: Escape closes panel
+Verify: Panel animates smoothly on open/close
+Rollback: git checkout HEAD -- templates/index.html
+```
+
+**Phase 5 Deliverable**: Full analysis window panel with datetime pickers, calendars, and day steppers
+
+---
+
+### Test Specifications
+
+| Test ID | Hypothesis | Prediction | Verify |
+|---------|------------|------------|--------|
+| H-TIME-5 | Playback rate affects animation speed | Set rate=4x, FF should step 4× faster than rate=1x | Measure steps/sec |
+| H-TIME-6 | Playback rate affects hold-to-repeat | Set rate=8x, hold > should produce 8 steps/sec | Count steps in 2s |
+| H-TIME-7 | Ctrl+wheel scrubs time | Ctrl+wheel up over map increases sim time | Check time before/after |
+| H-TIME-8 | Preset sets analysis window | Select "Last 6h", window should span 6h ending now | Check start/stop |
+| H-TIME-9 | Analysis panel opens/closes | Click window button toggles panel visibility | Check display state |
+| H-TIME-10 | Day stepper changes date | Click -1d on start, start decreases by 86400000ms | Check time delta |
+
+---
+
+### UI Layout Proposal
+
+```
+CURRENT TIME BAR:
+┌──────────────────────────────────────────────────────────────────────────┐
+│ «« ▶ »»  │  [5m▼] < ═══════════════════════════════ > [Now]             │
+└──────────────────────────────────────────────────────────────────────────┘
+
+PROPOSED TIME BAR:
+┌──────────────────────────────────────────────────────────────────────────┐
+│ «« ▶ »» [1x▼] │ [5m▼] < ═══════════════════════════ > [Now] [Window▼] ⚙ │
+└──────────────────────────────────────────────────────────────────────────┘
+     ↑              ↑                                          ↑        ↑
+   Speed         Step Size                                 Presets   Panel
+
+EXPANDED ANALYSIS WINDOW PANEL (above time bar):
+┌─────────────────────────────────────────────────────────────────────────┐
+│ ANALYSIS WINDOW                                                         │
+├─────────────────────────────────────────────────────────────────────────┤
+│ Start: [2025-11-26 08:00:00 UTC] 📅  [-1d] [Now] [+1d]                  │
+│ End:   [2025-11-27 08:00:00 UTC] 📅  [-1d] [Now] [+1d]                  │
+│ Duration: 24h 00m 00s                                                   │
+│                                                    [Cancel]  [Apply]    │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Files to Modify
+
+| File | Changes |
+|------|---------|
+| `static/modules/state/timeState.js` | Add playbackRate methods, seekPoints stub, jogEnabled |
+| `static/modules/ui/mapTimeBar.js` | Speed selector, presets, wheel handler, analysis panel |
+| `templates/index.html` | HTML for speed select, preset select, analysis panel; CSS styles |
+| `static/modules/test/testRegistry.js` | Add H-TIME-5 through H-TIME-10 |
+| `FEATURES.md` | Add TIME-023 through TIME-028 |
+
+---
+
+### Risk Mitigation
+
+| Risk | Mitigation |
+|------|------------|
+| Wheel event conflicts with map zoom | Use Ctrl modifier; preventDefault when Ctrl held |
+| Speed 600x overwhelms browser | Clamp minimum interval to 16ms (60fps cap) |
+| Analysis panel obscures map content | Semi-transparent, positioned to not cover center |
+| Complex state interactions | Clear mode hierarchy: Real-time > Playback > Manual |
+
+---
+
+### Decision Points (User Input Needed)
+
+1. **Jog Modifier Key**: Ctrl, Shift, or Alt? (Recommendation: Ctrl)
+2. **Preset Position**: Before or after Now button? (Recommendation: After)
+3. **Panel Trigger**: Button label "⚙" or "Window"? (Recommendation: "⚙")
+4. **Speed Selector Position**: After FF or after step-size? (Recommendation: After FF)
 
 ---
 
@@ -206,6 +592,7 @@ venv\Scripts\python backend\main.py
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.4 | 2025-11-27 | Added TIME CONTROL ENHANCEMENTS PLAN (TIME-023 to TIME-028): playback rate, jog wheel, seek stubs, presets, analysis window |
 | 1.3 | 2025-11-26 | Added UI/UX Improvements batch: hold-to-repeat, glow fade, Tests/Watch List panels |
 | 1.2 | 2025-11-26 | Added TIME-011: Time Slider with Step Controls to recently completed |
 | 1.1 | 2025-11-26 | Added TLE Rendering Features milestone, updated active tasks |
