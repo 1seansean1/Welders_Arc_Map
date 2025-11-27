@@ -1,8 +1,8 @@
 # WA_map Test Documentation
 
 > **Document Type**: TESTS
-> **Version**: 1.0
-> **Last Updated**: 2025-11-26
+> **Version**: 1.1
+> **Last Updated**: 2025-11-27
 > **Maintainer**: AI Governor System
 
 ---
@@ -27,7 +27,8 @@ All tests follow a **hypothesis-driven** approach inspired by the scientific met
 | Event | H-EVENT-* | 2 | Event bus functionality |
 | UI | H-UI-* | 3 | User interface components |
 | Validation | H-VALID-* | 2 | Input validation |
-| **Total** | | **17** | |
+| Time | H-TIME-* | 4 | Time control functionality |
+| **Total** | | **21** | |
 
 ---
 
@@ -75,6 +76,16 @@ All tests follow a **hypothesis-driven** approach inspired by the scientific met
 | H-VALID-1 | Coordinate Bounds | PASS | Lat >90 or <-90 rejected |
 | H-VALID-2 | TLE Checksum | PASS | Invalid checksum rejected |
 
+### Time Tests (H-TIME-*)
+
+| ID | Name | Status | Description |
+|----|------|--------|-------------|
+| H-TIME-1 | Ground Track Time Source | PASS | Tracks use timeState, not wall clock |
+| H-TIME-5 | Playback Rate State | PENDING | setPlaybackRate/getPlaybackRate work correctly |
+| H-TIME-6 | Preset Sets Analysis Window | PENDING | Time presets apply correct start/stop times |
+| H-TIME-7 | Seek Points API | PENDING | addSeekPoint/getSeekPoints/removeSeekPoint work |
+| H-TIME-8 | Valid Playback Rates Enforced | PENDING | Invalid rates rejected with error |
+
 ---
 
 ## Running Tests
@@ -89,7 +100,7 @@ All tests follow a **hypothesis-driven** approach inspired by the scientific met
 ### Via Console
 
 ```javascript
-// Run all 17 tests
+// Run all 21 tests
 await window.automatedTests.runAllTests();
 
 // Run specific category
@@ -295,3 +306,4 @@ The test suite is complete when:
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2025-11-26 | Initial standardized test documentation |
+| 1.1 | 2025-11-27 | Added TIME tests H-TIME-5 through H-TIME-8 (playback rate, presets, seek points) |

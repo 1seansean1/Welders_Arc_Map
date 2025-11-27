@@ -54,6 +54,14 @@
 - [ ] All controls interact coherently (no conflicting states)
 - [ ] 6 hypothesis tests pass (H-TIME-5 through H-TIME-10)
 
+**AI Governor Mandatory Compliance (Phases 1-4):**
+- [x] Research Log documented (this PLAN.md section)
+- [x] Add hypothesis tests H-TIME-5 through H-TIME-8 to testRegistry.js
+- [x] Update LESSONS.md with time control patterns learned (LL-008)
+- [x] Update TESTS.md with new test specifications (v1.1)
+- [ ] Verify in browser (manual test)
+- [ ] Final commit and push
+
 **4. How do we undo this?**
 - Git: `git revert HEAD` or `git checkout HEAD~1 -- <files>`
 - Files: timeState.js, mapTimeBar.js, index.html (CSS + HTML)

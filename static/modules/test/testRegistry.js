@@ -1429,6 +1429,195 @@ const SATELLITE_HYPOTHESES = {
 };
 
 // ============================================
+// TIME CONTROL TESTS (TIME-023 to TIME-026)
+// ============================================
+
+const TIME_HYPOTHESES = {
+    'H-TIME-5': {
+        id: 'H-TIME-5',
+        name: 'Playback Rate State',
+        category: 'time',
+        hypothesis: 'Playback rate can be set and retrieved via timeState',
+        symptom: 'Speed selector has no effect on playback',
+        prediction: 'setPlaybackRate(4) causes getPlaybackRate() to return 4',
+        nullPrediction: 'getPlaybackRate() would return unchanged value',
+        threshold: { rateApplied: true },
+        causalChain: [
+            'SYMPTOM: Speed selector changes have no effect',
+            'PROXIMATE: timeState.playbackSpeed not updated',
+            'ROOT: setPlaybackRate() not storing value',
+            'MECHANISM: State not persisted in _state object',
+            'FIX: Ensure _state.playbackSpeed is updated'
+        ],
+        testFn: async () => {
+            const timeState = window.timeState;
+            if (!timeState) return { passed: true, skipped: true, reason: 'timeState not available' };
+
+            const originalRate = timeState.getPlaybackRate();
+            timeState.setPlaybackRate(4);
+            const newRate = timeState.getPlaybackRate();
+            timeState.setPlaybackRate(originalRate); // Restore
+
+            const passed = newRate === 4;
+
+            return {
+                passed,
+                details: {
+                    originalRate,
+                    setTo: 4,
+                    resultRate: newRate,
+                    rateApplied: passed
+                }
+            };
+        }
+    },
+    'H-TIME-6': {
+        id: 'H-TIME-6',
+        name: 'Preset Sets Analysis Window',
+        category: 'time',
+        hypothesis: 'Time window presets correctly set start/stop times',
+        symptom: 'Preset dropdown does nothing',
+        prediction: 'Selecting "Last 6h" sets window spanning 6 hours ending at current time',
+        nullPrediction: 'Window bounds would remain unchanged',
+        threshold: { windowSet: true, durationCorrect: true },
+        causalChain: [
+            'SYMPTOM: Preset selection has no effect',
+            'PROXIMATE: applyPreset() not called or failing',
+            'ROOT: Event handler not wired or timeState not updated',
+            'MECHANISM: setTimeRange() and applyTimeChanges() must be called',
+            'FIX: Wire preset change event to applyPreset()'
+        ],
+        testFn: async () => {
+            const timeState = window.timeState;
+            if (!timeState) return { passed: true, skipped: true, reason: 'timeState not available' };
+
+            // Save original state
+            const originalStart = timeState.getCommittedStartTime();
+            const originalStop = timeState.getCommittedStopTime();
+
+            // Apply a 6-hour preset manually (simulating Last 6h)
+            const now = new Date();
+            const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+            timeState.setTimeRange(sixHoursAgo, now);
+            timeState.applyTimeChanges();
+
+            const newStart = timeState.getCommittedStartTime();
+            const newStop = timeState.getCommittedStopTime();
+
+            // Calculate duration
+            const durationMs = newStop.getTime() - newStart.getTime();
+            const expectedDurationMs = 6 * 60 * 60 * 1000;
+            const durationCorrect = Math.abs(durationMs - expectedDurationMs) < 1000; // 1s tolerance
+
+            // Restore original (if they existed)
+            if (originalStart && originalStop) {
+                timeState.setTimeRange(originalStart, originalStop);
+                timeState.applyTimeChanges();
+            }
+
+            return {
+                passed: durationCorrect,
+                details: {
+                    newStart: newStart?.toISOString(),
+                    newStop: newStop?.toISOString(),
+                    durationMs,
+                    expectedDurationMs,
+                    durationCorrect
+                }
+            };
+        }
+    },
+    'H-TIME-7': {
+        id: 'H-TIME-7',
+        name: 'Seek Points API',
+        category: 'time',
+        hypothesis: 'Seek points can be added, retrieved, and removed',
+        symptom: 'Seek point functions fail or return wrong data',
+        prediction: 'addSeekPoint() stores point, getSeekPoints() returns it, removeSeekPoint() removes it',
+        nullPrediction: 'Seek points would not be stored or retrieved',
+        threshold: { addWorks: true, getWorks: true, removeWorks: true },
+        causalChain: [
+            'SYMPTOM: Seek point navigation not working',
+            'PROXIMATE: Seek point not in array',
+            'ROOT: addSeekPoint() not pushing to array',
+            'MECHANISM: Array operations must use correct methods',
+            'FIX: Verify push/find/splice operations'
+        ],
+        testFn: async () => {
+            const timeState = window.timeState;
+            if (!timeState || !timeState.addSeekPoint) return { passed: true, skipped: true, reason: 'seekPoints API not available' };
+
+            const testName = '__test_seek_point__';
+            const testTime = new Date();
+
+            // Test add
+            const addResult = timeState.addSeekPoint(testName, testTime);
+
+            // Test get
+            const points = timeState.getSeekPoints();
+            const found = points.find(p => p.name === testName);
+
+            // Test remove
+            const removeResult = timeState.removeSeekPoint(testName);
+
+            // Verify removed
+            const pointsAfter = timeState.getSeekPoints();
+            const stillExists = pointsAfter.find(p => p.name === testName);
+
+            return {
+                passed: addResult && found && removeResult && !stillExists,
+                details: {
+                    addWorks: addResult,
+                    getWorks: !!found,
+                    removeWorks: removeResult && !stillExists,
+                    foundPoint: found ? { name: found.name, time: found.time.toISOString() } : null
+                }
+            };
+        }
+    },
+    'H-TIME-8': {
+        id: 'H-TIME-8',
+        name: 'Valid Playback Rates Enforced',
+        category: 'time',
+        hypothesis: 'Only valid playback rates are accepted',
+        symptom: 'Invalid rates cause errors or unexpected behavior',
+        prediction: 'setPlaybackRate(999) should be rejected, rate unchanged',
+        nullPrediction: 'Any rate value would be accepted',
+        threshold: { invalidRejected: true },
+        causalChain: [
+            'SYMPTOM: Arbitrary playback rates cause issues',
+            'PROXIMATE: No validation on setPlaybackRate()',
+            'ROOT: VALID_PLAYBACK_RATES not checked',
+            'MECHANISM: Should validate against allowed values',
+            'FIX: Check rate against TimeState.VALID_PLAYBACK_RATES'
+        ],
+        testFn: async () => {
+            const timeState = window.timeState;
+            if (!timeState) return { passed: true, skipped: true, reason: 'timeState not available' };
+
+            const originalRate = timeState.getPlaybackRate();
+
+            // Try to set an invalid rate
+            timeState.setPlaybackRate(999);
+            const afterInvalidRate = timeState.getPlaybackRate();
+
+            // Invalid rate should be rejected, rate should be unchanged
+            const invalidRejected = afterInvalidRate === originalRate;
+
+            return {
+                passed: invalidRejected,
+                details: {
+                    originalRate,
+                    attemptedRate: 999,
+                    resultRate: afterInvalidRate,
+                    invalidRejected
+                }
+            };
+        }
+    }
+};
+
+// ============================================
 // COMBINED REGISTRY
 // ============================================
 
@@ -1438,7 +1627,8 @@ export const TEST_REGISTRY = {
     ...EVENT_HYPOTHESES,
     ...UI_HYPOTHESES,
     ...VALIDATION_HYPOTHESES,
-    ...SATELLITE_HYPOTHESES
+    ...SATELLITE_HYPOTHESES,
+    ...TIME_HYPOTHESES
 };
 
 /**

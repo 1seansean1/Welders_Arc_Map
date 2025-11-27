@@ -24,6 +24,7 @@ This document captures debugging knowledge, integration patterns, and hard-won i
 | LL-005 | Deck.gl Layer State Corruption | Rendering | 2025-11-26 |
 | LL-006 | deck.gl-leaflet Integration vs Manual Sync | Architecture | 2025-11-26 |
 | LL-007 | Test Visual Properties Not Just Existence | Testing | 2025-11-26 |
+| LL-008 | Time Control Paradigms from Industry Standards | Architecture | 2025-11-27 |
 
 ---
 
@@ -480,3 +481,98 @@ When testing visual elements:
 2. Check opacity/alpha values - a layer with alpha=1 exists but isn't visible
 3. Validate dimensions - width/height must be perceivable
 4. Add threshold checks for minimum visible values
+
+---
+
+## LL-008: Time Control Paradigms from Industry Standards
+
+**Date**: 2025-11-27
+**Category**: Architecture
+**Status**: APPLIED
+
+### Context
+
+Implementing time navigation controls for satellite visualization required researching industry terminology and UX patterns. Initial confusion about "scrubbing", "seeking", and "playback" led to research across video editing, GIS, and aerospace domains.
+
+### Key Industry Terminology
+
+| Term | Origin | Definition | WA_map Implementation |
+|------|--------|------------|----------------------|
+| **Scrubbing** | Video editing | Dragging playhead along timeline | Click/drag on time bar thumb |
+| **Jog** | Professional editing | Frame-by-frame stepping (shuttle dial inner ring) | Ctrl+mouse wheel = ±1 step |
+| **Shuttle** | Professional editing | Variable-speed playback (outer ring) | FF/RW buttons × playback rate |
+| **Seeking** | Media players | Jump to specific points (bookmarks, chapters) | Stub API for AOS/LOS, conjunctions |
+| **Playback Rate** | Video/animation | Speed multiplier (0.5x-600x) | Speed selector dropdown |
+| **Time Extent** | ArcGIS/GIS | Start/stop window for temporal data | Analysis window (start/stop times) |
+| **Time Instant** | STK/Aerospace | Single point in time | currentTime in timeState |
+| **Time Interval** | STK/Aerospace | Duration between instants | Analysis window duration |
+
+### Key Patterns Discovered
+
+**1. Separate "Current Time" from "Analysis Window"**
+
+```javascript
+// Two distinct concepts:
+_state.currentTime     // The instant being displayed (playhead position)
+_state.startTime       // Analysis window start (data query boundary)
+_state.stopTime        // Analysis window stop (data query boundary)
+```
+
+The current time can move within the analysis window, but the window itself defines what data is loaded/visible.
+
+**2. Playback Rate as Multiplier, Not Absolute Speed**
+
+Industry uses multipliers (1x, 2x, 60x) rather than "seconds per frame":
+```javascript
+static VALID_PLAYBACK_RATES = [0.5, 1, 2, 4, 8, 16, 60, 600];
+// 600x = 10 minutes per second of wall clock (useful for orbital periods)
+```
+
+**3. Jog Requires Modifier Key**
+
+Mouse wheel naturally scrolls/zooms the map. Jog requires modifier to distinguish intent:
+```javascript
+function handleWheelJog(e) {
+    if (!e.ctrlKey) return;  // Only jog with Ctrl held
+    // ...step time
+}
+```
+
+**4. Presets Commit Immediately**
+
+Time window presets (Last 1h, Next 24h) should apply instantly, not require confirmation:
+```javascript
+function applyPreset(preset) {
+    // Calculate window immediately
+    // Commit time range directly
+    // No intermediate "preview" state needed
+}
+```
+
+**5. Seek Points as Future-Proofing Stub**
+
+Even if not fully implemented, stub the API early:
+```javascript
+// Stub enables future features without refactoring:
+// - AOS/LOS events (satellite passes)
+// - Conjunction events (close approaches)
+// - User bookmarks
+// - Event highlights from analysis
+addSeekPoint(name, time, type = 'user')
+seekNext() / seekPrevious()
+```
+
+### Sources Researched
+
+1. **Video Editing**: Premiere Pro, Final Cut Pro - JKL controls, jog/shuttle
+2. **GIS**: ArcGIS Time Slider API - time extent, time instants
+3. **Aerospace**: AGI STK - scenario time intervals, animation epochs
+4. **Web Standards**: HTML5 video element - playbackRate property
+
+### Prevention
+
+1. **Research industry terminology first** - Different domains use different terms for similar concepts
+2. **Stub future APIs early** - Seek points API costs little but enables future features
+3. **Separate state concerns** - Current time vs analysis window serve different purposes
+4. **Use multipliers over absolutes** - 2x is more intuitive than "500ms per frame"
+5. **Modifier keys for overloaded inputs** - Ctrl+wheel for jog vs regular wheel for zoom
