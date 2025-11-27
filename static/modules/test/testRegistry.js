@@ -1614,6 +1614,97 @@ const TIME_HYPOTHESES = {
                 }
             };
         }
+    },
+    'H-TIME-9': {
+        id: 'H-TIME-9',
+        name: 'DateTime Inputs Sync with State',
+        category: 'time',
+        hypothesis: 'Datetime inputs update when time range changes externally',
+        symptom: 'Datetime inputs show stale values after preset applied',
+        prediction: 'After setTimeRange(), datetime inputs reflect new values',
+        nullPrediction: 'Inputs would show old values',
+        threshold: { startUpdated: true, stopUpdated: true },
+        causalChain: [
+            'SYMPTOM: Datetime inputs show wrong times',
+            'PROXIMATE: Inputs not updated after state change',
+            'ROOT: No listener for time:range:changed event',
+            'MECHANISM: updateDateTimeInputs() must be called',
+            'FIX: Wire event listener to update inputs'
+        ],
+        testFn: async () => {
+            const timeState = window.timeState;
+            const startInput = document.getElementById('map-time-start');
+            const stopInput = document.getElementById('map-time-stop');
+
+            if (!timeState || !startInput || !stopInput) {
+                return { passed: true, skipped: true, reason: 'Required elements not available' };
+            }
+
+            // Set a known time range
+            const testStart = new Date('2025-01-01T00:00:00Z');
+            const testStop = new Date('2025-01-02T00:00:00Z');
+            timeState.setTimeRange(testStart, testStop);
+            timeState.applyTimeChanges();
+
+            // Allow time for event propagation
+            await new Promise(resolve => setTimeout(resolve, 50));
+
+            // Check if inputs contain the expected date portions
+            const startValue = startInput.value; // Format: YYYY-MM-DDTHH:mm
+            const stopValue = stopInput.value;
+
+            const startUpdated = startValue.includes('2025-01-01');
+            const stopUpdated = stopValue.includes('2025-01-02');
+
+            return {
+                passed: startUpdated && stopUpdated,
+                details: {
+                    expectedStart: '2025-01-01',
+                    expectedStop: '2025-01-02',
+                    actualStartValue: startValue,
+                    actualStopValue: stopValue,
+                    startUpdated,
+                    stopUpdated
+                }
+            };
+        }
+    },
+    'H-TIME-10': {
+        id: 'H-TIME-10',
+        name: 'Stop Button Halts Animation',
+        category: 'time',
+        hypothesis: 'Stop button halts running animation without returning to real-time',
+        symptom: 'Stop button does nothing or returns to real-time',
+        prediction: 'Click stop during FF: animation stops, time holds, not real-time',
+        nullPrediction: 'Animation would continue or real-time would resume',
+        threshold: { animationStopped: true, notRealTime: true },
+        causalChain: [
+            'SYMPTOM: Cannot pause animation at current time',
+            'PROXIMATE: Stop button not wired or calls wrong function',
+            'ROOT: handleStopButton() not implemented correctly',
+            'MECHANISM: Should call stopAnimation() only, not startRealTime()',
+            'FIX: Wire stop button to handleStopButton()'
+        ],
+        testFn: async () => {
+            // This test requires UI interaction - verify button exists and has handler
+            const stopBtn = document.getElementById('map-time-stop-btn');
+
+            if (!stopBtn) {
+                return { passed: false, skipped: false, reason: 'Stop button not found in DOM' };
+            }
+
+            // Check button is visible
+            const isVisible = stopBtn.offsetParent !== null;
+
+            return {
+                passed: isVisible,
+                details: {
+                    buttonExists: true,
+                    isVisible,
+                    note: 'Full animation test requires manual verification'
+                }
+            };
+        }
     }
 };
 

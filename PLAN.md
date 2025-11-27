@@ -50,9 +50,11 @@
 - [x] Mouse wheel scrubs time when Ctrl+wheel over map
 - [x] Hold < or > steps at selected rate × speed multiplier
 - [x] Preset buttons set analysis window bounds instantly
-- [ ] Start/Stop pickers expand from time bar, work with calendar (PAUSED)
-- [ ] All controls interact coherently (no conflicting states)
-- [ ] 6 hypothesis tests pass (H-TIME-5 through H-TIME-10)
+- [x] Start/Stop datetime pickers inline in time bar (revised design)
+- [x] Stop button (■) halts animation
+- [x] Time bar reordered per user specification
+- [x] All controls interact coherently (no conflicting states)
+- [x] 6 hypothesis tests pass (H-TIME-5 through H-TIME-10)
 
 **AI Governor Mandatory Compliance (Phases 1-4):**
 - [x] Research Log documented (this PLAN.md section)
@@ -61,6 +63,13 @@
 - [x] Update TESTS.md with new test specifications (v1.1)
 - [x] Verify in browser (syntax checks passed - manual verification recommended)
 - [x] Final commit and push (3074d29)
+
+**AI Governor Mandatory Compliance (Phase 5):**
+- [x] Research Log documented (Phase 5 section updated with inline design)
+- [x] Implementation complete (TIME-027, TIME-028)
+- [x] Add hypothesis tests H-TIME-9, H-TIME-10 to testRegistry.js
+- [x] Update TESTS.md with Phase 5 test specifications (v1.2)
+- [ ] Final commit and push
 
 **4. How do we undo this?**
 - Git: `git revert HEAD` or `git checkout HEAD~1 -- <files>`

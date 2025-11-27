@@ -1,7 +1,7 @@
 # WA_map Test Documentation
 
 > **Document Type**: TESTS
-> **Version**: 1.1
+> **Version**: 1.2
 > **Last Updated**: 2025-11-27
 > **Maintainer**: AI Governor System
 
@@ -27,8 +27,8 @@ All tests follow a **hypothesis-driven** approach inspired by the scientific met
 | Event | H-EVENT-* | 2 | Event bus functionality |
 | UI | H-UI-* | 3 | User interface components |
 | Validation | H-VALID-* | 2 | Input validation |
-| Time | H-TIME-* | 4 | Time control functionality |
-| **Total** | | **21** | |
+| Time | H-TIME-* | 6 | Time control functionality |
+| **Total** | | **23** | |
 
 ---
 
@@ -85,6 +85,8 @@ All tests follow a **hypothesis-driven** approach inspired by the scientific met
 | H-TIME-6 | Preset Sets Analysis Window | PENDING | Time presets apply correct start/stop times |
 | H-TIME-7 | Seek Points API | PENDING | addSeekPoint/getSeekPoints/removeSeekPoint work |
 | H-TIME-8 | Valid Playback Rates Enforced | PENDING | Invalid rates rejected with error |
+| H-TIME-9 | DateTime Inputs Sync with State | PENDING | Inputs update when presets applied |
+| H-TIME-10 | Stop Button Halts Animation | PENDING | Stop (■) button exists and is visible |
 
 ---
 
@@ -100,7 +102,7 @@ All tests follow a **hypothesis-driven** approach inspired by the scientific met
 ### Via Console
 
 ```javascript
-// Run all 21 tests
+// Run all 23 tests
 await window.automatedTests.runAllTests();
 
 // Run specific category
@@ -305,5 +307,6 @@ The test suite is complete when:
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 1.0 | 2025-11-26 | Initial standardized test documentation |
+| 1.2 | 2025-11-27 | Added TIME tests H-TIME-9, H-TIME-10 (datetime sync, stop button) |
 | 1.1 | 2025-11-27 | Added TIME tests H-TIME-5 through H-TIME-8 (playback rate, presets, seek points) |
+| 1.0 | 2025-11-26 | Initial standardized test documentation |
