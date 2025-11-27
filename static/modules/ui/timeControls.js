@@ -68,20 +68,23 @@ let startPicker, stopPicker;
 
 /**
  * Initialize time controls with default values
- * Sets default start time to 24 hours ago, stop time to now
+ * Sets time window centered on NOW (-12h to +12h for 24h total)
+ * This places NOW at the middle of the slider (position 0.5)
  */
 export function initializeTimeControls() {
     const now = new Date();
-    const lookbackHours = 24; // Default lookback
-    const startDefault = new Date(now.getTime() - (lookbackHours * 60 * 60 * 1000));
+    const windowHours = 24; // Total window size
+    const halfWindowMs = (windowHours / 2) * 60 * 60 * 1000;
+    const startDefault = new Date(now.getTime() - halfWindowMs);
+    const stopDefault = new Date(now.getTime() + halfWindowMs);
 
     timeState.setCurrentTime(now);
     timeState.setStartTime(startDefault);
-    timeState.setStopTime(now);
+    timeState.setStopTime(stopDefault);
     timeState.applyTimeChanges(); // Commit the initial values
 
     startTimeInput.value = formatDateTimeLocal(startDefault);
-    stopTimeInput.value = formatDateTimeLocal(now);
+    stopTimeInput.value = formatDateTimeLocal(stopDefault);
 }
 
 /**

@@ -778,21 +778,25 @@ class TimeState {
     }
 
     /**
-     * Initialize time state with default range (NOW to NOW + lookback)
+     * Initialize time state with default range centered on NOW
+     * Window is split: half lookback, half lookforward
+     * This places NOW at the middle of the slider (position 0.5)
      */
     initializeTimeState() {
         const now = new Date();
-        const lookbackMs = this._state.lookbackHours * 60 * 60 * 1000;
-        const start = new Date(now.getTime() - lookbackMs);
+        // Split the window: half behind NOW, half ahead
+        const halfWindowMs = (this._state.lookbackHours / 2) * 60 * 60 * 1000;
+        const start = new Date(now.getTime() - halfWindowMs);
+        const stop = new Date(now.getTime() + halfWindowMs);
 
         this._state.currentTime = new Date(now);
         this._state.startTime = start;
-        this._state.stopTime = new Date(now);
+        this._state.stopTime = stop;
         this._state.committedStartTime = new Date(start);
-        this._state.committedStopTime = new Date(now);
+        this._state.committedStopTime = new Date(stop);
         this._state.hasPendingChanges = false;
 
-        logger.log(`Time state initialized: ${start.toISOString()} to ${now.toISOString()}`, logger.CATEGORY.TIME);
+        logger.log(`Time state initialized (centered): ${start.toISOString()} to ${stop.toISOString()}`, logger.CATEGORY.TIME);
 
         eventBus.emit('time:range:changed', {
             startTime: new Date(this._state.startTime),

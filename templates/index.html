@@ -2181,6 +2181,15 @@
                 </span>
                 <span class="nav-label">Watch List</span>
             </button>
+            <button class="nav-btn" data-section="lists">
+                <span class="nav-icon">
+                    <!-- Folder/list icon -->
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                </span>
+                <span class="nav-label">Lists</span>
+            </button>
             <button class="nav-btn" data-section="settings">
                 <span class="nav-icon">
                     <!-- Settings/gear icon -->
@@ -2238,6 +2247,7 @@
                                     <th class="col-norad">NORAD</th>
                                     <th class="col-name">Name</th>
                                     <th class="col-star" style="width: 30px; text-align: center;">★</th>
+                                    <th class="col-list" style="width: 50px; text-align: center;">List</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -2326,6 +2336,34 @@
                 </div>
             </div>
 
+            <div id="content-lists" style="display: none;">
+                <!-- User Lists -->
+                <div class="sensor-controls">
+                    <div class="sensor-table-wrapper">
+                        <table class="sensor-table" id="userlist-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-sel" style="width: 24px;">Show</th>
+                                    <th class="col-name">List Name</th>
+                                    <th class="col-count" style="width: 40px;">#</th>
+                                    <th class="col-delete" style="width: 30px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="userlist-new-container" style="display: none;"></div>
+                    <div class="sensor-actions">
+                        <button class="sensor-action-btn sensor-add-btn" id="userlist-new-btn">+ New</button>
+                    </div>
+                    <p style="color: var(--text-muted); font-size: 9px; margin-top: 8px;">
+                        Check to show satellites from list on map. Click row to expand.
+                    </p>
+                </div>
+            </div>
+
             <div id="content-settings" style="display: none;">
                 <!-- Ground Track Settings (moved from TIME) -->
                 <div class="settings-section">
@@ -2400,23 +2438,22 @@
                 </button>
                 <!-- Fit Earth button (resize grid + fit) -->
                 <button id="map-fit-earth-btn" title="Resize grid to fit Earth (1:1)">
-                    <span style="font-size: 14px;">[ ]</span>
+                    <span style="font-size: 12px; font-family: monospace;">[:]</span>
                 </button>
                 <!-- Fit View button (just fit, works when maximized) -->
                 <button id="map-fit-view-btn" title="Fit map to Earth bounds">
-                    <span>FIT</span>
+                    <span style="font-size: 14px;">+</span>
                 </button>
                 <!-- Map Time Bar (bottom of map) - Compact Responsive Design -->
                 <div id="map-time-bar" class="map-time-bar">
                     <!-- Group 1: Time Window -->
                     <div class="mtb-group mtb-window-group">
-                        <select class="mtb-select" id="map-time-preset-select" title="Quick time window presets">
+                        <select class="mtb-select" id="map-time-preset-select" title="Time window centered on NOW">
                             <option value="" disabled selected>Win</option>
-                            <option value="last-1h">-1h</option>
-                            <option value="last-6h">-6h</option>
-                            <option value="last-24h">-24h</option>
-                            <option value="next-6h">+6h</option>
-                            <option value="next-24h">+24h</option>
+                            <option value="win-1h">±30m</option>
+                            <option value="win-6h">±3h</option>
+                            <option value="win-24h">±12h</option>
+                            <option value="win-48h">±24h</option>
                         </select>
                         <input type="text" class="mtb-datetime" id="map-time-start" title="Start time (UTC)" placeholder="Start" readonly />
                         <input type="text" class="mtb-datetime" id="map-time-stop" title="Stop time (UTC)" placeholder="Stop" readonly />

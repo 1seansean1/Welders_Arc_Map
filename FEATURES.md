@@ -81,6 +81,18 @@
 | SAT-017 | Anti-Meridian Segment Wrapping | P2 | S | DONE | SAT-005, SAT-008 |
 | SAT-018 | Latitude Apex Glow Ticks | P2 | M | DONE | SAT-014, SAT-015 |
 | SAT-019 | Watch List Color Assignment | P2 | M | DONE | SAT-007, MAP-003 |
+| SAT-020 | User Lists Feature | P2 | M | DONE | SAT-001, LIST-001 |
+
+### User Lists (LIST)
+
+| ID | Feature | Priority | Complexity | Status | Dependencies |
+|----|---------|----------|------------|--------|--------------|
+| LIST-001 | List State Module | P1 | M | DONE | None |
+| LIST-002 | List CRUD Operations | P1 | S | DONE | LIST-001 |
+| LIST-003 | List Table UI | P1 | M | DONE | LIST-001 |
+| LIST-004 | Add to List Dropdown | P1 | S | DONE | LIST-001, SAT-004 |
+| LIST-005 | List Visibility Toggle | P1 | S | DONE | LIST-001, MAP-003 |
+| LIST-006 | List localStorage Persistence | P1 | S | DONE | LIST-001 |
 
 ### Sensor Management (SEN)
 
@@ -262,7 +274,7 @@
 | Category | Total | DONE | WIP | PLAN | IDEA |
 |----------|-------|------|-----|------|------|
 | MAP | 13 | 13 | 0 | 0 | 0 |
-| SAT | 18 | 16 | 0 | 1 | 1 |
+| SAT | 19 | 17 | 0 | 1 | 1 |
 | SEN | 9 | 8 | 0 | 0 | 1 |
 | TIME | 29 | 29 | 0 | 0 | 0 |
 | UI | 17 | 15 | 0 | 2 | 0 |
@@ -270,9 +282,10 @@
 | TEST | 15 | 13 | 0 | 1 | 0 |
 | BACK | 9 | 3 | 0 | 4 | 2 |
 | ARCH | 5 | 5 | 0 | 0 | 0 |
-| **TOTAL** | **126** | **111** | **0** | **8** | **6** |
+| LIST | 6 | 6 | 0 | 0 | 0 |
+| **TOTAL** | **133** | **118** | **0** | **8** | **6** |
 
-**Completion Rate**: 88% (111/126 features complete)
+**Completion Rate**: 89% (118/133 features complete)
 
 ---
 
@@ -280,6 +293,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.9 | 2025-11-27 | LIST-001 to LIST-006 DONE: User Lists feature with CRUD, visibility, localStorage |
 | 2.8 | 2025-11-27 | TIME-029 DONE: Compact time bar redesign with Flatpickr, responsive groups |
 | 2.7 | 2025-11-27 | TIME-027/TIME-028 DONE: Inline start/stop datetime pickers, time bar reorder, stop button |
 | 2.6 | 2025-11-27 | Added TIME-023 to TIME-026: Playback rate, jog wheel, seek stubs, presets |

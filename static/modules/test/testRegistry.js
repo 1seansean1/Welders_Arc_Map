@@ -1897,6 +1897,215 @@ if (typeof window !== 'undefined') {
 }
 
 // ============================================
+// USER LIST TESTS (LIST)
+// ============================================
+
+const LIST_HYPOTHESES = {
+    'H-LIST-1': {
+        id: 'H-LIST-1',
+        name: 'List CRUD Operations',
+        category: 'list',
+        hypothesis: 'User lists can be created, read, and deleted',
+        symptom: 'Lists cannot be created or managed',
+        prediction: 'createList() creates list, getAllLists() returns it, deleteList() removes it',
+        nullPrediction: 'Lists would not be stored or retrieved',
+        threshold: { crudWorks: true },
+        causalChain: [
+            'SYMPTOM: Cannot manage user lists',
+            'PROXIMATE: listState methods not working',
+            'ROOT: State not persisted or methods broken',
+            'MECHANISM: localStorage or state array issues',
+            'FIX: Verify CRUD operations on listState'
+        ],
+        testFn: async () => {
+            const listState = window.listState;
+            if (!listState) return { passed: false, error: 'listState not available' };
+
+            const testName = '__test_list_' + Date.now();
+
+            // Test create
+            const created = listState.createList(testName);
+            const createWorks = created && created.id && created.name === testName;
+
+            // Test read
+            const allLists = listState.getAllLists();
+            const found = allLists.find(l => l.name === testName);
+            const readWorks = !!found;
+
+            // Test delete
+            const deleteResult = listState.deleteList(created.id);
+            const afterDelete = listState.getAllLists();
+            const stillExists = afterDelete.find(l => l.name === testName);
+            const deleteWorks = deleteResult && !stillExists;
+
+            return {
+                passed: createWorks && readWorks && deleteWorks,
+                details: {
+                    createWorks,
+                    readWorks,
+                    deleteWorks,
+                    createdId: created?.id
+                }
+            };
+        }
+    },
+    'H-LIST-2': {
+        id: 'H-LIST-2',
+        name: 'List Satellite Management',
+        category: 'list',
+        hypothesis: 'Satellites can be added to and removed from lists',
+        symptom: 'Cannot add satellites to lists',
+        prediction: 'addSatelliteToList() adds satellite, removeSatelliteFromList() removes it',
+        nullPrediction: 'Satellite associations would not be stored',
+        threshold: { satelliteManagementWorks: true },
+        causalChain: [
+            'SYMPTOM: Satellites not appearing in lists',
+            'PROXIMATE: satelliteIds array not updated',
+            'ROOT: addSatelliteToList() not pushing to array',
+            'MECHANISM: Array operations not persisted',
+            'FIX: Verify satellite add/remove and persistence'
+        ],
+        testFn: async () => {
+            const listState = window.listState;
+            const satelliteState = window.SatelliteApp?.satelliteState;
+            if (!listState) return { passed: false, error: 'listState not available' };
+            if (!satelliteState) return { passed: false, error: 'satelliteState not available' };
+
+            const satellites = satelliteState.getAllSatellites();
+            if (satellites.length === 0) return { passed: true, skipped: true, reason: 'No satellites' };
+
+            const testSatId = satellites[0].id;
+            const testList = listState.createList('__test_sat_list__');
+
+            // Test add
+            const addResult = listState.addSatelliteToList(testList.id, testSatId);
+            const afterAdd = listState.getListById(testList.id);
+            const addWorks = addResult && afterAdd.satelliteIds.includes(testSatId);
+
+            // Test remove
+            const removeResult = listState.removeSatelliteFromList(testList.id, testSatId);
+            const afterRemove = listState.getListById(testList.id);
+            const removeWorks = removeResult && !afterRemove.satelliteIds.includes(testSatId);
+
+            // Cleanup
+            listState.deleteList(testList.id);
+
+            return {
+                passed: addWorks && removeWorks,
+                details: {
+                    addWorks,
+                    removeWorks,
+                    testSatId
+                }
+            };
+        }
+    },
+    'H-LIST-3': {
+        id: 'H-LIST-3',
+        name: 'List Visibility Toggle',
+        category: 'list',
+        hypothesis: 'Toggling list visibility affects satellite display',
+        symptom: 'Checking/unchecking list has no effect',
+        prediction: 'toggleListVisibility() changes visible state and emits event',
+        nullPrediction: 'Visibility would not change',
+        threshold: { visibilityToggles: true },
+        causalChain: [
+            'SYMPTOM: List checkbox has no effect',
+            'PROXIMATE: visible property not changing',
+            'ROOT: toggleListVisibility() not updating state',
+            'MECHANISM: Event not emitted or not handled',
+            'FIX: Verify toggle updates state and emits list:changed'
+        ],
+        testFn: async () => {
+            const listState = window.listState;
+            if (!listState) return { passed: false, error: 'listState not available' };
+
+            const testList = listState.createList('__test_vis_list__');
+            const initialVisibility = testList.visible;
+
+            // Toggle once
+            const afterFirst = listState.toggleListVisibility(testList.id);
+
+            // Toggle back
+            const afterSecond = listState.toggleListVisibility(testList.id);
+
+            // Cleanup
+            listState.deleteList(testList.id);
+
+            const visibilityToggles = afterFirst === !initialVisibility && afterSecond === initialVisibility;
+
+            return {
+                passed: visibilityToggles,
+                details: {
+                    initialVisibility,
+                    afterFirstToggle: afterFirst,
+                    afterSecondToggle: afterSecond,
+                    visibilityToggles
+                }
+            };
+        }
+    },
+    'H-LIST-4': {
+        id: 'H-LIST-4',
+        name: 'Visible Satellite IDs Aggregation',
+        category: 'list',
+        hypothesis: 'getVisibleSatelliteIds() returns union of all visible list satellites',
+        symptom: 'Wrong satellites displayed when multiple lists checked',
+        prediction: 'Visible lists satellites combined, duplicates removed',
+        nullPrediction: 'Only one list\'s satellites would be shown',
+        threshold: { aggregationWorks: true },
+        causalChain: [
+            'SYMPTOM: Missing satellites from checked lists',
+            'PROXIMATE: getVisibleSatelliteIds() not aggregating',
+            'ROOT: Only checking first visible list',
+            'MECHANISM: Should iterate all visible lists',
+            'FIX: Use Set to collect unique IDs from all visible lists'
+        ],
+        testFn: async () => {
+            const listState = window.listState;
+            if (!listState) return { passed: false, error: 'listState not available' };
+
+            // Create two lists with different satellites
+            const list1 = listState.createList('__test_agg_1__');
+            const list2 = listState.createList('__test_agg_2__');
+
+            // Add fake satellite IDs
+            listState.addSatelliteToList(list1.id, 9001);
+            listState.addSatelliteToList(list1.id, 9002);
+            listState.addSatelliteToList(list2.id, 9002); // Duplicate
+            listState.addSatelliteToList(list2.id, 9003);
+
+            // Both visible by default
+            const visibleIds = listState.getVisibleSatelliteIds();
+
+            // Should have 3 unique IDs: 9001, 9002, 9003
+            const has9001 = visibleIds.includes(9001);
+            const has9002 = visibleIds.includes(9002);
+            const has9003 = visibleIds.includes(9003);
+            const noDuplicates = visibleIds.filter(id => id === 9002).length === 1;
+
+            // Cleanup
+            listState.deleteList(list1.id);
+            listState.deleteList(list2.id);
+
+            const aggregationWorks = has9001 && has9002 && has9003 && noDuplicates;
+
+            return {
+                passed: aggregationWorks,
+                details: {
+                    visibleIds,
+                    has9001,
+                    has9002,
+                    has9003,
+                    noDuplicates,
+                    aggregationWorks
+                }
+            };
+        }
+    }
+};
+
+// ============================================
 // COMBINED REGISTRY
 // ============================================
 
@@ -1907,7 +2116,8 @@ export const TEST_REGISTRY = {
     ...UI_HYPOTHESES,
     ...VALIDATION_HYPOTHESES,
     ...SATELLITE_HYPOTHESES,
-    ...TIME_HYPOTHESES
+    ...TIME_HYPOTHESES,
+    ...LIST_HYPOTHESES
 };
 
 /**

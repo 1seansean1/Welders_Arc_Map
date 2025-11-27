@@ -426,8 +426,9 @@ function resetToNow() {
 // ============================================
 
 /**
- * Apply a time window preset
- * @param {string} preset - Preset value (e.g., 'last-6h', 'next-24h')
+ * Apply a time window preset - all presets center on NOW
+ * This places NOW at slider position 0.5 for equal forward/backward scrolling
+ * @param {string} preset - Preset value (e.g., 'win-1h', 'win-6h', 'win-24h')
  */
 function applyPreset(preset) {
     if (!preset) return;
@@ -440,44 +441,31 @@ function applyPreset(preset) {
     const now = new Date();
     let start, stop;
 
-    // Parse preset value
-    const match = preset.match(/^(last|next)-(\d+)h$/);
+    // Parse preset value - format: win-Xh (X hour window centered on NOW)
+    const match = preset.match(/^win-(\d+)h$/);
     if (!match) {
         logger.error(`Invalid preset format: ${preset}`, logger.CATEGORY.TIME);
         return;
     }
 
-    const direction = match[1];  // 'last' or 'next'
-    const hours = parseInt(match[2], 10);
-    const durationMs = hours * 60 * 60 * 1000;
+    const hours = parseInt(match[1], 10);
+    const halfDurationMs = (hours / 2) * 60 * 60 * 1000;
 
-    if (direction === 'last') {
-        // Last X hours: start = now - X, stop = now
-        start = new Date(now.getTime() - durationMs);
-        stop = new Date(now);
-    } else {
-        // Next X hours: start = now, stop = now + X
-        start = new Date(now);
-        stop = new Date(now.getTime() + durationMs);
-    }
+    // Center window on NOW: half behind, half ahead
+    start = new Date(now.getTime() - halfDurationMs);
+    stop = new Date(now.getTime() + halfDurationMs);
 
     // Apply the time range (directly commit, no pending state)
     timeState.setTimeRange(start, stop);
     timeState.applyTimeChanges();
 
-    // Set current time to appropriate position
-    if (direction === 'last') {
-        // For "last" windows, set to end (now)
-        timeState.setCurrentTime(stop);
-    } else {
-        // For "next" windows, set to start (now)
-        timeState.setCurrentTime(start);
-    }
+    // Set current time to NOW (center of window, slider position 0.5)
+    timeState.setCurrentTime(now);
 
     // Update slider
     updateSliderFromState();
 
-    logger.info(`Time window preset applied: ${preset} (${start.toISOString()} to ${stop.toISOString()})`, logger.CATEGORY.TIME);
+    logger.info(`Time window preset applied: ±${hours/2}h centered on NOW`, logger.CATEGORY.TIME);
 
     // Reset dropdown to placeholder
     if (presetSelect) {

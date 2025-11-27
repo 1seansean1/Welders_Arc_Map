@@ -24,6 +24,7 @@ import eventBus from '../events/eventBus.js';
 import sensorState from '../state/sensorState.js';
 import satelliteState from '../state/satelliteState.js';
 import timeState from '../state/timeState.js';
+import listState from '../state/listState.js';
 import { calculateFOVCircle } from '../utils/geometry.js';
 import { calculateGroundTrack } from '../data/propagation.js';
 
@@ -162,6 +163,15 @@ function setupTimeStateSync() {
         logger.info('Glow settings changed, updating visualization', logger.CATEGORY.SYNC, {
             enabled: glowEnabled,
             intensity: glowIntensity
+        });
+        updateDeckOverlay();
+    });
+
+    // Update when user list visibility changes
+    eventBus.on('list:changed', ({ action, listId }) => {
+        logger.info('User list changed, updating visualization', logger.CATEGORY.SYNC, {
+            action,
+            listId
         });
         updateDeckOverlay();
     });
@@ -620,8 +630,18 @@ function createLayers() {
         };
     });
 
-    // Calculate ground tracks for selected satellites
-    const satellitesToRender = satelliteState.getSelectedSatellites();
+    // Calculate ground tracks for selected satellites AND satellites from visible user lists
+    // Combine manually selected satellites with those from visible user lists
+    const selectedSatellites = satelliteState.getSelectedSatellites();
+    const listSatelliteIds = listState.getVisibleSatelliteIds();
+
+    // Get satellites from visible lists that aren't already selected
+    const listSatellites = listSatelliteIds
+        .map(id => satelliteState.getSatelliteById(id))
+        .filter(sat => sat && !selectedSatellites.some(s => s.id === sat.id));
+
+    // Merge: selected satellites + list satellites (no duplicates)
+    const satellitesToRender = [...selectedSatellites, ...listSatellites];
     const currentTime = timeState.getCurrentTime();
     const tailMinutes = timeState.getTailMinutes();
     const headMinutes = timeState.getHeadMinutes();
@@ -871,9 +891,9 @@ function createLayers() {
             stroked: true,
             filled: true,
             radiusScale: 1,
-            radiusMinPixels: 6,
-            radiusMaxPixels: 12,
-            lineWidthMinPixels: 2,
+            radiusMinPixels: 4,
+            radiusMaxPixels: 8,
+            lineWidthMinPixels: 1,
             getPosition: d => d.position,
             getRadius: d => d.radius,
             getFillColor: d => {

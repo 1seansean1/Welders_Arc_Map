@@ -3,6 +3,7 @@
  *
  * DEPENDENCIES:
  * - satelliteState: Satellite data and selection state
+ * - listState: User list management
  * - logger: Diagnostic logging
  *
  * Features:
@@ -13,9 +14,11 @@
  * - Row selection (single click to highlight)
  * - Double-click to edit
  * - Watchlist toggle (star icon)
+ * - Add to List dropdown
  */
 
 import satelliteState from '../state/satelliteState.js';
+import listState from '../state/listState.js';
 import logger from '../utils/logger.js';
 
 // ============================================
@@ -163,6 +166,73 @@ function createSatelliteRow(sat, index) {
     tdStar.appendChild(starBtn);
     tr.appendChild(tdStar);
 
+    // Add to List column
+    const tdList = document.createElement('td');
+    tdList.style.cssText = 'text-align: center; padding: 4px;';
+
+    const lists = listState.getAllLists();
+    const inLists = listState.getListsContainingSatellite(sat.id);
+
+    if (lists.length === 0) {
+        // No lists exist yet - show disabled button
+        const noListBtn = document.createElement('button');
+        noListBtn.style.cssText = 'background: none; border: none; cursor: help; color: var(--text-muted); font-size: 10px; padding: 2px 4px;';
+        noListBtn.textContent = '+';
+        noListBtn.title = 'Create a list first in the Lists panel';
+        tdList.appendChild(noListBtn);
+    } else {
+        // Show dropdown to add to list
+        const listSelect = document.createElement('select');
+        listSelect.style.cssText = 'padding: 1px 2px; font-size: 9px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--text-muted); border-radius: 2px; cursor: pointer; max-width: 50px;';
+
+        // Placeholder option
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = inLists.length > 0 ? `(${inLists.length})` : '+';
+        placeholder.disabled = true;
+        placeholder.selected = true;
+        listSelect.appendChild(placeholder);
+
+        // Add option for each list
+        lists.forEach(list => {
+            const opt = document.createElement('option');
+            opt.value = list.id;
+            const isInList = inLists.some(l => l.id === list.id);
+            opt.textContent = isInList ? `✓ ${list.name}` : list.name;
+            opt.style.cssText = isInList ? 'background: var(--bg-tertiary);' : '';
+            listSelect.appendChild(opt);
+        });
+
+        listSelect.addEventListener('change', (e) => {
+            e.stopPropagation();
+            const listId = parseInt(e.target.value);
+            if (listId) {
+                const isInList = listState.getListsContainingSatellite(sat.id).some(l => l.id === listId);
+                if (isInList) {
+                    listState.removeSatelliteFromList(listId, sat.id);
+                    logger.info(`Removed ${sat.name} from list`, logger.CATEGORY.DATA);
+                } else {
+                    listState.addSatelliteToList(listId, sat.id);
+                    logger.info(`Added ${sat.name} to list`, logger.CATEGORY.DATA);
+                }
+                renderSatelliteTable(); // Re-render to update list indicator
+
+                // Update map visualization
+                if (updateMapCallback) {
+                    updateMapCallback();
+                }
+            }
+            listSelect.selectedIndex = 0; // Reset to placeholder
+        });
+
+        listSelect.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent row click
+        });
+
+        tdList.appendChild(listSelect);
+    }
+    tr.appendChild(tdList);
+
     return tr;
 }
 
@@ -223,8 +293,8 @@ function handleColumnHeaderClick(columnName) {
         return;
     }
 
-    // Star column is not sortable
-    if (columnName === 'star') {
+    // Star and List columns are not sortable
+    if (columnName === 'star' || columnName === 'list') {
         return;
     }
 
@@ -253,12 +323,13 @@ function handleColumnHeaderClick(columnName) {
  */
 function updateColumnHeaderIndicators() {
     const headers = document.querySelectorAll('#satellite-table th');
-    const columnMap = ['sel', 'noradId', 'name', 'star'];
+    const columnMap = ['sel', 'noradId', 'name', 'star', 'list'];
     const labelMap = {
         'sel': 'Sel',
         'noradId': 'NORAD',
         'name': 'Name',
-        'star': '★'
+        'star': '★',
+        'list': 'List'
     };
 
     headers.forEach((header, index) => {
