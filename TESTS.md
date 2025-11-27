@@ -89,6 +89,7 @@ All tests follow a **hypothesis-driven** approach inspired by the scientific met
 | H-GLOW-3 | Glow Enable Toggle | PASS | setGlowEnabled toggles correctly |
 | H-GLOW-4 | Gradual Fade-In | PENDING | Intensity monotonically increases approaching crossing |
 | H-GLOW-5 | Gradual Fade-Out | PENDING | Intensity monotonically decreases after crossing |
+| H-GLOW-6 | Fade Controls Responsiveness | PENDING | Changing fade values affects glow timing |
 
 ### Time Tests (H-TIME-*)
 

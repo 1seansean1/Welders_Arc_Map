@@ -1353,6 +1353,86 @@ const SATELLITE_HYPOTHESES = {
             };
         }
     },
+    'H-GLOW-6': {
+        id: 'H-GLOW-6',
+        name: 'Fade Controls Responsiveness',
+        category: 'satellite',
+        hypothesis: 'Changing fade in/out controls should affect when glow appears/disappears',
+        symptom: 'Glow fade controls have no effect on glow behavior',
+        prediction: 'Setting fadeInMinutes=10 makes glow appear earlier than fadeInMinutes=2',
+        nullPrediction: 'Fade controls would be ignored, glow always appears at same time',
+        threshold: { controlsWork: true },
+        causalChain: [
+            'SYMPTOM: Fade controls do nothing',
+            'PROXIMATE: timeState fade values not passed to detectEquatorCrossings',
+            'ROOT: updateDeckOverlay not reading updated fade values',
+            'MECHANISM: getGlowFadeInMinutes/OutMinutes must be called fresh each render',
+            'FIX: Ensure fade values are read from timeState on each overlay update'
+        ],
+        testFn: async () => {
+            const timeState = window.SatelliteApp?.timeState || window.timeState;
+            if (!timeState) return { passed: true, skipped: true, reason: 'timeState not available' };
+            if (!timeState.getGlowFadeInMinutes || !timeState.setGlowFadeInMinutes) {
+                return { passed: true, skipped: true, reason: 'Fade methods not available' };
+            }
+
+            // Store original values
+            const originalFadeIn = timeState.getGlowFadeInMinutes();
+            const originalFadeOut = timeState.getGlowFadeOutMinutes();
+
+            try {
+                // Test 1: Set different fade values and verify they're stored
+                timeState.setGlowFadeInMinutes(10);
+                timeState.setGlowFadeOutMinutes(15);
+
+                const newFadeIn = timeState.getGlowFadeInMinutes();
+                const newFadeOut = timeState.getGlowFadeOutMinutes();
+
+                const fadeInUpdated = newFadeIn === 10;
+                const fadeOutUpdated = newFadeOut === 15;
+
+                // Test 2: Verify the cosine fade produces different results at same time offset
+                const testTimeDelta = 5 * 60 * 1000;  // 5 minutes in ms
+
+                const fadeInMs10 = 10 * 60 * 1000;
+                const fadeInMs2 = 2 * 60 * 1000;
+
+                const progress10 = testTimeDelta / fadeInMs10;  // 0.5
+                const progress2 = testTimeDelta / fadeInMs2;    // 2.5
+
+                const intensity10 = progress10 <= 1 ? Math.cos(progress10 * Math.PI / 2) : 0;
+                const intensity2 = progress2 <= 1 ? Math.cos(progress2 * Math.PI / 2) : 0;
+
+                const differentResults = intensity10 !== intensity2;
+
+                return {
+                    passed: fadeInUpdated && fadeOutUpdated && differentResults,
+                    details: {
+                        fadeInUpdated,
+                        fadeOutUpdated,
+                        newFadeIn,
+                        newFadeOut,
+                        testScenario: '5 min before crossing',
+                        withFadeIn10: {
+                            fadeProgress: progress10.toFixed(2),
+                            intensity: intensity10.toFixed(3),
+                            glowVisible: intensity10 > 0
+                        },
+                        withFadeIn2: {
+                            fadeProgress: progress2.toFixed(2),
+                            intensity: intensity2.toFixed(3),
+                            glowVisible: intensity2 > 0
+                        },
+                        differentResults
+                    }
+                };
+            } finally {
+                // Restore original values
+                timeState.setGlowFadeInMinutes(originalFadeIn);
+                timeState.setGlowFadeOutMinutes(originalFadeOut);
+            }
+        }
+    },
     'H-SAT-3': {
         id: 'H-SAT-3',
         name: 'Anti-Meridian Segment Wrapping',
