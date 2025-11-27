@@ -73,6 +73,7 @@
 | SAT-012 | Ground Track Gradient Fade | P2 | M | DONE | SAT-005 |
 | SAT-013 | Chevron Satellite Icon | P2 | M | DONE | SAT-005 |
 | SAT-014 | Equator Crossing Glow | P2 | M | DONE | SAT-005 |
+| SAT-015 | Multi-layer Glow Effect | P2 | S | DONE | SAT-014 |
 
 ### Sensor Management (SEN)
 
@@ -105,6 +106,7 @@
 | TIME-011 | Time Slider with Step Controls | P1 | M | DONE | TIME-001 |
 | TIME-012 | Hold-to-Repeat Step Buttons | P2 | S | DONE | TIME-011 |
 | TIME-013 | Glow Fade Duration Control | P2 | S | DONE | UI-010 |
+| TIME-014 | Separate Fade In/Out Controls | P2 | S | DONE | TIME-013 |
 
 ### Control Panel (UI)
 
@@ -233,17 +235,17 @@
 | Category | Total | DONE | WIP | PLAN | IDEA |
 |----------|-------|------|-----|------|------|
 | MAP | 10 | 10 | 0 | 0 | 0 |
-| SAT | 14 | 12 | 0 | 1 | 1 |
+| SAT | 15 | 13 | 0 | 1 | 1 |
 | SEN | 9 | 8 | 0 | 0 | 1 |
-| TIME | 13 | 13 | 0 | 0 | 0 |
+| TIME | 14 | 14 | 0 | 0 | 0 |
 | UI | 12 | 10 | 0 | 2 | 0 |
 | LOG | 10 | 8 | 0 | 0 | 2 |
 | TEST | 15 | 13 | 0 | 1 | 0 |
 | BACK | 9 | 3 | 0 | 4 | 2 |
 | ARCH | 5 | 5 | 0 | 0 | 0 |
-| **TOTAL** | **97** | **82** | **0** | **8** | **6** |
+| **TOTAL** | **99** | **84** | **0** | **8** | **6** |
 
-**Completion Rate**: 85% (82/97 features complete)
+**Completion Rate**: 85% (84/99 features complete)
 
 ---
 
@@ -251,6 +253,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.6 | 2025-11-26 | Added SAT-015: Multi-layer glow effect, TIME-014: Separate fade in/out controls |
 | 1.5 | 2025-11-26 | Added TEST-015: Column sorting hypothesis test (H-UI-8) |
 | 1.4 | 2025-11-26 | Added TEST-013/014: Test Panel column sorting, enhanced download report |
 | 1.3 | 2025-11-26 | Added TIME-012/013, UI-011/012: hold-to-repeat, glow fade, Tests/Watch List panels |

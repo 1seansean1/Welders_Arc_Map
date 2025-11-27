@@ -237,10 +237,11 @@ function createChevronAtlas() {
  * @param {number} fadeMinutes - Minutes for fade effect (crossing fades over this range)
  * @returns {Array} Array of equator crossing data with smooth fade intensity
  */
-function detectEquatorCrossings(tailPoints, headPoints, currentPosition, currentTime, fadeMinutes = 5) {
+function detectEquatorCrossings(tailPoints, headPoints, currentPosition, currentTime, fadeInMinutes = 5, fadeOutMinutes = 5) {
     const crossings = [];
     const currentTimeMs = currentTime ? currentTime.getTime() : Date.now();
-    const fadeMs = fadeMinutes * 60 * 1000;
+    const fadeInMs = fadeInMinutes * 60 * 1000;  // Fade in BEFORE crossing (future crossings)
+    const fadeOutMs = fadeOutMinutes * 60 * 1000; // Fade out AFTER crossing (past crossings)
 
     // Build array with all points including timestamps
     const allPoints = [
@@ -286,20 +287,28 @@ function detectEquatorCrossings(tailPoints, headPoints, currentPosition, current
                 crossingTime = current.time + t * (next.time - current.time);
             }
 
-            // Calculate time-based intensity using smooth fade
-            // Distance from current time in ms
-            const timeDelta = Math.abs(crossingTime - currentTimeMs);
+            // Calculate time-based intensity using asymmetric fade
+            // Future crossings: fade IN as we approach
+            // Past crossings: fade OUT as we move away
+            const timeDelta = crossingTime - currentTimeMs; // Positive = future, negative = past
+            const absTimeDelta = Math.abs(timeDelta);
 
-            // Smooth fade: full intensity at current time, fading to 0 at fadeMs
-            // Using cosine curve for smooth fade (1 at center, 0 at edges)
-            let intensity = 1.0;
-            if (timeDelta < fadeMs) {
-                // Smooth cosine fade: cos(0) = 1 (at crossing), cos(PI/2) = 0 (at edge)
-                const fadeProgress = timeDelta / fadeMs;
-                intensity = Math.cos(fadeProgress * Math.PI / 2);
+            let intensity = 0;
+
+            if (timeDelta > 0) {
+                // Future crossing: fade IN (intensity increases as we get closer)
+                if (absTimeDelta <= fadeInMs) {
+                    // Smooth cosine fade: 0 at edge, 1 at crossing
+                    const fadeProgress = absTimeDelta / fadeInMs;
+                    intensity = Math.cos(fadeProgress * Math.PI / 2);
+                }
             } else {
-                // Beyond fade range - hide completely
-                intensity = 0;
+                // Past crossing: fade OUT (intensity decreases as we move away)
+                if (absTimeDelta <= fadeOutMs) {
+                    // Smooth cosine fade: 1 at crossing, 0 at edge
+                    const fadeProgress = absTimeDelta / fadeOutMs;
+                    intensity = Math.cos(fadeProgress * Math.PI / 2);
+                }
             }
 
             // Direction: northbound or southbound
@@ -310,10 +319,10 @@ function detectEquatorCrossings(tailPoints, headPoints, currentPosition, current
                 crossings.push({
                     position: [crossingLon, 0],
                     intensity: Math.max(0, Math.min(1, intensity)),
-                direction,
-                isHistory: crossingTime < currentTimeMs,
-                isFuture: crossingTime > currentTimeMs,
-                timeDelta: timeDelta / 60000 // Minutes from now (for debugging)
+                    direction,
+                    isHistory: crossingTime < currentTimeMs,
+                    isFuture: crossingTime > currentTimeMs,
+                    timeDelta: timeDelta / 60000 // Minutes from now (positive=future, negative=past)
                 });
             }
         }
@@ -404,7 +413,8 @@ function createLayers() {
     const headMinutes = timeState.getHeadMinutes();
     const glowEnabled = timeState.isGlowEnabled();
     const glowIntensity = timeState.getGlowIntensity();
-    const glowFadeMinutes = timeState.getGlowFadeMinutes();
+    const glowFadeInMinutes = timeState.getGlowFadeInMinutes();
+    const glowFadeOutMinutes = timeState.getGlowFadeOutMinutes();
 
     // Prepare ground track data and satellite position data
     const groundTrackData = [];
@@ -484,7 +494,8 @@ function createLayers() {
             trackResult.headPoints || [],
             trackResult.currentPosition,
             currentTime,
-            glowFadeMinutes
+            glowFadeInMinutes,
+            glowFadeOutMinutes
         );
 
         crossings.forEach(crossing => {
@@ -653,9 +664,75 @@ function createLayers() {
             }
         }),
 
-        // Equator crossing glow layer
+        // Equator crossing glow effect - OUTER diffuse layer (largest, most transparent)
         new deck.ScatterplotLayer({
-            id: 'equator-crossings',
+            id: 'equator-crossings-outer',
+            data: equatorCrossingData,
+            visible: glowEnabled && equatorCrossingData.length > 0,
+            coordinateSystem: deck.COORDINATE_SYSTEM.LNGLAT,
+            wrapLongitude: true,
+            pickable: false,
+            opacity: 1,
+            stroked: false,
+            filled: true,
+            radiusScale: glowIntensity,
+            radiusMinPixels: 16 * glowIntensity,
+            radiusMaxPixels: 60 * glowIntensity,
+            getPosition: d => d.position,
+            getRadius: d => 80000 * d.intensity,
+            getFillColor: d => {
+                // Very transparent outer glow
+                const alpha = Math.floor(d.intensity * 40 * glowIntensity);
+                if (d.isHistory) {
+                    return [100, 150, 220, Math.min(80, alpha)];
+                } else if (d.isFuture) {
+                    return [150, 180, 255, Math.min(80, alpha)];
+                }
+                return [180, 200, 255, Math.min(80, alpha)];
+            },
+            updateTriggers: {
+                visible: `${glowEnabled}-${equatorCrossingData.length}`,
+                getRadius: `${currentTime.getTime()}-${glowIntensity}-${glowFadeInMinutes}-${glowFadeOutMinutes}`,
+                getFillColor: `${currentTime.getTime()}-${glowIntensity}-${glowFadeInMinutes}-${glowFadeOutMinutes}`
+            }
+        }),
+
+        // Equator crossing glow effect - MIDDLE layer
+        new deck.ScatterplotLayer({
+            id: 'equator-crossings-middle',
+            data: equatorCrossingData,
+            visible: glowEnabled && equatorCrossingData.length > 0,
+            coordinateSystem: deck.COORDINATE_SYSTEM.LNGLAT,
+            wrapLongitude: true,
+            pickable: false,
+            opacity: 1,
+            stroked: false,
+            filled: true,
+            radiusScale: glowIntensity,
+            radiusMinPixels: 8 * glowIntensity,
+            radiusMaxPixels: 35 * glowIntensity,
+            getPosition: d => d.position,
+            getRadius: d => 45000 * d.intensity,
+            getFillColor: d => {
+                // Medium opacity middle glow
+                const alpha = Math.floor(d.intensity * 100 * glowIntensity);
+                if (d.isHistory) {
+                    return [130, 170, 220, Math.min(150, alpha)];
+                } else if (d.isFuture) {
+                    return [180, 210, 255, Math.min(150, alpha)];
+                }
+                return [200, 220, 255, Math.min(150, alpha)];
+            },
+            updateTriggers: {
+                visible: `${glowEnabled}-${equatorCrossingData.length}`,
+                getRadius: `${currentTime.getTime()}-${glowIntensity}-${glowFadeInMinutes}-${glowFadeOutMinutes}`,
+                getFillColor: `${currentTime.getTime()}-${glowIntensity}-${glowFadeInMinutes}-${glowFadeOutMinutes}`
+            }
+        }),
+
+        // Equator crossing glow effect - INNER bright core
+        new deck.ScatterplotLayer({
+            id: 'equator-crossings-inner',
             data: equatorCrossingData,
             visible: glowEnabled && equatorCrossingData.length > 0,
             coordinateSystem: deck.COORDINATE_SYSTEM.LNGLAT,
@@ -664,27 +741,26 @@ function createLayers() {
             opacity: 1,
             stroked: false,
             filled: true,
-            radiusScale: glowIntensity, // Apply intensity as size multiplier
-            radiusMinPixels: 4 * glowIntensity,
-            radiusMaxPixels: 20 * glowIntensity,
+            radiusScale: glowIntensity,
+            radiusMinPixels: 3 * glowIntensity,
+            radiusMaxPixels: 15 * glowIntensity,
             getPosition: d => d.position,
-            getRadius: d => 20000 * d.intensity,
+            getRadius: d => 15000 * d.intensity,
             getFillColor: d => {
-                // Blue-white glow color based on intensity
+                // Bright core with high opacity
                 const alpha = Math.floor(d.intensity * 200 * glowIntensity + 55);
-                // Past crossings: grey-blue, Future crossings: white-blue
                 if (d.isHistory) {
-                    return [150, 180, 220, Math.min(255, alpha)];
+                    return [180, 200, 240, Math.min(255, alpha)];
                 } else if (d.isFuture) {
-                    return [200, 220, 255, Math.min(255, alpha)];
+                    return [220, 235, 255, Math.min(255, alpha)];
                 }
                 // Current/near: bright white-blue
-                return [220, 240, 255, Math.min(255, alpha)];
+                return [240, 250, 255, Math.min(255, alpha)];
             },
             updateTriggers: {
                 visible: `${glowEnabled}-${equatorCrossingData.length}`,
-                getRadius: `${tailMinutes}-${headMinutes}-${currentTime.getTime()}-${glowIntensity}-${glowFadeMinutes}`,
-                getFillColor: `${tailMinutes}-${headMinutes}-${currentTime.getTime()}-${glowIntensity}-${glowFadeMinutes}`
+                getRadius: `${currentTime.getTime()}-${glowIntensity}-${glowFadeInMinutes}-${glowFadeOutMinutes}`,
+                getFillColor: `${currentTime.getTime()}-${glowIntensity}-${glowFadeInMinutes}-${glowFadeOutMinutes}`
             },
             onHover: ({object}) => {
                 if (object) {

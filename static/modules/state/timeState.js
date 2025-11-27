@@ -54,9 +54,10 @@ class TimeState {
             headMinutes: 0,   // How far forward to render ground track (default: 0 min)
 
             // Equator crossing glow settings
-            glowEnabled: true,     // Whether to show equator crossing glow
-            glowIntensity: 1.0,    // Glow brightness multiplier (0.1 - 2.0)
-            glowFadeMinutes: 5,    // Minutes before/after equator crossing for fade effect (1-30)
+            glowEnabled: true,       // Whether to show equator crossing glow
+            glowIntensity: 1.0,      // Glow brightness multiplier (0.1 - 2.0)
+            glowFadeInMinutes: 5,    // Minutes BEFORE equator crossing to start fade in (1-30)
+            glowFadeOutMinutes: 5,   // Minutes AFTER equator crossing to end fade out (1-30)
 
             // Time slider settings
             timeStepMinutes: 5,    // Step size for < > buttons (1, 5, 15, 30, 60)
@@ -222,38 +223,64 @@ class TimeState {
         this._state.glowIntensity = intensity;
         logger.log(`Glow intensity set: ${intensity}`, logger.CATEGORY.TIME);
 
-        eventBus.emit('time:glow:changed', {
-            glowEnabled: this._state.glowEnabled,
-            glowIntensity: this._state.glowIntensity,
-            glowFadeMinutes: this._state.glowFadeMinutes
-        });
+        this._emitGlowChanged();
     }
 
     /**
-     * Get glow fade duration in minutes
-     * @returns {number} Fade duration in minutes (1-30)
+     * Get glow fade-in duration in minutes (before crossing)
+     * @returns {number} Fade-in duration in minutes (1-30)
      */
-    getGlowFadeMinutes() {
-        return this._state.glowFadeMinutes;
+    getGlowFadeInMinutes() {
+        return this._state.glowFadeInMinutes;
     }
 
     /**
-     * Set glow fade duration in minutes
-     * @param {number} minutes - Fade duration (1-30)
+     * Get glow fade-out duration in minutes (after crossing)
+     * @returns {number} Fade-out duration in minutes (1-30)
      */
-    setGlowFadeMinutes(minutes) {
+    getGlowFadeOutMinutes() {
+        return this._state.glowFadeOutMinutes;
+    }
+
+    /**
+     * Set glow fade-in duration in minutes (before crossing)
+     * @param {number} minutes - Fade-in duration (1-30)
+     */
+    setGlowFadeInMinutes(minutes) {
         if (typeof minutes !== 'number' || minutes < 1 || minutes > 30) {
-            logger.log('setGlowFadeMinutes: must be 1-30 minutes', logger.CATEGORY.ERROR);
+            logger.log('setGlowFadeInMinutes: must be 1-30 minutes', logger.CATEGORY.ERROR);
             return;
         }
 
-        this._state.glowFadeMinutes = minutes;
-        logger.log(`Glow fade duration set: ${minutes} minutes`, logger.CATEGORY.TIME);
+        this._state.glowFadeInMinutes = minutes;
+        logger.log(`Glow fade-in set: ${minutes} min before`, logger.CATEGORY.TIME);
+        this._emitGlowChanged();
+    }
 
+    /**
+     * Set glow fade-out duration in minutes (after crossing)
+     * @param {number} minutes - Fade-out duration (1-30)
+     */
+    setGlowFadeOutMinutes(minutes) {
+        if (typeof minutes !== 'number' || minutes < 1 || minutes > 30) {
+            logger.log('setGlowFadeOutMinutes: must be 1-30 minutes', logger.CATEGORY.ERROR);
+            return;
+        }
+
+        this._state.glowFadeOutMinutes = minutes;
+        logger.log(`Glow fade-out set: ${minutes} min after`, logger.CATEGORY.TIME);
+        this._emitGlowChanged();
+    }
+
+    /**
+     * Emit glow changed event (internal helper)
+     */
+    _emitGlowChanged() {
         eventBus.emit('time:glow:changed', {
             glowEnabled: this._state.glowEnabled,
             glowIntensity: this._state.glowIntensity,
-            glowFadeMinutes: this._state.glowFadeMinutes
+            glowFadeInMinutes: this._state.glowFadeInMinutes,
+            glowFadeOutMinutes: this._state.glowFadeOutMinutes
         });
     }
 

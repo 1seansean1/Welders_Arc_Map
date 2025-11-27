@@ -1088,7 +1088,7 @@ const SATELLITE_HYPOTHESES = {
             const timeState = window.SatelliteApp?.timeState || window.timeState;
             if (!timeState) return { passed: true, skipped: true, reason: 'timeState not available' };
 
-            const fadeMinutes = timeState.getGlowFadeMinutes?.() || 5;
+            const fadeMinutes = timeState.getGlowFadeOutMinutes?.() || timeState.getGlowFadeMinutes?.() || 5;
             const fadeMs = fadeMinutes * 60 * 1000;
             const testDeltas = [0, fadeMs / 2, fadeMs, fadeMs * 2];
 

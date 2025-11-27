@@ -918,8 +918,33 @@
         .track-unit {
             font-size: 7px;
             color: var(--text-muted);
-            width: 18px;
             flex-shrink: 0;
+        }
+
+        .track-step-btn {
+            width: 20px;
+            height: 18px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 3px;
+            color: var(--text-secondary);
+            font-size: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+        }
+
+        .track-step-btn:hover {
+            background: var(--accent-blue-grey);
+            border-color: var(--accent-blue-grey);
+            color: var(--text-primary);
+        }
+
+        .track-step-btn:active {
+            transform: scale(0.95);
         }
 
         /* ============================================
@@ -1886,24 +1911,6 @@
                     </div>
                 </div>
 
-                <!-- Ground Track Duration Controls -->
-                <div class="track-duration-section">
-                    <label class="time-label" style="margin-top: 12px;">Ground Track</label>
-
-                    <div class="track-duration-control">
-                        <span class="track-label">Tail</span>
-                        <input type="range" class="track-slider" id="track-tail-slider" min="0" max="90" value="20" />
-                        <input type="number" class="track-input" id="track-tail-input" min="0" max="90" value="20" />
-                        <span class="track-unit">min</span>
-                    </div>
-
-                    <div class="track-duration-control">
-                        <span class="track-label">Head</span>
-                        <input type="range" class="track-slider" id="track-head-slider" min="0" max="90" value="0" />
-                        <input type="number" class="track-input" id="track-head-input" min="0" max="90" value="0" />
-                        <span class="track-unit">min</span>
-                    </div>
-                </div>
             </div>
 
             <!-- Other sections (hidden by default) -->
@@ -1991,8 +1998,27 @@
             </div>
 
             <div id="content-settings" style="display: none;">
-                <!-- Glow Effect Settings -->
+                <!-- Ground Track Settings (moved from TIME) -->
                 <div class="settings-section">
+                    <label class="time-label">Ground Track</label>
+
+                    <div class="track-duration-control">
+                        <span class="track-label">Tail</span>
+                        <input type="range" class="track-slider" id="track-tail-slider" min="0" max="90" value="45" />
+                        <input type="number" class="track-input" id="track-tail-input" min="0" max="90" value="45" />
+                        <span class="track-unit">min</span>
+                    </div>
+
+                    <div class="track-duration-control">
+                        <span class="track-label">Head</span>
+                        <input type="range" class="track-slider" id="track-head-slider" min="0" max="90" value="0" />
+                        <input type="number" class="track-input" id="track-head-input" min="0" max="90" value="0" />
+                        <span class="track-unit">min</span>
+                    </div>
+                </div>
+
+                <!-- Glow Effect Settings -->
+                <div class="settings-section" style="margin-top: 12px;">
                     <label class="time-label">Equator Crossing Glow</label>
 
                     <div class="settings-row">
@@ -2002,16 +2028,20 @@
                         </label>
                     </div>
 
-                    <div class="settings-row">
-                        <span class="track-label">Intensity</span>
-                        <input type="range" class="track-slider" id="glow-intensity-slider" min="10" max="200" value="100" />
-                        <span class="track-input-display" id="glow-intensity-display">1.0</span>
+                    <div class="track-duration-control">
+                        <span class="track-label">Fade In</span>
+                        <button class="track-step-btn" id="glow-fade-in-down">-</button>
+                        <input type="number" class="track-input" id="glow-fade-in-input" min="1" max="30" value="5" style="width: 40px;" />
+                        <button class="track-step-btn" id="glow-fade-in-up">+</button>
+                        <span class="track-unit">min before</span>
                     </div>
 
-                    <div class="settings-row">
-                        <span class="track-label">Fade (min)</span>
-                        <input type="range" class="track-slider" id="glow-fade-slider" min="1" max="30" value="5" />
-                        <input type="number" class="track-input" id="glow-fade-input" min="1" max="30" value="5" />
+                    <div class="track-duration-control">
+                        <span class="track-label">Fade Out</span>
+                        <button class="track-step-btn" id="glow-fade-out-down">-</button>
+                        <input type="number" class="track-input" id="glow-fade-out-input" min="1" max="30" value="5" style="width: 40px;" />
+                        <button class="track-step-btn" id="glow-fade-out-up">+</button>
+                        <span class="track-unit">min after</span>
                     </div>
                 </div>
             </div>
