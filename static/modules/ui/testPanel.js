@@ -12,7 +12,6 @@
 
 import logger from '../utils/logger.js';
 import { mapTests, TEST_HYPOTHESES } from '../map/automated-tests.js';
-import { diagnostics } from '../map/diagnostics.js';
 import { testResults } from '../test/testResults.js';
 import { TEST_REGISTRY as ALL_HYPOTHESES } from '../test/testRegistry.js';
 
@@ -51,7 +50,8 @@ const TEST_LIST = [
 
 let isRunning = false;
 let expandedTestId = null;
-let showHistory = false;
+let sortColumn = null;  // 'status', 'id', 'name'
+let sortDirection = null;  // 'asc', 'desc', null
 
 /**
  * Run a test from the registry
@@ -112,34 +112,98 @@ function getHypothesis(hypId) {
 }
 
 /**
+ * Get sort indicator for column header
+ */
+function getSortIndicator(column) {
+    if (sortColumn !== column) return '';
+    return sortDirection === 'asc' ? ' ▲' : sortDirection === 'desc' ? ' ▼' : '';
+}
+
+/**
+ * Get sorted test list based on current sort state
+ */
+function getSortedTestList() {
+    if (!sortColumn || !sortDirection) {
+        return TEST_LIST;
+    }
+
+    const lastRun = testResults.getLastRun();
+    const resultMap = {};
+    if (lastRun?.results) {
+        lastRun.results.forEach(r => {
+            resultMap[r.hypothesisId] = r.passed ? 'pass' : 'fail';
+        });
+    }
+
+    return [...TEST_LIST].sort((a, b) => {
+        let valA, valB;
+
+        switch (sortColumn) {
+            case 'status':
+                valA = resultMap[a.hypId] || '';
+                valB = resultMap[b.hypId] || '';
+                break;
+            case 'id':
+                valA = a.hypId;
+                valB = b.hypId;
+                break;
+            case 'name':
+                valA = getHypothesis(a.hypId).name;
+                valB = getHypothesis(b.hypId).name;
+                break;
+            default:
+                return 0;
+        }
+
+        if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+        if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+        return 0;
+    });
+}
+
+/**
+ * Handle column header click for 3-click sorting
+ */
+function handleColumnSort(column) {
+    if (sortColumn !== column) {
+        // New column - start with ascending
+        sortColumn = column;
+        sortDirection = 'asc';
+    } else {
+        // Same column - cycle: asc -> desc -> none
+        if (sortDirection === 'asc') {
+            sortDirection = 'desc';
+        } else if (sortDirection === 'desc') {
+            sortDirection = null;
+            sortColumn = null;
+        }
+    }
+
+    // Re-render table body
+    refreshTableBody();
+}
+
+/**
  * Create test panel HTML
  */
 function createTestPanelHTML() {
     const lastRun = testResults.getLastRun();
-    const runCount = testResults.getRunCount();
 
     return `
         <div class="test-panel">
-            <!-- Action buttons row -->
-            <div class="sensor-actions" style="margin-bottom: 6px;">
-                <button class="sensor-action-btn sensor-add-btn" id="run-all-tests-btn">Run All</button>
-                <button class="sensor-action-btn sensor-edit-btn" id="run-ablation-btn">Ablation</button>
-                <button class="sensor-action-btn sensor-delete-btn" id="save-baseline-btn">Baseline</button>
-            </div>
-
             <!-- Test table -->
             <div class="sensor-table-wrapper" style="max-height: 220px;">
                 <table class="sensor-table" id="test-table">
                     <thead>
                         <tr>
-                            <th class="col-status" style="width: 28px;">St</th>
-                            <th class="col-hypid" style="width: 72px; text-align: left; padding-left: 4px;">ID</th>
-                            <th class="col-testname" style="text-align: left;">Name</th>
+                            <th class="col-status sortable-header" data-sort="status" style="width: 28px; cursor: pointer;">St${getSortIndicator('status')}</th>
+                            <th class="col-hypid sortable-header" data-sort="id" style="width: 72px; text-align: left; padding-left: 4px; cursor: pointer;">ID${getSortIndicator('id')}</th>
+                            <th class="col-testname sortable-header" data-sort="name" style="text-align: left; cursor: pointer;">Name${getSortIndicator('name')}</th>
                             <th class="col-run" style="width: 32px;">Run</th>
                         </tr>
                     </thead>
                     <tbody id="test-table-body">
-                        ${TEST_LIST.map(test => {
+                        ${getSortedTestList().map(test => {
                             const hyp = getHypothesis(test.hypId);
                             return `
                             <tr class="test-row" data-test-id="${test.id}">
@@ -162,9 +226,9 @@ function createTestPanelHTML() {
                 </table>
             </div>
 
-            <!-- History summary -->
+            <!-- Status bar -->
             <div class="test-history-bar">
-                <span class="history-label">History:</span>
+                <span class="history-label">Last:</span>
                 <span class="history-info" id="history-info">
                     ${lastRun ?
                         `<span class="${lastRun.summary?.failed > 0 ? 'fail-text' : 'pass-text'}">${lastRun.summary?.passed}/${lastRun.summary?.total}</span>` :
@@ -173,17 +237,11 @@ function createTestPanelHTML() {
                 <span class="history-status" id="test-status">Ready</span>
             </div>
 
-            <!-- History action buttons -->
+            <!-- Action buttons at bottom (matching Satellite/Sensor panels) -->
             <div class="sensor-actions">
-                <button class="sensor-action-btn" id="toggle-history-btn">${runCount} runs</button>
-                <button class="sensor-action-btn" id="export-json-btn">JSON</button>
-                <button class="sensor-action-btn" id="export-csv-btn">CSV</button>
+                <button class="sensor-action-btn sensor-add-btn" id="run-all-tests-btn">Run All</button>
                 <button class="sensor-action-btn" id="clear-history-btn">Clear</button>
-            </div>
-
-            <!-- History detail (hidden by default) -->
-            <div class="test-history-detail" id="history-detail" style="display: none;">
-                ${createHistoryDetailHTML()}
+                <button class="sensor-action-btn" id="download-report-btn">Download</button>
             </div>
         </div>
 
@@ -289,65 +347,12 @@ function createTestPanelHTML() {
             .fail-text { color: #a77; }
             .text-muted { color: var(--text-muted); }
 
-            /* History detail panel */
-            .test-history-detail {
-                max-height: 60px;
-                overflow-y: auto;
-                background: var(--bg-primary);
-                border: 1px solid var(--border-color);
-                border-radius: 2px;
-            }
-
-            .history-run-item {
-                display: flex;
-                justify-content: space-between;
-                padding: 2px 4px;
-                font-size: 7px;
-                font-family: var(--font-mono);
-                color: var(--text-secondary);
-                border-bottom: 1px solid #2a2a2a;
-            }
-
-            .history-run-item:last-child {
-                border-bottom: none;
+            /* Sortable headers */
+            .sortable-header:hover {
+                background: var(--bg-tertiary);
             }
         </style>
     `;
-}
-
-/**
- * Format timestamp for display (compact)
- */
-function formatTimestamp(isoString) {
-    const date = new Date(isoString);
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const mins = String(date.getMinutes()).padStart(2, '0');
-    return `${month}/${day} ${hours}:${mins}`;
-}
-
-/**
- * Create history detail HTML
- */
-function createHistoryDetailHTML() {
-    const runs = testResults.getAllRuns().slice(0, 10);
-
-    if (runs.length === 0) {
-        return '<div class="history-run-item">No history</div>';
-    }
-
-    return runs.map(run => {
-        const passRate = run.summary ? ((run.summary.passed / run.summary.total) * 100).toFixed(0) : 0;
-        const statusClass = run.summary?.failed > 0 ? 'fail-text' : 'pass-text';
-
-        return `
-            <div class="history-run-item">
-                <span>${formatTimestamp(run.timestamp)}</span>
-                <span class="${statusClass}">${run.summary?.passed}/${run.summary?.total} (${passRate}%)</span>
-            </div>
-        `;
-    }).join('');
 }
 
 /**
@@ -355,16 +360,28 @@ function createHistoryDetailHTML() {
  */
 function setupEventListeners() {
     document.getElementById('run-all-tests-btn')?.addEventListener('click', runAllTests);
-    document.getElementById('run-ablation-btn')?.addEventListener('click', runAblation);
-    document.getElementById('save-baseline-btn')?.addEventListener('click', saveBaseline);
-    document.getElementById('toggle-history-btn')?.addEventListener('click', toggleHistory);
-    document.getElementById('export-json-btn')?.addEventListener('click', () => testResults.download('json'));
-    document.getElementById('export-csv-btn')?.addEventListener('click', () => testResults.download('csv'));
     document.getElementById('clear-history-btn')?.addEventListener('click', () => {
         testResults.clearHistory();
         updateHistoryDisplay();
+        // Reset all status indicators
+        TEST_LIST.forEach(test => updateTestStatus(test.id, '', '-'));
+    });
+    document.getElementById('download-report-btn')?.addEventListener('click', downloadReport);
+
+    // Column header sorting
+    document.querySelectorAll('.sortable-header').forEach(header => {
+        header.addEventListener('click', () => {
+            handleColumnSort(header.dataset.sort);
+        });
     });
 
+    setupTableEventListeners();
+}
+
+/**
+ * Setup table row event listeners (called after table refresh)
+ */
+function setupTableEventListeners() {
     // Individual test run buttons
     document.querySelectorAll('.test-run-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -383,23 +400,10 @@ function setupEventListeners() {
 }
 
 /**
- * Toggle history detail view
- */
-function toggleHistory() {
-    showHistory = !showHistory;
-    const detailEl = document.getElementById('history-detail');
-    if (detailEl) {
-        detailEl.style.display = showHistory ? 'block' : 'none';
-        if (showHistory) detailEl.innerHTML = createHistoryDetailHTML();
-    }
-}
-
-/**
  * Update history display
  */
 function updateHistoryDisplay() {
     const lastRun = testResults.getLastRun();
-    const runCount = testResults.getRunCount();
 
     const historyInfo = document.getElementById('history-info');
     if (historyInfo) {
@@ -409,14 +413,6 @@ function updateHistoryDisplay() {
         } else {
             historyInfo.innerHTML = '<span class="text-muted">none</span>';
         }
-    }
-
-    const toggleBtn = document.getElementById('toggle-history-btn');
-    if (toggleBtn) toggleBtn.textContent = `${runCount} runs`;
-
-    if (showHistory) {
-        const detailEl = document.getElementById('history-detail');
-        if (detailEl) detailEl.innerHTML = createHistoryDetailHTML();
     }
 }
 
@@ -437,6 +433,128 @@ function toggleDetails(testId) {
     const isHidden = detailsRow.style.display === 'none';
     detailsRow.style.display = isHidden ? 'table-row' : 'none';
     expandedTestId = isHidden ? testId : null;
+}
+
+/**
+ * Refresh table body (for sorting)
+ */
+function refreshTableBody() {
+    const tbody = document.getElementById('test-table-body');
+    const thead = document.querySelector('#test-table thead tr');
+    if (!tbody || !thead) return;
+
+    // Update header sort indicators
+    thead.innerHTML = `
+        <th class="col-status sortable-header" data-sort="status" style="width: 28px; cursor: pointer;">St${getSortIndicator('status')}</th>
+        <th class="col-hypid sortable-header" data-sort="id" style="width: 72px; text-align: left; padding-left: 4px; cursor: pointer;">ID${getSortIndicator('id')}</th>
+        <th class="col-testname sortable-header" data-sort="name" style="text-align: left; cursor: pointer;">Name${getSortIndicator('name')}</th>
+        <th class="col-run" style="width: 32px;">Run</th>
+    `;
+
+    // Re-attach header listeners
+    document.querySelectorAll('.sortable-header').forEach(header => {
+        header.addEventListener('click', () => {
+            handleColumnSort(header.dataset.sort);
+        });
+    });
+
+    // Get current status from DOM before refreshing
+    const statusMap = {};
+    TEST_LIST.forEach(test => {
+        const statusEl = document.getElementById(`status-${test.id}`);
+        if (statusEl) {
+            statusMap[test.id] = {
+                text: statusEl.textContent,
+                className: statusEl.className
+            };
+        }
+    });
+
+    // Regenerate table body
+    tbody.innerHTML = getSortedTestList().map(test => {
+        const hyp = getHypothesis(test.hypId);
+        const status = statusMap[test.id] || { text: '-', className: 'test-status-icon' };
+        return `
+            <tr class="test-row" data-test-id="${test.id}">
+                <td class="col-status"><span class="${status.className}" id="status-${test.id}">${status.text}</span></td>
+                <td class="col-hypid" style="text-align: left; padding-left: 4px;">${hyp.id}</td>
+                <td class="col-testname" style="text-align: left;">${hyp.name}</td>
+                <td class="col-run"><button class="test-run-btn" data-test-id="${test.id}">▶</button></td>
+            </tr>
+            <tr class="test-details-row" id="details-row-${test.id}" style="display: none;">
+                <td colspan="4" class="test-details-cell">
+                    <div class="test-details-content">
+                        <div class="test-detail-item"><span class="detail-label">H:</span> ${hyp.hypothesis}</div>
+                        <div class="test-detail-item"><span class="detail-label">P:</span> ${hyp.prediction}</div>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    // Reset expanded state and re-attach listeners
+    expandedTestId = null;
+    setupTableEventListeners();
+}
+
+/**
+ * Download detailed test report
+ */
+function downloadReport() {
+    const lastRun = testResults.getLastRun();
+    const allRuns = testResults.getAllRuns();
+
+    if (!lastRun) {
+        logger.warning('No test results to download', logger.CATEGORY.SYNC);
+        return;
+    }
+
+    // Build comprehensive report
+    const report = {
+        generated: new Date().toISOString(),
+        summary: {
+            lastRun: lastRun.timestamp,
+            passed: lastRun.summary.passed,
+            failed: lastRun.summary.failed,
+            total: lastRun.summary.total,
+            passRate: ((lastRun.summary.passed / lastRun.summary.total) * 100).toFixed(1) + '%',
+            totalDuration: lastRun.results.reduce((sum, r) => sum + (r.duration || 0), 0) + 'ms'
+        },
+        tests: lastRun.results.map(result => {
+            const hyp = getHypothesis(result.hypothesisId);
+            return {
+                id: result.hypothesisId,
+                name: hyp.name,
+                hypothesis: hyp.hypothesis,
+                prediction: hyp.prediction,
+                status: result.passed ? 'PASS' : 'FAIL',
+                duration: result.duration + 'ms',
+                details: result.details
+            };
+        }),
+        history: {
+            totalRuns: allRuns.length,
+            runs: allRuns.slice(0, 10).map(run => ({
+                timestamp: run.timestamp,
+                passed: run.summary?.passed,
+                failed: run.summary?.failed,
+                total: run.summary?.total
+            }))
+        }
+    };
+
+    // Create and download file
+    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `test-report-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    logger.info('Test report downloaded', logger.CATEGORY.SYNC);
 }
 
 /**
@@ -537,59 +655,6 @@ async function runSingleTest(testId) {
     isRunning = false;
 }
 
-/**
- * Run ablation study
- */
-async function runAblation() {
-    if (isRunning) return;
-
-    isRunning = true;
-    updateStatus('Ablation...');
-    disableButtons(true);
-
-    logger.info('=== ABLATION STUDY ===', logger.CATEGORY.SYNC);
-
-    try {
-        const results = await mapTests.runAblationStudy();
-
-        if (results.ablation.hasBaseline) {
-            if (results.ablation.improved) {
-                logger.success('[ABLATION] Improvement confirmed vs baseline', logger.CATEGORY.SYNC);
-                updateStatus('Ablation: PASS');
-            } else {
-                logger.warning('[ABLATION] No improvement vs baseline', logger.CATEGORY.SYNC);
-                updateStatus('Ablation: CHECK');
-            }
-        } else {
-            logger.warning('[ABLATION] No baseline - save baseline first', logger.CATEGORY.SYNC);
-            updateStatus('No baseline');
-        }
-    } catch (error) {
-        logger.error(`[ABLATION ERROR] ${error.message}`, logger.CATEGORY.SYNC);
-        updateStatus('Ablation: ERR');
-    }
-
-    disableButtons(false);
-    isRunning = false;
-}
-
-/**
- * Save current state as baseline
- */
-function saveBaseline() {
-    updateStatus('Recording...');
-    diagnostics.startRecording();
-
-    logger.info('[BASELINE] Recording 1s of metrics...', logger.CATEGORY.SYNC);
-
-    setTimeout(() => {
-        const report = diagnostics.stopRecording();
-        diagnostics.saveAsBaseline(report);
-        updateStatus('Baseline saved');
-        logger.success('[BASELINE] Saved for ablation comparison', logger.CATEGORY.SYNC);
-    }, 1000);
-}
-
 function updateStatus(text) {
     const el = document.getElementById('test-status');
     if (el) el.textContent = text;
@@ -604,7 +669,7 @@ function updateTestStatus(testId, state, text) {
 }
 
 function disableButtons(disabled) {
-    ['run-all-tests-btn', 'run-ablation-btn', 'save-baseline-btn'].forEach(id => {
+    ['run-all-tests-btn', 'clear-history-btn', 'download-report-btn'].forEach(id => {
         const btn = document.getElementById(id);
         if (btn) btn.disabled = disabled;
     });

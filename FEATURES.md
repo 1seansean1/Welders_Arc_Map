@@ -154,6 +154,8 @@
 | TEST-010 | JSON/CSV Export | P2 | S | DONE | TEST-002 |
 | TEST-011 | Regression Detection | P2 | S | DONE | TEST-002 |
 | TEST-012 | Integration Flow Tests | P2 | M | PLAN | TEST-001 |
+| TEST-013 | Test Panel Column Sorting | P2 | S | DONE | TEST-009 |
+| TEST-014 | Enhanced Test Report Download | P2 | S | DONE | TEST-009, TEST-002 |
 
 ### Backend Infrastructure (BACK)
 
@@ -235,12 +237,12 @@
 | TIME | 13 | 13 | 0 | 0 | 0 |
 | UI | 12 | 10 | 0 | 2 | 0 |
 | LOG | 10 | 8 | 0 | 0 | 2 |
-| TEST | 12 | 10 | 0 | 1 | 0 |
+| TEST | 14 | 12 | 0 | 1 | 0 |
 | BACK | 9 | 3 | 0 | 4 | 2 |
 | ARCH | 5 | 5 | 0 | 0 | 0 |
-| **TOTAL** | **94** | **79** | **0** | **8** | **6** |
+| **TOTAL** | **96** | **81** | **0** | **8** | **6** |
 
-**Completion Rate**: 84% (79/94 features complete)
+**Completion Rate**: 84% (81/96 features complete)
 
 ---
 
@@ -248,6 +250,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.4 | 2025-11-26 | Added TEST-013/014: Test Panel column sorting, enhanced download report |
 | 1.3 | 2025-11-26 | Added TIME-012/013, UI-011/012: hold-to-repeat, glow fade, Tests/Watch List panels |
 | 1.2 | 2025-11-26 | Added TIME-011: Time Slider with Step Controls |
 | 1.1 | 2025-11-26 | Added TLE rendering features: SAT-012/013/014, TIME-009/010, UI-009/010 |
