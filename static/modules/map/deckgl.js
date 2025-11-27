@@ -1139,8 +1139,8 @@ function createLayers() {
             getColor: d => {
                 // Same fade logic as equator glow
                 const timeDelta = (currentTime - d.time) / 60000; // minutes
-                const fadeStart = glowFadeDuration * 0.3;
-                const fadeEnd = glowFadeDuration;
+                const fadeStart = glowFadeOutMinutes * 0.3;
+                const fadeEnd = glowFadeOutMinutes;
 
                 let alpha = 0;
                 if (timeDelta >= 0 && timeDelta < fadeStart) {
@@ -1157,7 +1157,7 @@ function createLayers() {
             capRounded: true,
             updateTriggers: {
                 visible: `${glowEnabled}-${apexTickData.length}`,
-                getColor: `${currentTime.getTime()}-${glowFadeDuration}`
+                getColor: `${currentTime.getTime()}-${glowFadeOutMinutes}`
             }
         })
     ];
