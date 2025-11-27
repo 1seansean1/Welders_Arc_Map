@@ -36,6 +36,7 @@ const TEST_LIST = [
     { id: 'ui-panel', hypId: 'H-UI-1', fn: () => runRegistryTest('H-UI-1') },
     { id: 'ui-sections', hypId: 'H-UI-2', fn: () => runRegistryTest('H-UI-2') },
     { id: 'ui-highlight', hypId: 'H-UI-4', fn: () => runRegistryTest('H-UI-4') },
+    { id: 'ui-sort', hypId: 'H-UI-8', fn: () => runRegistryTest('H-UI-8') },
     // Validation tests (new)
     { id: 'valid-coords', hypId: 'H-VALID-1', fn: () => runRegistryTest('H-VALID-1') },
     { id: 'valid-tle', hypId: 'H-VALID-2', fn: () => runRegistryTest('H-VALID-2') },

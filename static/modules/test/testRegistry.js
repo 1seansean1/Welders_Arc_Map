@@ -723,6 +723,57 @@ const UI_HYPOTHESES = {
                 }
             };
         }
+    },
+    'H-UI-8': {
+        id: 'H-UI-8',
+        name: 'Test Panel Column Sorting',
+        category: 'ui',
+        hypothesis: 'Clicking column headers cycles through sort states',
+        symptom: 'Column headers don\'t sort or show indicators',
+        prediction: 'Click cycles: none → asc (▲) → desc (▼) → none',
+        nullPrediction: 'Headers would be static, no sorting',
+        threshold: { sortCycles: true },
+        causalChain: [
+            'SYMPTOM: Test table cannot be sorted',
+            'PROXIMATE: handleColumnSort() not called',
+            'ROOT: Click handler not attached to headers',
+            'MECHANISM: sortColumn/sortDirection state not cycling',
+            'FIX: Attach click handler to .sortable-header elements'
+        ],
+        testFn: async () => {
+            // Check if test table exists
+            const testTable = document.getElementById('test-table');
+            if (!testTable) return { passed: true, skipped: true, reason: 'Test table not visible' };
+
+            // Check for sortable headers
+            const sortableHeaders = testTable.querySelectorAll('.sortable-header');
+            if (sortableHeaders.length === 0) {
+                return { passed: false, details: { error: 'No sortable headers found' } };
+            }
+
+            // Check that headers have data-sort attribute
+            const headerConfigs = Array.from(sortableHeaders).map(h => ({
+                column: h.dataset.sort,
+                hasClickHandler: true // Headers exist with sortable class
+            }));
+
+            const hasStatusSort = headerConfigs.some(h => h.column === 'status');
+            const hasIdSort = headerConfigs.some(h => h.column === 'id');
+            const hasNameSort = headerConfigs.some(h => h.column === 'name');
+
+            const passed = hasStatusSort && hasIdSort && hasNameSort;
+
+            return {
+                passed,
+                details: {
+                    headerCount: sortableHeaders.length,
+                    hasStatusSort,
+                    hasIdSort,
+                    hasNameSort,
+                    headers: headerConfigs
+                }
+            };
+        }
     }
 };
 

@@ -156,6 +156,7 @@
 | TEST-012 | Integration Flow Tests | P2 | M | PLAN | TEST-001 |
 | TEST-013 | Test Panel Column Sorting | P2 | S | DONE | TEST-009 |
 | TEST-014 | Enhanced Test Report Download | P2 | S | DONE | TEST-009, TEST-002 |
+| TEST-015 | Column Sorting Hypothesis Test | P2 | XS | DONE | TEST-013, TEST-001 |
 
 ### Backend Infrastructure (BACK)
 
@@ -237,12 +238,12 @@
 | TIME | 13 | 13 | 0 | 0 | 0 |
 | UI | 12 | 10 | 0 | 2 | 0 |
 | LOG | 10 | 8 | 0 | 0 | 2 |
-| TEST | 14 | 12 | 0 | 1 | 0 |
+| TEST | 15 | 13 | 0 | 1 | 0 |
 | BACK | 9 | 3 | 0 | 4 | 2 |
 | ARCH | 5 | 5 | 0 | 0 | 0 |
-| **TOTAL** | **96** | **81** | **0** | **8** | **6** |
+| **TOTAL** | **97** | **82** | **0** | **8** | **6** |
 
-**Completion Rate**: 84% (81/96 features complete)
+**Completion Rate**: 85% (82/97 features complete)
 
 ---
 
@@ -250,6 +251,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.5 | 2025-11-26 | Added TEST-015: Column sorting hypothesis test (H-UI-8) |
 | 1.4 | 2025-11-26 | Added TEST-013/014: Test Panel column sorting, enhanced download report |
 | 1.3 | 2025-11-26 | Added TIME-012/013, UI-011/012: hold-to-repeat, glow fade, Tests/Watch List panels |
 | 1.2 | 2025-11-26 | Added TIME-011: Time Slider with Step Controls |
