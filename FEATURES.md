@@ -56,6 +56,7 @@
 | MAP-010 | Smart Aspect Ratio Zoom | P3 | S | DONE | MAP-005 |
 | MAP-011 | Equator Reference Line | P2 | XS | DONE | MAP-003 |
 | MAP-012 | Fit Earth Button | P2 | S | DONE | MAP-001, MAP-005 |
+| MAP-013 | Fit View Button | P2 | XS | DONE | MAP-001 |
 
 ### Satellite Management (SAT)
 
@@ -252,7 +253,7 @@
 
 | Category | Total | DONE | WIP | PLAN | IDEA |
 |----------|-------|------|-----|------|------|
-| MAP | 12 | 12 | 0 | 0 | 0 |
+| MAP | 13 | 13 | 0 | 0 | 0 |
 | SAT | 17 | 15 | 0 | 1 | 1 |
 | SEN | 9 | 8 | 0 | 0 | 1 |
 | TIME | 22 | 22 | 0 | 0 | 0 |
@@ -261,9 +262,9 @@
 | TEST | 15 | 13 | 0 | 1 | 0 |
 | BACK | 9 | 3 | 0 | 4 | 2 |
 | ARCH | 5 | 5 | 0 | 0 | 0 |
-| **TOTAL** | **117** | **102** | **0** | **8** | **6** |
+| **TOTAL** | **118** | **103** | **0** | **8** | **6** |
 
-**Completion Rate**: 87% (102/117 features complete)
+**Completion Rate**: 87% (103/118 features complete)
 
 ---
 
@@ -271,6 +272,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.4 | 2025-11-26 | Added MAP-013: Fit View Button, H-MAP-7 test, fixed grid state sync |
 | 2.3 | 2025-11-26 | Added UI-017: Table height consistency, H-UI-9 test |
 | 2.2 | 2025-11-26 | Added MAP-012: Fit Earth Button, TIME-022: Enhanced clock display, UI-014/015/016: Button/panel/table fixes |
 | 2.1 | 2025-11-26 | Added SAT-018: Latitude apex glow ticks |

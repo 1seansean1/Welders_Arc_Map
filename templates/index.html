@@ -263,6 +263,32 @@
             color: #9dd4ff;
         }
 
+        /* Fit View button - just fit (below fit earth) */
+        #map-fit-view-btn {
+            position: absolute;
+            top: 130px;
+            right: 10px;
+            width: 30px;
+            height: 30px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            cursor: pointer;
+            z-index: 1000;
+            color: var(--text-secondary);
+            font-size: 11px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        #map-fit-view-btn:hover {
+            background: #2a2a2a;
+            color: #9dd4ff;
+        }
+
         /* Mobile: Larger touch target */
         @media (max-width: 768px) {
             #map-maximize-btn {
@@ -2274,9 +2300,13 @@
                 <button id="map-maximize-btn" title="Maximize map">
                     <span id="maximize-icon">⛶</span>
                 </button>
-                <!-- Fit Earth button -->
-                <button id="map-fit-earth-btn" title="Fit to single Earth view">
-                    <span>🌍</span>
+                <!-- Fit Earth button (resize grid + fit) -->
+                <button id="map-fit-earth-btn" title="Resize grid to fit Earth (1:1)">
+                    <span style="font-size: 14px;">[ ]</span>
+                </button>
+                <!-- Fit View button (just fit, works when maximized) -->
+                <button id="map-fit-view-btn" title="Fit map to Earth bounds">
+                    <span>FIT</span>
                 </button>
                 <!-- Map Time Bar (bottom of map) -->
                 <div id="map-time-bar" class="map-time-bar">
@@ -2443,7 +2473,7 @@
     </div>
 
     <!-- ES6 Module Loading -->
-    <script type="module" src="/static/app.js?v=49"></script>
+    <script type="module" src="/static/app.js?v=52"></script>
 
     <!-- Fallback for browsers without ES6 module support -->
     <script nomodule>

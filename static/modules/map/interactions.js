@@ -31,6 +31,33 @@ import logger from '../utils/logger.js';
 import { resizeDeckCanvas } from './deckgl.js';
 import { enforceLogPanelConstraints } from '../ui/logPanel.js';
 
+// Module-level grid state (shared between resizer and fit-earth)
+let gridState = {
+    horizontalPercent: 65,
+    verticalPercent: 60,
+    updateHandles: null  // Will be set by initializePaneResizer
+};
+
+/**
+ * Update grid layout and sync handles
+ * Call this when programmatically changing the grid
+ */
+export function setGridLayout(horizontalPercent, verticalPercent) {
+    const mainContainer = document.getElementById('main-container');
+    if (!mainContainer) return;
+
+    gridState.horizontalPercent = horizontalPercent;
+    gridState.verticalPercent = verticalPercent;
+
+    mainContainer.style.gridTemplateColumns = `${horizontalPercent}% ${100 - horizontalPercent}%`;
+    mainContainer.style.gridTemplateRows = `${verticalPercent}% ${100 - verticalPercent}%`;
+
+    // Update handle positions if resizer is initialized
+    if (gridState.updateHandles) {
+        gridState.updateHandles();
+    }
+}
+
 // ============================================
 // PANE RESIZER
 // ============================================
@@ -51,8 +78,12 @@ export function initializePaneResizer() {
 
     let isDragging = false;
     let activeHandle = null; // 'vertical', 'horizontal', or 'crosshair'
-    let currentHorizontalPercent = 65; // Match CSS grid-template-columns: 65% 35%
-    let currentVerticalPercent = 60;   // Match CSS grid-template-rows: 60% 40%
+
+    // Use module-level gridState for percentages (allows external updates)
+    const getHorizontalPercent = () => gridState.horizontalPercent;
+    const getVerticalPercent = () => gridState.verticalPercent;
+    const setHorizontalPercent = (v) => { gridState.horizontalPercent = v; };
+    const setVerticalPercent = (v) => { gridState.verticalPercent = v; };
 
     // Simple constraints - user-friendly ranges
     const MIN_PERCENT = 25;  // Minimum 25% (enough space for content)
@@ -62,11 +93,14 @@ export function initializePaneResizer() {
      * Update handle positions based on current grid percentages
      */
     function updateHandlePositions() {
-        verticalHandle.style.left = `calc(${currentHorizontalPercent}% - 6px)`;
-        horizontalHandle.style.top = `calc(${currentVerticalPercent}% - 6px)`;
-        crosshairHandle.style.left = `calc(${currentHorizontalPercent}% - 10px)`;
-        crosshairHandle.style.top = `calc(${currentVerticalPercent}% - 10px)`;
+        verticalHandle.style.left = `calc(${getHorizontalPercent()}% - 6px)`;
+        horizontalHandle.style.top = `calc(${getVerticalPercent()}% - 6px)`;
+        crosshairHandle.style.left = `calc(${getHorizontalPercent()}% - 10px)`;
+        crosshairHandle.style.top = `calc(${getVerticalPercent()}% - 10px)`;
     }
+
+    // Expose updateHandlePositions to module scope
+    gridState.updateHandles = updateHandlePositions;
 
     // Set initial positions
     updateHandlePositions();
@@ -257,7 +291,7 @@ export function initializePaneResizer() {
             // Vertical handle controls horizontal split
             let horizontalPercent = (relativeX / containerRect.width) * 100;
             horizontalPercent = Math.max(MIN_PERCENT, Math.min(MAX_PERCENT, horizontalPercent));
-            currentHorizontalPercent = horizontalPercent;
+            setHorizontalPercent(horizontalPercent);
             mainContainer.style.gridTemplateColumns = `${horizontalPercent}% ${100 - horizontalPercent}%`;
 
             // CRITICAL: Keep Leaflet and Deck.gl synced during horizontal resize
@@ -269,7 +303,7 @@ export function initializePaneResizer() {
             // Horizontal handle controls vertical split
             let verticalPercent = (relativeY / containerRect.height) * 100;
             verticalPercent = Math.max(MIN_PERCENT, Math.min(MAX_PERCENT, verticalPercent));
-            currentVerticalPercent = verticalPercent;
+            setVerticalPercent(verticalPercent);
             mainContainer.style.gridTemplateRows = `${verticalPercent}% ${100 - verticalPercent}%`;
 
             // Dynamically shrink log panel if needed during drag
@@ -287,8 +321,8 @@ export function initializePaneResizer() {
             let verticalPercent = (relativeY / containerRect.height) * 100;
             horizontalPercent = Math.max(MIN_PERCENT, Math.min(MAX_PERCENT, horizontalPercent));
             verticalPercent = Math.max(MIN_PERCENT, Math.min(MAX_PERCENT, verticalPercent));
-            currentHorizontalPercent = horizontalPercent;
-            currentVerticalPercent = verticalPercent;
+            setHorizontalPercent(horizontalPercent);
+            setVerticalPercent(verticalPercent);
             mainContainer.style.gridTemplateColumns = `${horizontalPercent}% ${100 - horizontalPercent}%`;
             mainContainer.style.gridTemplateRows = `${verticalPercent}% ${100 - verticalPercent}%`;
 
@@ -337,8 +371,8 @@ export function initializePaneResizer() {
             'Grid resized',
             logger.CATEGORY.PANEL,
             {
-                horizontal: `${currentHorizontalPercent.toFixed(1)}%`,
-                vertical: `${currentVerticalPercent.toFixed(1)}%`
+                horizontal: `${getHorizontalPercent().toFixed(1)}%`,
+                vertical: `${getVerticalPercent().toFixed(1)}%`
             }
         );
     }
@@ -461,71 +495,115 @@ export function initializeFitEarthButton() {
         const map = window.leafletMap;
         if (!map) return;
 
-        // Target aspect ratio for one complete Earth in Web Mercator
-        // World is roughly 2:1 (360° longitude / ~170° latitude visible)
-        const TARGET_ASPECT_RATIO = 2.0;
+        // DETERMINISTIC FIT EARTH ALGORITHM
+        // ===================================
+        // Web Mercator full extent is a SQUARE in pixel space (1:1 aspect ratio)
+        // Bounds: -85.051° to +85.051° latitude, -180° to +180° longitude
 
-        // Get current main container dimensions
+        const EARTH_BOUNDS = L.latLngBounds(
+            L.latLng(-85.051, -180),  // SW corner (Mercator limit)
+            L.latLng(85.051, 180)     // NE corner (Mercator limit)
+        );
+
+        // Full Web Mercator is 1:1 aspect ratio
+        const MERCATOR_ASPECT_RATIO = 1.0;
+
+        // Get container dimensions
         const containerRect = mainContainer.getBoundingClientRect();
-        const totalWidth = containerRect.width;
-        const totalHeight = containerRect.height;
 
-        // Calculate what horizontal % would give the map the target aspect ratio
-        // We need: mapWidth / mapHeight = TARGET_ASPECT_RATIO
-        // mapWidth = horizontalPercent * totalWidth
-        // mapHeight = verticalPercent * totalHeight
-        // So: (horizontalPercent * totalWidth) / (verticalPercent * totalHeight) = TARGET_ASPECT_RATIO
-
-        // Start with current vertical split (or use 60% as default)
-        const currentVerticalPercent = 60;
-        const mapHeight = (currentVerticalPercent / 100) * totalHeight;
-
-        // Calculate required map width for target aspect ratio
-        const requiredMapWidth = mapHeight * TARGET_ASPECT_RATIO;
-
-        // Calculate what horizontal % this represents
-        let horizontalPercent = (requiredMapWidth / totalWidth) * 100;
+        // Calculate grid percentages to achieve square map canvas
+        // Keep vertical at 60%, calculate horizontal for 1:1 map aspect
+        const verticalPercent = 60;
+        const mapHeight = (verticalPercent / 100) * containerRect.height;
+        const requiredMapWidth = mapHeight * MERCATOR_ASPECT_RATIO;
+        let horizontalPercent = (requiredMapWidth / containerRect.width) * 100;
 
         // Clamp to reasonable bounds (25% - 85%)
         horizontalPercent = Math.max(25, Math.min(85, horizontalPercent));
 
-        // Apply the new grid layout
-        mainContainer.style.gridTemplateColumns = `${horizontalPercent}% ${100 - horizontalPercent}%`;
-        mainContainer.style.gridTemplateRows = `${currentVerticalPercent}% ${100 - currentVerticalPercent}%`;
+        // Step 1: Apply grid layout to get square canvas (uses setGridLayout to sync handles)
+        setGridLayout(horizontalPercent, verticalPercent);
 
-        // Wait for layout to update, then fit the map
-        setTimeout(() => {
-            // Invalidate map size first
-            map.invalidateSize({ animate: false });
+        // Step 2: Wait for layout to settle (double rAF ensures paint complete)
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                // Step 3: Tell Leaflet about new container size
+                map.invalidateSize({ animate: false });
 
-            // Resize Deck.gl canvas
-            resizeDeckCanvas();
+                // Step 4: Sync Deck.gl canvas
+                resizeDeckCanvas();
 
-            // Fit to world bounds (shows exactly one Earth)
-            // Web Mercator limits: lat ~±85.05°, lon ±180°
-            const worldBounds = L.latLngBounds(
-                L.latLng(-60, -180),  // SW corner (cut off Antarctica)
-                L.latLng(75, 180)     // NE corner (cut off Arctic)
-            );
+                // Step 5: Fit to exact Earth bounds - deterministic result
+                map.fitBounds(EARTH_BOUNDS, {
+                    animate: true,
+                    duration: 0.5,
+                    padding: [0, 0],      // No padding - exact fit
+                    maxZoom: 1            // Prevent zooming past single Earth
+                });
 
-            map.fitBounds(worldBounds, {
-                animate: true,
-                duration: 0.5,
-                padding: [10, 10]
+                // Log result
+                const mapContainer = document.getElementById('map-container');
+                const finalRect = mapContainer.getBoundingClientRect();
+
+                logger.diagnostic('Fit to Earth view', logger.CATEGORY.MAP, {
+                    bounds: '-85.051,-180 to 85.051,180',
+                    gridWidth: `${horizontalPercent.toFixed(1)}%`,
+                    mapSize: `${Math.round(finalRect.width)}x${Math.round(finalRect.height)}`,
+                    aspectRatio: (finalRect.width / finalRect.height).toFixed(2),
+                    zoom: map.getZoom().toFixed(2)
+                });
             });
-
-            // Get final dimensions for logging
-            const mapContainer = document.getElementById('map-container');
-            const finalRect = mapContainer.getBoundingClientRect();
-            const finalAspect = finalRect.width / finalRect.height;
-
-            logger.diagnostic('Fit to Earth view', logger.CATEGORY.MAP, {
-                gridWidth: `${horizontalPercent.toFixed(1)}%`,
-                mapSize: `${finalRect.width.toFixed(0)}x${finalRect.height.toFixed(0)}`,
-                aspectRatio: finalAspect.toFixed(2)
-            });
-        }, 50);
+        });
     });
 
     logger.success('Fit Earth button initialized', logger.CATEGORY.PANEL);
+}
+
+// ============================================
+// FIT VIEW BUTTON (works in any state)
+// ============================================
+
+/**
+ * Initialize Fit View button - fits map to Earth bounds without resizing grid
+ * Works in normal mode AND maximized mode
+ */
+export function initializeFitViewButton() {
+    const fitViewBtn = document.getElementById('map-fit-view-btn');
+
+    if (!fitViewBtn) {
+        logger.warning('Fit View button not found', logger.CATEGORY.PANEL);
+        return;
+    }
+
+    fitViewBtn.addEventListener('click', () => {
+        const map = window.leafletMap;
+        if (!map) return;
+
+        // Full Web Mercator bounds
+        const EARTH_BOUNDS = L.latLngBounds(
+            L.latLng(-85.051, -180),
+            L.latLng(85.051, 180)
+        );
+
+        // Just fit to bounds - works regardless of container shape
+        map.fitBounds(EARTH_BOUNDS, {
+            animate: true,
+            duration: 0.5,
+            padding: [0, 0],
+            maxZoom: 2  // Allow slightly higher zoom for non-square containers
+        });
+
+        // Sync Deck.gl
+        resizeDeckCanvas();
+
+        const mapContainer = document.getElementById('map-container');
+        const rect = mapContainer.getBoundingClientRect();
+
+        logger.diagnostic('Fit to Earth bounds', logger.CATEGORY.MAP, {
+            mapSize: `${Math.round(rect.width)}x${Math.round(rect.height)}`,
+            zoom: map.getZoom().toFixed(2)
+        });
+    });
+
+    logger.success('Fit View button initialized', logger.CATEGORY.PANEL);
 }
