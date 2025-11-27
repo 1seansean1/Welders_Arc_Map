@@ -305,14 +305,17 @@ function detectEquatorCrossings(tailPoints, headPoints, currentPosition, current
             // Direction: northbound or southbound
             const direction = lat2 > lat1 ? 'north' : 'south';
 
-            crossings.push({
-                position: [crossingLon, 0],
-                intensity: Math.max(0, Math.min(1, intensity)),
+            // Only add crossing if it has visible intensity
+            if (intensity > 0) {
+                crossings.push({
+                    position: [crossingLon, 0],
+                    intensity: Math.max(0, Math.min(1, intensity)),
                 direction,
                 isHistory: crossingTime < currentTimeMs,
                 isFuture: crossingTime > currentTimeMs,
                 timeDelta: timeDelta / 60000 // Minutes from now (for debugging)
-            });
+                });
+            }
         }
     }
 
