@@ -300,8 +300,8 @@
         .map-time-bar {
             position: absolute;
             bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
+            left: 10px;
+            right: 10px;
             background: rgba(10, 10, 10, 0.9);
             border: 1px solid #333333;
             border-radius: 6px;
@@ -365,6 +365,19 @@
         /* Animation buttons (rewind/fast-forward) */
         .map-time-anim-btn {
             font-size: 10px;
+            padding: 0 6px;
+        }
+
+        .map-time-anim-btn .anim-icon {
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: -2px;
+            color: var(--text-secondary);
+        }
+
+        .map-time-anim-btn:hover .anim-icon {
+            color: var(--text-primary);
         }
 
         .map-time-anim-btn.animating {
@@ -403,7 +416,8 @@
         }
 
         .map-time-slider {
-            width: 150px;
+            flex: 1;
+            min-width: 100px;
             height: 4px;
             -webkit-appearance: none;
             appearance: none;
@@ -2200,11 +2214,11 @@
                 <!-- Map Time Bar (bottom of map) -->
                 <div id="map-time-bar" class="map-time-bar">
                     <!-- Animation control group: RW, Play/Stop, FF -->
-                    <button class="map-time-btn map-time-anim-btn" id="map-time-rewind" title="Rewind animation">⏪</button>
+                    <button class="map-time-btn map-time-anim-btn" id="map-time-rewind" title="Rewind animation"><span class="anim-icon">««</span></button>
                     <button class="map-time-btn map-time-play-btn" id="map-time-play-btn" title="Play/Stop real-time">
                         <span id="map-time-play-icon">▶</span>
                     </button>
-                    <button class="map-time-btn map-time-anim-btn" id="map-time-ffwd" title="Fast forward animation">⏩</button>
+                    <button class="map-time-btn map-time-anim-btn" id="map-time-ffwd" title="Fast forward animation"><span class="anim-icon">»»</span></button>
                     <!-- Separator -->
                     <div class="map-time-separator"></div>
                     <!-- Step control group: Dropdown, Step buttons, Slider, Now -->

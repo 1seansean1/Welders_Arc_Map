@@ -428,6 +428,56 @@ function calculateBearing(tailPoints, currentPosition) {
 
     return bearing;
 }
+/**
+ * Handle anti-meridian crossing by splitting segment into two wrapped segments
+ * Instead of skipping segments that cross the date line, we split them
+ * so one segment goes to the edge and another continues from the opposite edge.
+ *
+ * @param {Array} startPos - [lon, lat] of start point
+ * @param {Array} endPos - [lon, lat] of end point
+ * @returns {Array} Array of path segments (1 if no crossing, 2 if crossing)
+ */
+function wrapAntiMeridianSegment(startPos, endPos) {
+    const [lon1, lat1] = startPos;
+    const [lon2, lat2] = endPos;
+
+    const lonDiff = lon2 - lon1;
+
+    // No crossing if longitude difference is reasonable
+    if (Math.abs(lonDiff) <= 180) {
+        return [[startPos, endPos]];
+    }
+
+    // Determine crossing direction
+    let crossingLon, wrapLon;
+    if (lonDiff < -180) {
+        // Eastward: crossing +180/-180 boundary (e.g., 170 -> -170)
+        crossingLon = 180;
+        wrapLon = -180;
+    } else {
+        // Westward: crossing -180/+180 boundary (e.g., -170 -> 170)
+        crossingLon = -180;
+        wrapLon = 180;
+    }
+
+    // Calculate the actual angular distance traveled (shorter path around globe)
+    const actualDistance = 360 - Math.abs(lonDiff);
+
+    // Distance to crossing from start
+    const distToCrossing = Math.abs(crossingLon - lon1);
+
+    // Fraction of total path to reach crossing
+    const fraction = distToCrossing / actualDistance;
+
+    // Interpolate latitude at crossing point
+    const crossingLat = lat1 + (lat2 - lat1) * fraction;
+
+    // Return two segments that wrap around the date line
+    return [
+        [[lon1, lat1], [crossingLon, crossingLat]],
+        [[wrapLon, crossingLat], [lon2, lat2]]
+    ];
+}
 
 // ============================================
 // LAYER CREATION
@@ -509,9 +559,8 @@ function createLayers() {
                 const startPoint = trackResult.tailPoints[i];
                 const endPoint = trackResult.tailPoints[i + 1];
 
-                // Check for anti-meridian crossing (skip segment if crossing detected)
-                const lonDiff = Math.abs(endPoint.position[0] - startPoint.position[0]);
-                if (lonDiff > 300) continue;
+                // Handle anti-meridian crossing by wrapping segments
+                const wrappedSegments = wrapAntiMeridianSegment(startPoint.position, endPoint.position);
 
                 // Calculate opacity based on progress (older = more transparent)
                 const avgProgress = (startPoint.progress + endPoint.progress) / 2;
@@ -538,14 +587,17 @@ function createLayers() {
                     segmentAlpha = Math.min(255, alpha + Math.floor(glowProximity * 80));
                 }
 
-                groundTrackData.push({
-                    path: [startPoint.position, endPoint.position],
-                    name: sat.name,
-                    color: [r, g, b, segmentAlpha],
-                    satellite: sat,
-                    segmentIndex: i,
-                    isTail: true,
-                    glowProximity
+                // Add each wrapped segment (1 for normal, 2 for date line crossing)
+                wrappedSegments.forEach((segPath, segIdx) => {
+                    groundTrackData.push({
+                        path: segPath,
+                        name: sat.name,
+                        color: [r, g, b, segmentAlpha],
+                        satellite: sat,
+                        segmentIndex: i * 10 + segIdx,
+                        isTail: true,
+                        glowProximity
+                    });
                 });
             }
         }
@@ -556,9 +608,8 @@ function createLayers() {
                 const startPoint = trackResult.headPoints[i];
                 const endPoint = trackResult.headPoints[i + 1];
 
-                // Check for anti-meridian crossing
-                const lonDiff = Math.abs(endPoint.position[0] - startPoint.position[0]);
-                if (lonDiff > 300) continue;
+                // Handle anti-meridian crossing by wrapping segments
+                const wrappedSegments = wrapAntiMeridianSegment(startPoint.position, endPoint.position);
 
                 // Head uses lighter color and decreasing opacity into future
                 const avgProgress = (startPoint.progress + endPoint.progress) / 2;
@@ -584,14 +635,17 @@ function createLayers() {
                     segmentAlpha = Math.min(255, alpha + Math.floor(glowProximity * 60));
                 }
 
-                groundTrackData.push({
-                    path: [startPoint.position, endPoint.position],
-                    name: sat.name,
-                    color: [r, g, b, segmentAlpha],
-                    satellite: sat,
-                    segmentIndex: i,
-                    isHead: true,
-                    glowProximity
+                // Add each wrapped segment (1 for normal, 2 for date line crossing)
+                wrappedSegments.forEach((segPath, segIdx) => {
+                    groundTrackData.push({
+                        path: segPath,
+                        name: sat.name,
+                        color: [r, g, b, segmentAlpha],
+                        satellite: sat,
+                        segmentIndex: i * 10 + segIdx,
+                        isHead: true,
+                        glowProximity
+                    });
                 });
             }
         }
@@ -610,6 +664,25 @@ function createLayers() {
 
     // Create layers - always include all with 'visible' prop
     const layers = [
+        // Equator reference line
+        new deck.PathLayer({
+            id: 'equator-line',
+            data: [{
+                path: [[-180, 0], [180, 0]],
+                name: 'Equator'
+            }],
+            visible: true,
+            coordinateSystem: deck.COORDINATE_SYSTEM.LNGLAT,
+            wrapLongitude: true,
+            pickable: false,
+            widthScale: 1,
+            widthMinPixels: 1,
+            widthMaxPixels: 1,
+            getPath: d => d.path,
+            getColor: [100, 120, 140, 60],  // Subtle blue-gray
+            getWidth: 1
+        }),
+
         // FOV polygon layer
         new deck.PolygonLayer({
             id: 'sensor-fov',

@@ -54,6 +54,7 @@
 | MAP-008 | Infinite World Wrapping | P2 | S | DONE | MAP-001 |
 | MAP-009 | Touch/Mobile Support | P1 | M | DONE | MAP-001 |
 | MAP-010 | Smart Aspect Ratio Zoom | P3 | S | DONE | MAP-005 |
+| MAP-011 | Equator Reference Line | P2 | XS | DONE | MAP-003 |
 
 ### Satellite Management (SAT)
 
@@ -75,6 +76,7 @@
 | SAT-014 | Equator Crossing Glow | P2 | M | DONE | SAT-005 |
 | SAT-015 | Multi-layer Glow Effect | P2 | S | DONE | SAT-014 |
 | SAT-016 | Chevron-Based Glow Enhancement | P2 | M | DONE | SAT-014, SAT-015 |
+| SAT-017 | Anti-Meridian Segment Wrapping | P2 | S | DONE | SAT-005, SAT-008 |
 
 ### Sensor Management (SEN)
 
@@ -114,6 +116,7 @@
 | TIME-018 | Dual Clock Display (UTC + Sim) | P2 | S | DONE | TIME-001 |
 | TIME-019 | Rewind/Fast Forward Animation | P2 | S | DONE | TIME-015 |
 | TIME-020 | Time Bar Button Reorder | P2 | XS | DONE | TIME-015 |
+| TIME-021 | Full-Width Time Bar | P2 | XS | DONE | TIME-015 |
 
 ### Control Panel (UI)
 
@@ -131,6 +134,7 @@
 | UI-010 | Glow Effect Controls | P2 | S | DONE | UI-009, SAT-014 |
 | UI-011 | Tests Panel | P2 | S | DONE | UI-002, TEST-001 |
 | UI-012 | Watch List Panel | P2 | S | DONE | UI-002 |
+| UI-013 | Styled Animation Icons | P2 | XS | DONE | TIME-019 |
 
 ### Logging System (LOG)
 
@@ -241,18 +245,18 @@
 
 | Category | Total | DONE | WIP | PLAN | IDEA |
 |----------|-------|------|-----|------|------|
-| MAP | 10 | 10 | 0 | 0 | 0 |
-| SAT | 16 | 14 | 0 | 1 | 1 |
+| MAP | 11 | 11 | 0 | 0 | 0 |
+| SAT | 17 | 15 | 0 | 1 | 1 |
 | SEN | 9 | 8 | 0 | 0 | 1 |
-| TIME | 20 | 20 | 0 | 0 | 0 |
-| UI | 12 | 10 | 0 | 2 | 0 |
+| TIME | 21 | 21 | 0 | 0 | 0 |
+| UI | 13 | 11 | 0 | 2 | 0 |
 | LOG | 10 | 8 | 0 | 0 | 2 |
 | TEST | 15 | 13 | 0 | 1 | 0 |
 | BACK | 9 | 3 | 0 | 4 | 2 |
 | ARCH | 5 | 5 | 0 | 0 | 0 |
-| **TOTAL** | **106** | **91** | **0** | **8** | **6** |
+| **TOTAL** | **110** | **95** | **0** | **8** | **6** |
 
-**Completion Rate**: 86% (91/106 features complete)
+**Completion Rate**: 86% (95/110 features complete)
 
 ---
 
@@ -260,6 +264,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.0 | 2025-11-26 | Added SAT-017: Anti-meridian wrapping, MAP-011: Equator line, TIME-021: Full-width bar, UI-013: Styled icons |
 | 1.9 | 2025-11-26 | Added TIME-019: Rewind/Fast Forward animation buttons |
 | 1.8 | 2025-11-26 | Added TIME-018: Dual Clock Display (UTC + Sim), moved to top-left of map |
 | 1.7 | 2025-11-26 | Added TIME-015/016/017: Map Time Bar with play/stop and sub-minute steps |
