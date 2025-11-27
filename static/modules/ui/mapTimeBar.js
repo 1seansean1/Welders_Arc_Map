@@ -8,6 +8,7 @@
  *
  * Features:
  * - Play/Stop button for real-time mode
+ * - Rewind/Fast Forward animation buttons (step per second)
  * - Step size selector (1s, 10s, 30s, 1m, 5m, 15m, 30m, 1h)
  * - Step back/forward buttons with hold-to-repeat
  * - Time slider for scrubbing
@@ -26,8 +27,10 @@ const container = document.getElementById('map-time-bar');
 const playBtn = document.getElementById('map-time-play-btn');
 const playIcon = document.getElementById('map-time-play-icon');
 const stepSelect = document.getElementById('map-time-step-select');
+const rewindBtn = document.getElementById('map-time-rewind');
 const stepBackBtn = document.getElementById('map-time-step-back');
 const stepForwardBtn = document.getElementById('map-time-step-forward');
+const ffwdBtn = document.getElementById('map-time-ffwd');
 const timeSlider = document.getElementById('map-time-slider');
 const nowBtn = document.getElementById('map-time-now-btn');
 
@@ -38,9 +41,12 @@ const nowBtn = document.getElementById('map-time-now-btn');
 let isRealTime = true;  // True = synced with wall clock
 let realTimeInterval = null;  // Interval for real-time updates
 let stepRepeatInterval = null;
+let animationInterval = null;  // Interval for rewind/ffwd animation
+let animationDirection = 0;    // -1 = rewind, 0 = stopped, 1 = fast forward
 const STEP_REPEAT_DELAY = 400;  // ms before repeat starts
 const STEP_REPEAT_RATE = 150;   // ms between repeats
 const REAL_TIME_UPDATE_MS = 1000;  // 1 second updates in real-time mode
+const ANIMATION_UPDATE_MS = 1000;  // Animation updates every 1 real second
 
 // ============================================
 // REAL-TIME MODE
@@ -50,6 +56,9 @@ const REAL_TIME_UPDATE_MS = 1000;  // 1 second updates in real-time mode
  * Start real-time mode - update time every second
  */
 function startRealTime() {
+    // Stop any animation first
+    stopAnimation();
+
     isRealTime = true;
 
     // Clear any existing interval
@@ -203,6 +212,81 @@ function stopStepRepeat() {
 }
 
 // ============================================
+// ANIMATION CONTROLS (REWIND/FAST FORWARD)
+// ============================================
+
+/**
+ * Start animation (rewind or fast forward)
+ * @param {number} direction - -1 for rewind, 1 for fast forward
+ */
+function startAnimation(direction) {
+    // If already animating in this direction, stop it (toggle behavior)
+    if (animationDirection === direction) {
+        stopAnimation();
+        return;
+    }
+
+    // Stop any existing animation or real-time mode
+    stopAnimation();
+    if (isRealTime) {
+        stopRealTime();
+    }
+
+    animationDirection = direction;
+
+    // Update button appearance
+    updateAnimationButtonState();
+
+    // Perform initial step
+    stepTime(direction);
+
+    // Start animation interval (step size per real second)
+    animationInterval = setInterval(() => {
+        stepTime(direction);
+    }, ANIMATION_UPDATE_MS);
+
+    const directionName = direction > 0 ? 'Fast forward' : 'Rewind';
+    logger.info(`${directionName} animation started (${getStepMinutes()}min/sec)`, logger.CATEGORY.TIME);
+}
+
+/**
+ * Stop animation
+ */
+function stopAnimation() {
+    if (animationInterval) {
+        clearInterval(animationInterval);
+        animationInterval = null;
+    }
+    animationDirection = 0;
+    updateAnimationButtonState();
+}
+
+/**
+ * Update animation button appearance based on state
+ */
+function updateAnimationButtonState() {
+    if (rewindBtn) {
+        if (animationDirection === -1) {
+            rewindBtn.classList.add('animating');
+            rewindBtn.title = 'Stop rewind';
+        } else {
+            rewindBtn.classList.remove('animating');
+            rewindBtn.title = 'Rewind animation';
+        }
+    }
+
+    if (ffwdBtn) {
+        if (animationDirection === 1) {
+            ffwdBtn.classList.add('animating');
+            ffwdBtn.title = 'Stop fast forward';
+        } else {
+            ffwdBtn.classList.remove('animating');
+            ffwdBtn.title = 'Fast forward animation';
+        }
+    }
+}
+
+// ============================================
 // SLIDER CONTROLS
 // ============================================
 
@@ -289,6 +373,22 @@ function initializeEventHandlers() {
             e.stopPropagation();
             const stepMinutes = parseFloat(e.target.value);
             timeState.setTimeStepMinutes(stepMinutes);
+        });
+    }
+
+    // Rewind animation button
+    if (rewindBtn) {
+        rewindBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            startAnimation(-1);
+        });
+    }
+
+    // Fast forward animation button
+    if (ffwdBtn) {
+        ffwdBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            startAnimation(1);
         });
     }
 

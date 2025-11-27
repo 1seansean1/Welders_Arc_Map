@@ -362,6 +362,22 @@
             background: #a0522d;
         }
 
+        /* Animation buttons (rewind/fast-forward) */
+        .map-time-anim-btn {
+            font-size: 10px;
+        }
+
+        .map-time-anim-btn.animating {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+            color: var(--bg-primary);
+        }
+
+        .map-time-anim-btn.animating:hover {
+            background: var(--accent-blue-grey);
+            border-color: var(--accent-blue-grey);
+        }
+
         .map-time-step-select {
             background: var(--bg-secondary);
             border: 1px solid var(--border-color);
@@ -2190,12 +2206,16 @@
                         <option value="30">30m</option>
                         <option value="60">1h</option>
                     </select>
+                    <!-- Rewind animation button -->
+                    <button class="map-time-btn map-time-anim-btn" id="map-time-rewind" title="Rewind animation">⏪</button>
                     <!-- Step back button -->
                     <button class="map-time-btn" id="map-time-step-back" title="Step backward">&lt;</button>
                     <!-- Time slider -->
                     <input type="range" class="map-time-slider" id="map-time-slider" min="0" max="1000" value="1000" />
                     <!-- Step forward button -->
                     <button class="map-time-btn" id="map-time-step-forward" title="Step forward">&gt;</button>
+                    <!-- Fast forward animation button -->
+                    <button class="map-time-btn map-time-anim-btn" id="map-time-ffwd" title="Fast forward animation">⏩</button>
                     <!-- Now button -->
                     <button class="map-time-btn map-time-now-btn" id="map-time-now-btn" title="Reset to now">Now</button>
                 </div>

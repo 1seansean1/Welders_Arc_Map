@@ -111,6 +111,7 @@
 | TIME-016 | Real-time Play/Stop Mode | P1 | S | DONE | TIME-015 |
 | TIME-017 | Sub-minute Time Steps | P2 | S | DONE | TIME-015 |
 | TIME-018 | Dual Clock Display (UTC + Sim) | P2 | S | DONE | TIME-001 |
+| TIME-019 | Rewind/Fast Forward Animation | P2 | S | DONE | TIME-015 |
 
 ### Control Panel (UI)
 
@@ -241,15 +242,15 @@
 | MAP | 10 | 10 | 0 | 0 | 0 |
 | SAT | 15 | 13 | 0 | 1 | 1 |
 | SEN | 9 | 8 | 0 | 0 | 1 |
-| TIME | 18 | 18 | 0 | 0 | 0 |
+| TIME | 19 | 19 | 0 | 0 | 0 |
 | UI | 12 | 10 | 0 | 2 | 0 |
 | LOG | 10 | 8 | 0 | 0 | 2 |
 | TEST | 15 | 13 | 0 | 1 | 0 |
 | BACK | 9 | 3 | 0 | 4 | 2 |
 | ARCH | 5 | 5 | 0 | 0 | 0 |
-| **TOTAL** | **103** | **88** | **0** | **8** | **6** |
+| **TOTAL** | **104** | **89** | **0** | **8** | **6** |
 
-**Completion Rate**: 85% (88/103 features complete)
+**Completion Rate**: 86% (89/104 features complete)
 
 ---
 
@@ -257,6 +258,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.9 | 2025-11-26 | Added TIME-019: Rewind/Fast Forward animation buttons |
 | 1.8 | 2025-11-26 | Added TIME-018: Dual Clock Display (UTC + Sim), moved to top-left of map |
 | 1.7 | 2025-11-26 | Added TIME-015/016/017: Map Time Bar with play/stop and sub-minute steps |
 | 1.6 | 2025-11-26 | Added SAT-015: Multi-layer glow effect, TIME-014: Separate fade in/out controls |
