@@ -238,6 +238,31 @@
             color: #9dd4ff;
         }
 
+        /* Fit Earth button - positioned below maximize button */
+        #map-fit-earth-btn {
+            position: absolute;
+            top: 94px;  /* Below maximize button */
+            right: 10px;
+            width: 24px;
+            height: 24px;
+            background: #1a1a1a;
+            color: #f5f5f5;
+            border: 1px solid #333333;
+            border-radius: 3px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            z-index: 1000;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        #map-fit-earth-btn:hover {
+            background: #2a2a2a;
+            color: #9dd4ff;
+        }
+
         /* Mobile: Larger touch target */
         @media (max-width: 768px) {
             #map-maximize-btn {
@@ -261,11 +286,12 @@
             border-top: none;
             border-left: none;
             border-radius: 0 0 4px 0;
-            padding: 4px 8px;
+            padding: 4px 10px;
             z-index: 1000;
             display: flex;
             flex-direction: column;
             gap: 1px;
+            min-width: 180px;  /* Wider for date + offset */
         }
 
         .time-row {
@@ -290,7 +316,13 @@
         }
 
         .time-value.sim-mode {
-            color: #cd853f;  /* Orange for simulation mode */
+            color: #ffeb3b;  /* Yellow for simulation mode */
+        }
+
+        /* SIM label styling */
+        .time-label.sim-label {
+            text-transform: uppercase;
+            font-weight: 700;
         }
 
         /* ============================================
@@ -658,6 +690,19 @@
         .nav-btn.active {
             background: var(--bg-tertiary);
             color: var(--accent-blue-grey);
+        }
+
+        /* Ensure icon and text both inherit the active color */
+        .nav-btn.active .nav-icon,
+        .nav-btn.active .nav-icon svg,
+        .nav-btn.active .nav-icon img,
+        .nav-btn.active .nav-label {
+            color: var(--accent-blue-grey);
+        }
+
+        /* Override img filter for active state */
+        .nav-btn.active .nav-icon img {
+            filter: invert(1) sepia(1) saturate(5) hue-rotate(175deg);
         }
 
         /* Removed the green bar ::before element */
@@ -1637,7 +1682,7 @@
 
         /* Column widths (total ~195px to fit in 224px - 28px padding) */
         .col-sel { width: 18px; }
-        .col-name { width: 60px; text-align: left; padding-left: 4px; }
+        .col-name { width: 60px; text-align: left !important; padding-left: 4px; }
         .col-lat { width: 37px; }
         .col-lon { width: 40px; }
         .col-alt { width: 35px; }
@@ -1699,6 +1744,23 @@
         .sensor-table tbody tr {
             cursor: pointer;
             user-select: none;
+        }
+
+        /* Satellite table - match sensor table row height and checkbox size */
+        #satellite-table td {
+            padding: 3px 2px;
+        }
+
+        #satellite-table .col-name {
+            text-align: left !important;
+            padding-left: 4px;
+        }
+
+        /* Ensure all checkboxes are same size */
+        .sensor-table input[type="checkbox"] {
+            width: 12px;
+            height: 12px;
+            margin: 0;
         }
 
         /* ============================================
@@ -2203,13 +2265,17 @@
                         <span class="time-value" id="utc-time-value">--:--:--</span>
                     </div>
                     <div class="time-row">
-                        <span class="time-label">Sim</span>
+                        <span class="time-label sim-label">SIM</span>
                         <span class="time-value" id="sim-time-value">--:--:--</span>
                     </div>
                 </div>
                 <!-- Map maximize button -->
                 <button id="map-maximize-btn" title="Maximize map">
                     <span id="maximize-icon">⛶</span>
+                </button>
+                <!-- Fit Earth button -->
+                <button id="map-fit-earth-btn" title="Fit to single Earth view">
+                    <span>🌍</span>
                 </button>
                 <!-- Map Time Bar (bottom of map) -->
                 <div id="map-time-bar" class="map-time-bar">
@@ -2376,7 +2442,7 @@
     </div>
 
     <!-- ES6 Module Loading -->
-    <script type="module" src="/static/app.js?v=47"></script>
+    <script type="module" src="/static/app.js?v=48"></script>
 
     <!-- Fallback for browsers without ES6 module support -->
     <script nomodule>

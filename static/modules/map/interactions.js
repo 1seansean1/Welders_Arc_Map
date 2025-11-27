@@ -430,3 +430,102 @@ export function initializeMapMaximize() {
 
     logger.success('Map maximize button initialized', logger.CATEGORY.PANEL);
 }
+
+// ============================================
+// FIT EARTH BUTTON
+// ============================================
+
+/**
+ * Initialize Fit Earth button - zooms to show exactly one complete Earth
+ *
+ * FUNCTIONALITY:
+ * - Sets optimal zoom level to show a single complete Earth
+ * - Adjusts based on map container aspect ratio
+ * - Centers on current view center
+ *
+ * OPTIMAL EARTH VIEW:
+ * - For Web Mercator projection at zoom 1-2
+ * - Wider containers need slightly higher zoom
+ * - Taller containers need slightly lower zoom
+ */
+export function initializeFitEarthButton() {
+    const fitEarthBtn = document.getElementById('map-fit-earth-btn');
+    const mainContainer = document.getElementById('main-container');
+
+    if (!fitEarthBtn || !mainContainer) {
+        logger.warning('Fit Earth button not found', logger.CATEGORY.PANEL);
+        return;
+    }
+
+    fitEarthBtn.addEventListener('click', () => {
+        const map = window.leafletMap;
+        if (!map) return;
+
+        // Target aspect ratio for one complete Earth in Web Mercator
+        // World is roughly 2:1 (360° longitude / ~170° latitude visible)
+        const TARGET_ASPECT_RATIO = 2.0;
+
+        // Get current main container dimensions
+        const containerRect = mainContainer.getBoundingClientRect();
+        const totalWidth = containerRect.width;
+        const totalHeight = containerRect.height;
+
+        // Calculate what horizontal % would give the map the target aspect ratio
+        // We need: mapWidth / mapHeight = TARGET_ASPECT_RATIO
+        // mapWidth = horizontalPercent * totalWidth
+        // mapHeight = verticalPercent * totalHeight
+        // So: (horizontalPercent * totalWidth) / (verticalPercent * totalHeight) = TARGET_ASPECT_RATIO
+
+        // Start with current vertical split (or use 60% as default)
+        const currentVerticalPercent = 60;
+        const mapHeight = (currentVerticalPercent / 100) * totalHeight;
+
+        // Calculate required map width for target aspect ratio
+        const requiredMapWidth = mapHeight * TARGET_ASPECT_RATIO;
+
+        // Calculate what horizontal % this represents
+        let horizontalPercent = (requiredMapWidth / totalWidth) * 100;
+
+        // Clamp to reasonable bounds (25% - 85%)
+        horizontalPercent = Math.max(25, Math.min(85, horizontalPercent));
+
+        // Apply the new grid layout
+        mainContainer.style.gridTemplateColumns = `${horizontalPercent}% ${100 - horizontalPercent}%`;
+        mainContainer.style.gridTemplateRows = `${currentVerticalPercent}% ${100 - currentVerticalPercent}%`;
+
+        // Wait for layout to update, then fit the map
+        setTimeout(() => {
+            // Invalidate map size first
+            map.invalidateSize({ animate: false });
+
+            // Resize Deck.gl canvas
+            resizeDeckCanvas();
+
+            // Fit to world bounds (shows exactly one Earth)
+            // Web Mercator limits: lat ~±85.05°, lon ±180°
+            const worldBounds = L.latLngBounds(
+                L.latLng(-60, -180),  // SW corner (cut off Antarctica)
+                L.latLng(75, 180)     // NE corner (cut off Arctic)
+            );
+
+            map.fitBounds(worldBounds, {
+                animate: true,
+                duration: 0.5,
+                padding: [10, 10]
+            });
+
+            // Get final dimensions for logging
+            const mapContainer = document.getElementById('map-container');
+            const finalRect = mapContainer.getBoundingClientRect();
+            const finalAspect = finalRect.width / finalRect.height;
+
+            logger.diagnostic('Fit to Earth view', logger.CATEGORY.MAP, {
+                gridWidth: `${horizontalPercent.toFixed(1)}%`,
+                mapSize: `${finalRect.width.toFixed(0)}x${finalRect.height.toFixed(0)}`,
+                aspectRatio: finalAspect.toFixed(2)
+            });
+        }, 50);
+    });
+
+    logger.success('Fit Earth button initialized', logger.CATEGORY.PANEL);
+}

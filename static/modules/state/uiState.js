@@ -180,7 +180,7 @@ class UIState {
         }
 
         // Validate section name
-        const validSections = ['time', 'sensors', 'satellites', 'settings'];
+        const validSections = ['time', 'sensors', 'satellites', 'analysis', 'realtime', 'logs', 'tests', 'watchlist', 'settings'];
         if (!validSections.includes(section)) {
             logger.log(`setActiveSection: invalid section "${section}"`, logger.CATEGORY.ERROR);
             return this._state.activeSection;

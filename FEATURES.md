@@ -55,6 +55,7 @@
 | MAP-009 | Touch/Mobile Support | P1 | M | DONE | MAP-001 |
 | MAP-010 | Smart Aspect Ratio Zoom | P3 | S | DONE | MAP-005 |
 | MAP-011 | Equator Reference Line | P2 | XS | DONE | MAP-003 |
+| MAP-012 | Fit Earth Button | P2 | S | DONE | MAP-001, MAP-005 |
 
 ### Satellite Management (SAT)
 
@@ -118,6 +119,7 @@
 | TIME-019 | Rewind/Fast Forward Animation | P2 | S | DONE | TIME-015 |
 | TIME-020 | Time Bar Button Reorder | P2 | XS | DONE | TIME-015 |
 | TIME-021 | Full-Width Time Bar | P2 | XS | DONE | TIME-015 |
+| TIME-022 | Clock with Date + T+Offset | P2 | S | DONE | TIME-001 |
 
 ### Control Panel (UI)
 
@@ -136,6 +138,9 @@
 | UI-011 | Tests Panel | P2 | S | DONE | UI-002, TEST-001 |
 | UI-012 | Watch List Panel | P2 | S | DONE | UI-002 |
 | UI-013 | Styled Animation Icons | P2 | XS | DONE | TIME-019 |
+| UI-014 | Button Highlight Consistency | P2 | XS | DONE | UI-002 |
+| UI-015 | Double-Click Panel Close | P2 | XS | DONE | UI-002 |
+| UI-016 | Table Column Alignment | P2 | XS | DONE | SEN-003, SAT-004 |
 
 ### Logging System (LOG)
 
@@ -246,18 +251,18 @@
 
 | Category | Total | DONE | WIP | PLAN | IDEA |
 |----------|-------|------|-----|------|------|
-| MAP | 11 | 11 | 0 | 0 | 0 |
+| MAP | 12 | 12 | 0 | 0 | 0 |
 | SAT | 17 | 15 | 0 | 1 | 1 |
 | SEN | 9 | 8 | 0 | 0 | 1 |
-| TIME | 21 | 21 | 0 | 0 | 0 |
-| UI | 13 | 11 | 0 | 2 | 0 |
+| TIME | 22 | 22 | 0 | 0 | 0 |
+| UI | 16 | 14 | 0 | 2 | 0 |
 | LOG | 10 | 8 | 0 | 0 | 2 |
 | TEST | 15 | 13 | 0 | 1 | 0 |
 | BACK | 9 | 3 | 0 | 4 | 2 |
 | ARCH | 5 | 5 | 0 | 0 | 0 |
-| **TOTAL** | **110** | **95** | **0** | **8** | **6** |
+| **TOTAL** | **116** | **101** | **0** | **8** | **6** |
 
-**Completion Rate**: 86% (95/110 features complete)
+**Completion Rate**: 87% (101/116 features complete)
 
 ---
 
@@ -265,6 +270,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.2 | 2025-11-26 | Added MAP-012: Fit Earth Button, TIME-022: Enhanced clock display, UI-014/015/016: Button/panel/table fixes |
 | 2.1 | 2025-11-26 | Added SAT-018: Latitude apex glow ticks |
 | 2.0 | 2025-11-26 | Added SAT-017: Anti-meridian wrapping, MAP-011: Equator line, TIME-021: Full-width bar, UI-013: Styled icons |
 | 1.9 | 2025-11-26 | Added TIME-019: Rewind/Fast Forward animation buttons |

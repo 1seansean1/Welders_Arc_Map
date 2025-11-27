@@ -57,7 +57,7 @@ import {
 // Map modules
 import { initializeLeaflet } from '../map/leaflet.js';
 import { initializeDeckGL, updateDeckOverlay } from '../map/deckgl.js';
-import { initializePaneResizer, initializeMapMaximize } from '../map/interactions.js';
+import { initializePaneResizer, initializeMapMaximize, initializeFitEarthButton } from '../map/interactions.js';
 
 // ============================================
 // INITIALIZATION
@@ -129,6 +129,9 @@ export function init() {
 
     // Initialize map maximize button
     initializeMapMaximize();
+
+    // Initialize fit earth button
+    initializeFitEarthButton();
 
     // Initialize test panel (in Settings section)
     initTestPanel();
