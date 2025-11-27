@@ -353,6 +353,188 @@ class TestResults {
 
         return comparison;
     }
+
+    // ============================================
+    // FAILURE REMEDIATION
+    // ============================================
+
+    /**
+     * Generate remediation plan for failed tests
+     * Creates structured bug reports and action items
+     * @returns {Object|null} Remediation plan or null if all passed
+     */
+    generateRemediationPlan() {
+        const lastRun = this.getLastRun();
+        if (!lastRun) return null;
+
+        const failures = lastRun.results.filter(r => !r.passed && !r.details?.skipped);
+        if (failures.length === 0) return null;
+
+        const timestamp = new Date().toISOString();
+        const dateStr = timestamp.slice(0, 10);
+
+        return {
+            generated: timestamp,
+            runId: lastRun.id,
+            summary: {
+                totalTests: lastRun.summary.total,
+                passed: lastRun.summary.passed,
+                failed: failures.length,
+                passRate: ((lastRun.summary.passed / lastRun.summary.total) * 100).toFixed(1) + '%'
+            },
+            failures: failures.map((f, i) => ({
+                testId: f.hypothesisId,
+                name: f.name,
+                details: f.details,
+                duration: f.duration,
+                suggestedBugId: `BUG-TEST-${dateStr.replace(/-/g, '')}-${i + 1}`,
+                priority: this._determineFailurePriority(f)
+            })),
+            bugsMarkdown: this._generateBugsMarkdown(failures, dateStr),
+            planMarkdown: this._generatePlanMarkdown(failures, dateStr)
+        };
+    }
+
+    /**
+     * Determine priority based on failure characteristics
+     */
+    _determineFailurePriority(failure) {
+        // Regression = high priority
+        const regressions = this.detectRegressions();
+        if (regressions.some(r => r.hypothesisId === failure.hypothesisId)) {
+            return 'HIGH';
+        }
+        // Core functionality (STATE, MAP) = medium
+        if (failure.hypothesisId.match(/^H-(STATE|MAP|TIME)-/)) {
+            return 'MEDIUM';
+        }
+        return 'LOW';
+    }
+
+    /**
+     * Generate BUGS.md formatted entries for failures
+     */
+    _generateBugsMarkdown(failures, dateStr) {
+        if (failures.length === 0) return '';
+
+        let md = `\n## Test Failures - ${dateStr}\n\n`;
+        md += `Auto-generated from test run. ${failures.length} failure(s) detected.\n\n`;
+
+        failures.forEach((f, i) => {
+            const bugId = `BUG-TEST-${dateStr.replace(/-/g, '')}-${i + 1}`;
+            md += `### ${bugId}: ${f.hypothesisId} - ${f.name}\n\n`;
+            md += `**Status**: OPEN\n`;
+            md += `**Severity**: M\n`;
+            md += `**Detected**: ${dateStr} (automated test)\n\n`;
+            md += `**Symptom**:\n`;
+            md += `Test ${f.hypothesisId} failed with details:\n`;
+            md += '```json\n';
+            md += JSON.stringify(f.details || {}, null, 2);
+            md += '\n```\n\n';
+            md += `**Resolution**: Investigate and fix per AI Governor §5 Testing Protocol\n\n`;
+            md += `---\n\n`;
+        });
+
+        return md;
+    }
+
+    /**
+     * Generate PLAN.md formatted task entries for failures
+     */
+    _generatePlanMarkdown(failures, dateStr) {
+        if (failures.length === 0) return '';
+
+        let md = `\n## Test Remediation Tasks - ${dateStr}\n\n`;
+        md += `| Priority | Test ID | Name | Status |\n`;
+        md += `|----------|---------|------|--------|\n`;
+
+        failures.forEach(f => {
+            const priority = this._determineFailurePriority(f);
+            md += `| ${priority} | ${f.hypothesisId} | ${f.name} | OPEN |\n`;
+        });
+
+        md += `\n### Investigation Steps\n\n`;
+        failures.forEach((f, i) => {
+            md += `${i + 1}. **${f.hypothesisId}**: ${f.name}\n`;
+            md += `   - Review test implementation in testRegistry.js\n`;
+            md += `   - Check if test isolation is sufficient\n`;
+            md += `   - Verify feature still works manually\n`;
+            md += `   - Fix root cause or adjust test threshold\n\n`;
+        });
+
+        return md;
+    }
+
+    /**
+     * Download remediation plan as markdown file
+     */
+    downloadRemediationPlan() {
+        const plan = this.generateRemediationPlan();
+        if (!plan) {
+            logger.info('[TEST] No failures to remediate', logger.CATEGORY.SYNC);
+            return null;
+        }
+
+        let content = `# Test Remediation Plan\n\n`;
+        content += `Generated: ${plan.generated}\n`;
+        content += `Run ID: ${plan.runId}\n\n`;
+        content += `## Summary\n\n`;
+        content += `- Total Tests: ${plan.summary.totalTests}\n`;
+        content += `- Passed: ${plan.summary.passed}\n`;
+        content += `- Failed: ${plan.summary.failed}\n`;
+        content += `- Pass Rate: ${plan.summary.passRate}\n\n`;
+        content += `## Failures\n\n`;
+
+        plan.failures.forEach(f => {
+            content += `### ${f.testId}: ${f.name}\n\n`;
+            content += `- Priority: ${f.priority}\n`;
+            content += `- Duration: ${f.duration}ms\n`;
+            content += `- Suggested Bug ID: ${f.suggestedBugId}\n\n`;
+            content += `**Details:**\n\`\`\`json\n${JSON.stringify(f.details, null, 2)}\n\`\`\`\n\n`;
+        });
+
+        content += `---\n\n`;
+        content += `## For BUGS.md\n`;
+        content += plan.bugsMarkdown;
+        content += `\n---\n\n`;
+        content += `## For PLAN.md\n`;
+        content += plan.planMarkdown;
+
+        const filename = `test-remediation-${new Date().toISOString().slice(0, 10)}.md`;
+        const blob = new Blob([content], { type: 'text/markdown' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        logger.success(`[TEST] Remediation plan downloaded: ${filename}`, logger.CATEGORY.SYNC);
+        return plan;
+    }
+
+    /**
+     * Check if remediation is needed (any failures in last run)
+     * @returns {boolean}
+     */
+    needsRemediation() {
+        const lastRun = this.getLastRun();
+        if (!lastRun) return false;
+        return lastRun.summary.failed > 0;
+    }
+
+    /**
+     * Get failure count from last run
+     * @returns {number}
+     */
+    getFailureCount() {
+        const lastRun = this.getLastRun();
+        if (!lastRun) return 0;
+        return lastRun.summary.failed;
+    }
 }
 
 // Export singleton

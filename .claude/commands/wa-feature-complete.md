@@ -65,39 +65,75 @@ Execute the implementation plan:
 
 ---
 
-## Phase 6: Create Tests
+## Phase 6: Create Hypothesis Test (MANDATORY)
 
-Add hypothesis-driven test(s) in `static/modules/test/testRegistry.js`:
+**Every feature MUST have a test.** Add to `static/modules/test/testRegistry.js`:
 
+### Step 6.1: Assign Test ID
+Format: `H-{CATEGORY}-{N}` (e.g., H-UI-10, H-TIME-11)
+Categories: MAP, STATE, EVENT, UI, VALID, SAT, TIME, GLOW, WATCH, CHEV
+
+### Step 6.2: Add Test Definition
 ```javascript
-{
-    id: 'FEAT-XXX',
-    hypothesis: 'If [condition], then [expected behavior]',
-    category: '[category]',
-    steps: [
-        { action: '...', expected: '...' }
+'H-XXX-N': {
+    id: 'H-XXX-N',
+    name: 'Short Descriptive Name',
+    category: 'category',
+    hypothesis: 'Statement of what should be true',
+    symptom: 'What user sees when broken',
+    prediction: 'Specific measurable outcome if working',
+    threshold: { /* quantitative pass criteria */ },
+    causalChain: [
+        'SYMPTOM: User-visible problem',
+        'PROXIMATE: Immediate technical cause',
+        'ROOT: Underlying code issue',
+        'MECHANISM: Why root causes symptom',
+        'FIX: How to resolve'
     ],
-    validate: async () => { /* return true/false */ }
+    testFn: async () => {
+        // Test implementation - MUST return { passed: boolean, details: {...} }
+        return { passed: true, details: { /* measurements */ } };
+    }
 }
 ```
+
+### Step 6.3: Verify Auto-Registration
+Tests are **automatically** added to UI when testFn is defined.
+No manual sync to testPanel.js needed!
 
 ---
 
 ## Phase 7: Run All Tests
 
-Tests are accessible from the **Tests** panel in the Control Panel sidebar, or directly at:
-`http://localhost:8000/static/test-basic.html`
+Tests are in **Settings panel > Tests section** (auto-registered from testRegistry.js)
 
-- [ ] Open test page in browser
-- [ ] Run ALL tests (not just new ones)
-- [ ] Report results: X/Y passing
+### Step 7.1: Verify Test Appears
+- [ ] Hard refresh browser (Ctrl+Shift+R)
+- [ ] Open Settings > Tests
+- [ ] Find your new test in list (sorted by H-XXX-N ID)
+
+### Step 7.2: Run Individual Test
+- [ ] Click ▶ next to your new test
+- [ ] Verify PASS status
+
+### Step 7.3: Run All Tests
+- [ ] Click "Run All" button
+- [ ] All tests must PASS
+- [ ] Report: X/Y passing
 
 **If ANY test fails**:
-1. Stop and fix the issue
-2. Use `/wa-research` if bug is complex
-3. Re-run tests until ALL pass
+1. Check console for errors
+2. Run `window.testResults.downloadRemediationPlan()` for detailed failure info
+3. Use `/wa-research` if bug is complex
+4. Re-run tests until ALL pass
 
 **Do NOT proceed until all tests pass.**
+
+### Step 7.4: Update TESTS.md
+Add entry to appropriate category table:
+```markdown
+| H-XXX-N | Test Name | PASS | Brief description |
+```
 
 ---
 
@@ -130,18 +166,23 @@ GATE 1: Code Complete
   [ ] Self-review complete
   [ ] No TODO/FIXME remaining
 
-GATE 2: Tested
-  [ ] New tests added
-  [ ] All tests pass
-  [ ] Manual verification done
+GATE 2: Tested (MANDATORY - AI Governor §3.1)
+  [ ] Hypothesis test created (H-XXX-N format)
+  [ ] Test added to testRegistry.js with testFn
+  [ ] Test appears in UI (auto-registered)
+  [ ] Test passes when run individually
+  [ ] All existing tests still pass (no regressions)
+  [ ] TESTS.md updated with new test entry
 
 GATE 3: Documented
-  [ ] FEATURES.md updated
-  [ ] PLAN.md updated
-  [ ] Other docs as needed
+  [ ] FEATURES.md updated (status change)
+  [ ] PLAN.md updated (if in active tasks)
+  [ ] LESSONS.md updated (if debugging insights)
+  [ ] Code comments where logic is non-obvious
 
 GATE 4: Ready to Commit
-  [ ] All gates passed
+  [ ] All gates above passed
+  [ ] Run /mandatory-check for final verification
 ```
 
 ---

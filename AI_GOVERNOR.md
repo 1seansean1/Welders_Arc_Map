@@ -64,10 +64,13 @@ All AI assistants must perform these actions without prompting:
 | 5 | Pass all Quality Gates | Before marking done | §Quality Gates |
 | 6 | Update referenced docs | After work completion | §Maintenance Obligation |
 | 7 | Flag outdated info, propose additions | Continuously | §Maintenance Obligation |
+| 8 | **Create hypothesis test (H-XXX-N)** | **Any feature implementation** | **§3.1 Test Creation Checklist** |
+| 9 | **Verify test auto-registered in UI** | **After adding test to registry** | **§3.1 Step 3** |
+| 10 | **Run /test-verify before completion** | **Before marking feature done** | **Slash Commands** |
 
 ---
 
-**Version**: 2.3.0 | **Last Updated**: 2025-11-26
+**Version**: 2.4.0 | **Last Updated**: 2025-11-27
 
 ---
 
@@ -323,15 +326,18 @@ GATE 1: Code Complete
   [ ] Self-review complete
   [ ] No TODO/FIXME left unaddressed
 
-GATE 2: Tested
-  [ ] Unit tests pass
-  [ ] Integration tests pass
-  [ ] Manual verification complete
+GATE 2: Tested (MANDATORY - see §3.1 Test Creation Checklist)
+  [ ] Hypothesis test created (H-XXX-N format)
+  [ ] Test added to testRegistry.js with testFn
+  [ ] Test appears in UI (auto-registered)
+  [ ] Test passes when run individually
+  [ ] All existing tests still pass (no regressions)
 
 GATE 3: Documented
   [ ] Code comments current
-  [ ] Documentation updated
-  [ ] FEATURES/BUGS/LESSONS updated as applicable
+  [ ] FEATURES.md updated (status change)
+  [ ] TESTS.md updated (new test entry)
+  [ ] LESSONS.md updated if debugging insights gained
 
 GATE 4: Committed
   [ ] Atomic commit with clear message
@@ -339,8 +345,64 @@ GATE 4: Committed
 
 GATE 5: Verified
   [ ] Works in target environment
-  [ ] No regressions detected
+  [ ] Run full test suite - all pass
 ```
+
+### 3.1 Test Creation Checklist (MANDATORY)
+
+**Every feature implementation MUST include a hypothesis test.** This is not optional.
+
+#### Step 1: Assign Test ID
+Format: `H-{CATEGORY}-{N}` where:
+- CATEGORY: MAP, STATE, EVENT, UI, VALID, SAT, TIME, GLOW, WATCH, CHEV, etc.
+- N: Next sequential number in category
+
+#### Step 2: Add to testRegistry.js
+```javascript
+'H-XXX-N': {
+    id: 'H-XXX-N',
+    name: 'Short Descriptive Name',
+    category: 'category',
+    hypothesis: 'Statement of what should be true',
+    symptom: 'What user sees when broken',
+    prediction: 'Specific measurable outcome if working',
+    threshold: { /* quantitative pass criteria */ },
+    causalChain: [
+        'SYMPTOM: User-visible problem',
+        'PROXIMATE: Immediate technical cause',
+        'ROOT: Underlying code issue',
+        'MECHANISM: Why root causes symptom',
+        'FIX: How to resolve'
+    ],
+    testFn: async () => {
+        // Test implementation
+        // MUST return { passed: boolean, details: {...} }
+        return { passed: true, details: { /* measurements */ } };
+    }
+}
+```
+
+#### Step 3: Verify Auto-Registration
+Tests are **automatically** added to the UI panel when:
+1. Added to testRegistry.js
+2. Has a `testFn` function defined
+
+No manual sync to testPanel.js required!
+
+#### Step 4: Run and Verify
+1. Hard refresh browser (Ctrl+Shift+R)
+2. Open Settings → Tests panel
+3. Find your new test in the list
+4. Click ▶ to run individually
+5. Verify PASS status
+
+#### Step 5: Document in TESTS.md
+Add entry to appropriate category table:
+```markdown
+| H-XXX-N | Test Name | PASS | Brief description |
+```
+
+**AI assistants MUST NOT mark any feature complete until all 5 steps are verified.**
 
 ---
 

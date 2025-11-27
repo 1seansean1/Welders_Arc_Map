@@ -836,6 +836,14 @@ export function initializeMapTimeBar() {
 // Auto-initialize when module loads
 initializeMapTimeBar();
 
+// Expose on window for test access
+window.mapTimeBar = {
+    startRealTime,
+    stopRealTime,
+    toggleRealTime,
+    isRealTime: () => isRealTime
+};
+
 export default {
     initializeMapTimeBar,
     startRealTime,

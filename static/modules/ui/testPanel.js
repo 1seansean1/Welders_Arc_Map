@@ -8,50 +8,66 @@
  * - Ablation testing controls
  * - Result persistence and history
  * - Export functionality (JSON/CSV)
+ *
+ * AUTO-REGISTRATION: Tests are automatically discovered from TEST_REGISTRY.
+ * Adding a test to testRegistry.js with a testFn automatically adds it to the UI.
+ * No manual synchronization required!
  */
 
 import logger from '../utils/logger.js';
 import { mapTests, TEST_HYPOTHESES } from '../map/automated-tests.js';
 import { testResults } from '../test/testResults.js';
-import { TEST_REGISTRY as ALL_HYPOTHESES } from '../test/testRegistry.js';
+import { TEST_REGISTRY as ALL_HYPOTHESES, TEST_HOOKS } from '../test/testRegistry.js';
 
-// Test list - maps UI IDs to hypothesis IDs and test functions
-const TEST_LIST = [
-    // Map tests (existing)
-    { id: 'zoom-offset', hypId: 'H-DRIFT-1', fn: () => mapTests.testInitialZoomOffset() },
-    { id: 'time-sync', hypId: 'H-TIME-1', fn: () => mapTests.testTimeSync() },
-    { id: 'pan-sync', hypId: 'H-SYNC-PAN', fn: () => mapTests.testPanSync() },
-    { id: 'zoom-sync', hypId: 'H-SYNC-ZOOM', fn: () => mapTests.testZoomSync() },
-    { id: 'rapid-pan', hypId: 'H-PERF-1', fn: () => mapTests.testRapidPan() },
-    { id: 'batching', hypId: 'H-BATCH-1', fn: () => mapTests.testSetPropsBatching() },
-    // State tests (new)
-    { id: 'state-immutable', hypId: 'H-STATE-1', fn: () => runRegistryTest('H-STATE-1') },
-    { id: 'state-selection', hypId: 'H-STATE-2', fn: () => runRegistryTest('H-STATE-2') },
-    { id: 'state-pending', hypId: 'H-STATE-3', fn: () => runRegistryTest('H-STATE-3') },
-    { id: 'state-sort', hypId: 'H-STATE-4', fn: () => runRegistryTest('H-STATE-4') },
-    // Event tests (new)
-    { id: 'event-delivery', hypId: 'H-EVENT-1', fn: () => runRegistryTest('H-EVENT-1') },
-    { id: 'event-once', hypId: 'H-EVENT-2', fn: () => runRegistryTest('H-EVENT-2') },
-    // UI tests (new)
-    { id: 'ui-panel', hypId: 'H-UI-1', fn: () => runRegistryTest('H-UI-1') },
-    { id: 'ui-sections', hypId: 'H-UI-2', fn: () => runRegistryTest('H-UI-2') },
-    { id: 'ui-highlight', hypId: 'H-UI-4', fn: () => runRegistryTest('H-UI-4') },
-    { id: 'ui-sort', hypId: 'H-UI-8', fn: () => runRegistryTest('H-UI-8') },
-    // Validation tests (new)
-    { id: 'valid-coords', hypId: 'H-VALID-1', fn: () => runRegistryTest('H-VALID-1') },
-    { id: 'valid-tle', hypId: 'H-VALID-2', fn: () => runRegistryTest('H-VALID-2') },
-    // Satellite tests (new)
-    { id: 'sat-selection', hypId: 'H-SAT-1', fn: () => runRegistryTest('H-SAT-1') },
-    { id: 'sat-propagation', hypId: 'H-SAT-2', fn: () => runRegistryTest('H-SAT-2') },
-    { id: 'chevron-bearing', hypId: 'H-CHEV-1', fn: () => runRegistryTest('H-CHEV-1') },
-    { id: 'glow-crossing', hypId: 'H-GLOW-1', fn: () => runRegistryTest('H-GLOW-1') },
-    { id: 'glow-fade', hypId: 'H-GLOW-2', fn: () => runRegistryTest('H-GLOW-2') },
-    { id: 'glow-toggle', hypId: 'H-GLOW-3', fn: () => runRegistryTest('H-GLOW-3') },
-    // New feature tests
-    { id: 'anti-meridian', hypId: 'H-SAT-3', fn: () => runRegistryTest('H-SAT-3') },
-    { id: 'equator-line', hypId: 'H-MAP-7', fn: () => runRegistryTest('H-MAP-7') },
-    { id: 'full-width-bar', hypId: 'H-UI-9', fn: () => runRegistryTest('H-UI-9') }
-];
+// ============================================
+// AUTO-GENERATED TEST LIST
+// ============================================
+// Tests with custom implementations (mapTests.* functions)
+// These override the registry testFn for specific map tests
+const CUSTOM_TEST_OVERRIDES = {
+    'H-DRIFT-1': () => mapTests.testInitialZoomOffset(),
+    'H-TIME-1': () => mapTests.testTimeSync(),
+    'H-SYNC-PAN': () => mapTests.testPanSync(),
+    'H-SYNC-ZOOM': () => mapTests.testZoomSync(),
+    'H-PERF-1': () => mapTests.testRapidPan(),
+    'H-BATCH-1': () => mapTests.testSetPropsBatching()
+};
+
+/**
+ * Generate TEST_LIST automatically from TEST_REGISTRY
+ * This eliminates the need to manually sync two lists!
+ */
+function generateTestList() {
+    const tests = [];
+
+    for (const [hypId, hyp] of Object.entries(ALL_HYPOTHESES)) {
+        // Skip entries without test functions
+        if (typeof hyp.testFn !== 'function' && !CUSTOM_TEST_OVERRIDES[hypId]) {
+            continue;
+        }
+
+        // Generate a slug ID from hypothesis ID (H-STATE-1 -> h-state-1)
+        const id = hypId.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+
+        // Use custom override if available, otherwise use registry testFn
+        const fn = CUSTOM_TEST_OVERRIDES[hypId]
+            ? CUSTOM_TEST_OVERRIDES[hypId]
+            : () => runRegistryTest(hypId);
+
+        tests.push({ id, hypId, fn });
+    }
+
+    // Sort by hypothesis ID for consistent ordering
+    tests.sort((a, b) => a.hypId.localeCompare(b.hypId));
+
+    return tests;
+}
+
+// Auto-generate the test list from registry
+const TEST_LIST = generateTestList();
+
+// Log registration status on load
+console.log(`[TEST PANEL] Auto-registered ${TEST_LIST.length} tests from TEST_REGISTRY`);
 
 let isRunning = false;
 let expandedTestId = null;
@@ -563,7 +579,12 @@ function downloadReport() {
 }
 
 /**
- * Run all tests
+ * Run all tests with isolation hooks
+ *
+ * Each test runs with beforeEach/afterEach hooks to:
+ * - Stop real-time mode before test
+ * - Clear time bounds to prevent clamping
+ * - Restore state after test
  */
 async function runAllTests() {
     if (isRunning) return;
@@ -573,6 +594,7 @@ async function runAllTests() {
     disableButtons(true);
 
     logger.info('=== STARTING HYPOTHESIS TESTS ===', logger.CATEGORY.SYNC);
+    logger.info(`[ISOLATION] Test hooks enabled - each test runs in isolated state`, logger.CATEGORY.SYNC);
 
     // Start a new run
     testResults.startRun();
@@ -583,9 +605,33 @@ async function runAllTests() {
     for (const test of TEST_LIST) {
         try {
             updateTestStatus(test.id, '', '...');
+
+            // Run beforeEach hook for test isolation
+            if (TEST_HOOKS?.beforeEach) {
+                await TEST_HOOKS.beforeEach();
+            }
+
             const startTime = performance.now();
-            const result = await test.fn();
+            let result;
+            let testError = null;
+
+            try {
+                result = await test.fn();
+            } catch (err) {
+                testError = err;
+                result = { passed: false, error: err.message };
+            }
+
             const duration = Math.round(performance.now() - startTime);
+
+            // Run afterEach hook to restore state (always, even on error)
+            if (TEST_HOOKS?.afterEach) {
+                try {
+                    await TEST_HOOKS.afterEach();
+                } catch (hookError) {
+                    logger.warning(`[HOOK] afterEach failed: ${hookError.message}`, logger.CATEGORY.SYNC);
+                }
+            }
 
             // Add to results
             testResults.addResult({
@@ -596,7 +642,10 @@ async function runAllTests() {
                 duration
             });
 
-            if (result.passed) {
+            if (testError) {
+                updateTestStatus(test.id, 'fail', 'ERR');
+                logger.error(`[ERROR] ${test.hypId}: ${testError.message}`, logger.CATEGORY.SYNC);
+            } else if (result.passed) {
                 updateTestStatus(test.id, 'pass', 'OK');
             } else if (result.skipped) {
                 updateTestStatus(test.id, '', 'SKIP');
@@ -604,6 +653,7 @@ async function runAllTests() {
                 updateTestStatus(test.id, 'fail', 'FAIL');
             }
         } catch (error) {
+            // Catastrophic error (shouldn't happen with try/catch inside)
             updateTestStatus(test.id, 'fail', 'ERR');
             testResults.addResult({
                 hypothesisId: test.hypId,
@@ -615,7 +665,7 @@ async function runAllTests() {
             logger.error(`[ERROR] ${test.hypId}: ${error.message}`, logger.CATEGORY.SYNC);
         }
 
-        await delay(100);
+        await delay(50); // Reduced delay since hooks handle isolation
     }
 
     // Finish run and save
@@ -630,7 +680,7 @@ async function runAllTests() {
 }
 
 /**
- * Run a single test
+ * Run a single test with isolation hooks
  */
 async function runSingleTest(testId) {
     if (isRunning) return;
@@ -643,7 +693,22 @@ async function runSingleTest(testId) {
     disableButtons(true);
 
     try {
+        // Run beforeEach hook for test isolation
+        if (TEST_HOOKS?.beforeEach) {
+            await TEST_HOOKS.beforeEach();
+        }
+
         const result = await test.fn();
+
+        // Run afterEach hook to restore state
+        if (TEST_HOOKS?.afterEach) {
+            try {
+                await TEST_HOOKS.afterEach();
+            } catch (hookError) {
+                logger.warning(`[HOOK] afterEach failed: ${hookError.message}`, logger.CATEGORY.SYNC);
+            }
+        }
+
         if (result.passed) {
             updateTestStatus(testId, 'pass', 'OK');
         } else if (result.skipped) {
@@ -652,6 +717,14 @@ async function runSingleTest(testId) {
             updateTestStatus(testId, 'fail', 'FAIL');
         }
     } catch (error) {
+        // Ensure afterEach runs even on error
+        if (TEST_HOOKS?.afterEach) {
+            try {
+                await TEST_HOOKS.afterEach();
+            } catch (hookError) {
+                // Ignore hook errors on failure path
+            }
+        }
         updateTestStatus(testId, 'fail', 'ERR');
         logger.error(`[ERROR] ${test.hypId}: ${error.message}`, logger.CATEGORY.SYNC);
     }
