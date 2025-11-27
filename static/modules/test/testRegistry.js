@@ -340,6 +340,203 @@ const STATE_HYPOTHESES = {
                 }
             };
         }
+    },
+    'H-STATE-5': {
+        id: 'H-STATE-5',
+        name: 'Apex Tick Enabled State',
+        category: 'state',
+        hypothesis: 'Apex tick enabled state can be toggled independently',
+        symptom: 'Apex tick marks do not respond to enable/disable toggle',
+        prediction: 'isApexTickEnabled() returns correct state after setApexTickEnabled()',
+        nullPrediction: 'State would not change or would be linked to other controls',
+        threshold: { stateToggled: true },
+        causalChain: [
+            'SYMPTOM: Apex tick toggle has no effect',
+            'PROXIMATE: State not updated on toggle',
+            'ROOT: Getter/setter not wired correctly',
+            'MECHANISM: State property not accessed properly',
+            'FIX: Verify getter/setter implementation'
+        ],
+        testFn: async () => {
+            const timeState = window.SatelliteApp?.timeState;
+            if (!timeState) return { passed: false, error: 'timeState not available' };
+
+            // Get initial state
+            const initial = timeState.isApexTickEnabled();
+
+            // Toggle to opposite
+            timeState.setApexTickEnabled(!initial);
+            const afterToggle = timeState.isApexTickEnabled();
+
+            // Toggle back
+            timeState.setApexTickEnabled(initial);
+            const restored = timeState.isApexTickEnabled();
+
+            const stateToggled = afterToggle === !initial && restored === initial;
+
+            return {
+                passed: stateToggled,
+                details: {
+                    initial,
+                    afterToggle,
+                    restored,
+                    stateToggled
+                }
+            };
+        }
+    },
+    'H-STATE-6': {
+        id: 'H-STATE-6',
+        name: 'Apex Tick Pulse Speed Range',
+        category: 'state',
+        hypothesis: 'Apex tick pulse speed is constrained to 0.5-5.0 range',
+        symptom: 'Invalid pulse speeds accepted or cause errors',
+        prediction: 'Values outside range are rejected, valid values accepted',
+        nullPrediction: 'Invalid values would be accepted without validation',
+        threshold: { validationCorrect: true },
+        causalChain: [
+            'SYMPTOM: Pulse speed shows invalid values',
+            'PROXIMATE: Validation not applied',
+            'ROOT: Setter missing range check',
+            'MECHANISM: No min/max enforcement',
+            'FIX: Add validation in setApexTickPulseSpeed()'
+        ],
+        testFn: async () => {
+            const timeState = window.SatelliteApp?.timeState;
+            if (!timeState) return { passed: false, error: 'timeState not available' };
+
+            // Get initial state
+            const initial = timeState.getApexTickPulseSpeed();
+
+            // Test valid value
+            timeState.setApexTickPulseSpeed(2.5);
+            const validAccepted = timeState.getApexTickPulseSpeed() === 2.5;
+
+            // Test invalid low value (should be rejected)
+            timeState.setApexTickPulseSpeed(0.1);
+            const invalidLowRejected = timeState.getApexTickPulseSpeed() === 2.5;
+
+            // Test invalid high value (should be rejected)
+            timeState.setApexTickPulseSpeed(10.0);
+            const invalidHighRejected = timeState.getApexTickPulseSpeed() === 2.5;
+
+            // Restore
+            timeState.setApexTickPulseSpeed(initial);
+
+            const validationCorrect = validAccepted && invalidLowRejected && invalidHighRejected;
+
+            return {
+                passed: validationCorrect,
+                details: {
+                    initial,
+                    validAccepted,
+                    invalidLowRejected,
+                    invalidHighRejected,
+                    validationCorrect
+                }
+            };
+        }
+    },
+    'H-STATE-7': {
+        id: 'H-STATE-7',
+        name: 'Apex Tick Color Validation',
+        category: 'state',
+        hypothesis: 'Apex tick color accepts only valid hex colors',
+        symptom: 'Invalid color values accepted or cause rendering errors',
+        prediction: 'Valid hex colors accepted, invalid formats rejected',
+        nullPrediction: 'Invalid colors would be stored without validation',
+        threshold: { colorValidationCorrect: true },
+        causalChain: [
+            'SYMPTOM: Color picker shows invalid colors',
+            'PROXIMATE: No format validation',
+            'ROOT: Setter accepts any string',
+            'MECHANISM: hexToRgb() fails on invalid format',
+            'FIX: Add regex validation in setApexTickColor()'
+        ],
+        testFn: async () => {
+            const timeState = window.SatelliteApp?.timeState;
+            if (!timeState) return { passed: false, error: 'timeState not available' };
+
+            // Get initial state
+            const initial = timeState.getApexTickColor();
+
+            // Test valid hex color
+            timeState.setApexTickColor('#FF0000');
+            const validAccepted = timeState.getApexTickColor() === '#FF0000';
+
+            // Test invalid format (no hash)
+            timeState.setApexTickColor('FF0000');
+            const invalidNoHashRejected = timeState.getApexTickColor() === '#FF0000';
+
+            // Test invalid format (wrong length)
+            timeState.setApexTickColor('#FFF');
+            const invalidShortRejected = timeState.getApexTickColor() === '#FF0000';
+
+            // Restore
+            timeState.setApexTickColor(initial);
+
+            const colorValidationCorrect = validAccepted && invalidNoHashRejected && invalidShortRejected;
+
+            return {
+                passed: colorValidationCorrect,
+                details: {
+                    initial,
+                    validAccepted,
+                    invalidNoHashRejected,
+                    invalidShortRejected,
+                    colorValidationCorrect
+                }
+            };
+        }
+    },
+    'H-STATE-8': {
+        id: 'H-STATE-8',
+        name: 'Apex Tick Event Emission',
+        category: 'state',
+        hypothesis: 'Changing apex tick settings emits time:apexTick:changed event',
+        symptom: 'UI does not update when apex tick settings change',
+        prediction: 'Event fired with correct payload on state change',
+        nullPrediction: 'Event would not fire or have wrong payload',
+        threshold: { eventEmitted: true },
+        causalChain: [
+            'SYMPTOM: Map layers don\'t update on setting change',
+            'PROXIMATE: Event not emitted',
+            'ROOT: _emitApexTickChanged() not called',
+            'MECHANISM: deckgl.js listens for event to trigger redraw',
+            'FIX: Call _emitApexTickChanged() in all setters'
+        ],
+        testFn: async () => {
+            const timeState = window.SatelliteApp?.timeState;
+            const eventBus = window.SatelliteApp?.eventBus || window.eventBus;
+            if (!timeState || !eventBus) return { passed: false, error: 'timeState or eventBus not available' };
+
+            let eventReceived = false;
+            let eventPayload = null;
+
+            const handler = (payload) => {
+                eventReceived = true;
+                eventPayload = payload;
+            };
+
+            eventBus.on('time:apexTick:changed', handler);
+
+            // Trigger a change
+            const initialEnabled = timeState.isApexTickEnabled();
+            timeState.setApexTickEnabled(!initialEnabled);
+
+            // Restore and cleanup
+            timeState.setApexTickEnabled(initialEnabled);
+            eventBus.off('time:apexTick:changed', handler);
+
+            return {
+                passed: eventReceived && eventPayload !== null,
+                details: {
+                    eventReceived,
+                    hasPayload: eventPayload !== null,
+                    payloadHasEnabled: eventPayload?.apexTickEnabled !== undefined
+                }
+            };
+        }
     }
 };
 

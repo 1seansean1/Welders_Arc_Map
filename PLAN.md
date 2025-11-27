@@ -575,6 +575,7 @@ EXPANDED ANALYSIS WINDOW PANEL (above time bar):
 
 | Task | Priority | Completed | Notes |
 |------|----------|-----------|-------|
+| Apex Tick Pulse Controls | P2 | 2025-11-27 | SAT-023: Independent controls for apex latitude tick marks with horizontal pulse animation, color picker, opacity slider |
 | Compact Time Bar with Flatpickr | P1 | 2025-11-27 | TIME-029: Flatpickr datetime pickers, compact responsive design, grouped layout |
 | Watch List Color Assignment | P2 | 2025-11-26 | SAT-019: Table with color cycling (grey/red/blue), ground track + chevron coloring |
 | Map & Time Control Enhancements | P2 | 2025-11-26 | Anti-meridian wrapping, equator line, full-width time bar, styled icons |

@@ -2384,6 +2384,45 @@
                         <span class="track-unit">min after</span>
                     </div>
                 </div>
+
+                <!-- Apex Tick Pulse Settings -->
+                <div class="settings-section" style="margin-top: 12px;">
+                    <label class="time-label">Apex Latitude Tick Pulse</label>
+
+                    <div class="settings-row">
+                        <label class="settings-toggle-label">
+                            <input type="checkbox" id="apex-tick-enabled-checkbox" checked />
+                            <span>Show tick marks</span>
+                        </label>
+                    </div>
+
+                    <div class="track-duration-control">
+                        <span class="track-label">Pulse Speed</span>
+                        <button class="track-step-btn" id="apex-tick-speed-down">-</button>
+                        <input type="number" class="track-input" id="apex-tick-speed-input" min="0.5" max="5" step="0.5" value="1.0" style="width: 45px;" />
+                        <button class="track-step-btn" id="apex-tick-speed-up">+</button>
+                        <span class="track-unit">Hz</span>
+                    </div>
+
+                    <div class="track-duration-control">
+                        <span class="track-label">Pulse Width</span>
+                        <button class="track-step-btn" id="apex-tick-width-down">-</button>
+                        <input type="number" class="track-input" id="apex-tick-width-input" min="1" max="10" step="0.5" value="3.0" style="width: 45px;" />
+                        <button class="track-step-btn" id="apex-tick-width-up">+</button>
+                        <span class="track-unit">deg</span>
+                    </div>
+
+                    <div class="track-duration-control">
+                        <span class="track-label">Color</span>
+                        <input type="color" id="apex-tick-color-input" value="#FFD700" style="width: 40px; height: 24px; padding: 0; border: 1px solid #555; cursor: pointer;" />
+                    </div>
+
+                    <div class="track-duration-control">
+                        <span class="track-label">Opacity</span>
+                        <input type="range" id="apex-tick-opacity-input" min="10" max="100" value="80" style="width: 80px;" />
+                        <span class="track-unit" id="apex-tick-opacity-value">80%</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

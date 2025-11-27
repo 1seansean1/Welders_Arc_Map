@@ -59,6 +59,13 @@ class TimeState {
             glowFadeInMinutes: 5,    // Minutes BEFORE equator crossing to start fade in (1-30)
             glowFadeOutMinutes: 5,   // Minutes AFTER equator crossing to end fade out (1-30)
 
+            // Apex tick pulse settings (latitude apex tick marks)
+            apexTickEnabled: true,       // Whether to show apex tick marks
+            apexTickPulseSpeed: 1.0,     // Pulse animation speed (0.5-5.0 cycles/sec)
+            apexTickPulseWidth: 3.0,     // Max pulse expansion width in degrees (1-10)
+            apexTickColor: '#FFD700',    // Tick mark color (hex string, default: gold)
+            apexTickOpacity: 0.8,        // Tick mark opacity (0.1-1.0)
+
             // Time slider settings
             timeStepMinutes: 5,    // Step size for < > buttons (1, 5, 15, 30, 60)
             isRealTime: true,      // True = auto-update to current time
@@ -285,6 +292,138 @@ class TimeState {
             glowIntensity: this._state.glowIntensity,
             glowFadeInMinutes: this._state.glowFadeInMinutes,
             glowFadeOutMinutes: this._state.glowFadeOutMinutes
+        });
+    }
+
+    // ============================================
+    // APEX TICK PULSE METHODS
+    // ============================================
+
+    /**
+     * Get apex tick enabled state
+     * @returns {boolean} True if apex tick marks are enabled
+     */
+    isApexTickEnabled() {
+        return this._state.apexTickEnabled;
+    }
+
+    /**
+     * Set apex tick enabled state
+     * @param {boolean} enabled - True to enable apex tick marks
+     */
+    setApexTickEnabled(enabled) {
+        if (typeof enabled !== 'boolean') {
+            logger.log('setApexTickEnabled: must be boolean', logger.CATEGORY.ERROR);
+            return;
+        }
+
+        this._state.apexTickEnabled = enabled;
+        logger.log(`Apex tick marks ${enabled ? 'enabled' : 'disabled'}`, logger.CATEGORY.TIME);
+        this._emitApexTickChanged();
+    }
+
+    /**
+     * Get apex tick pulse speed
+     * @returns {number} Pulse speed in cycles/sec (0.5-5.0)
+     */
+    getApexTickPulseSpeed() {
+        return this._state.apexTickPulseSpeed;
+    }
+
+    /**
+     * Set apex tick pulse speed
+     * @param {number} speed - Pulse speed in cycles/sec (0.5-5.0)
+     */
+    setApexTickPulseSpeed(speed) {
+        if (typeof speed !== 'number' || speed < 0.5 || speed > 5.0) {
+            logger.log('setApexTickPulseSpeed: must be 0.5-5.0 cycles/sec', logger.CATEGORY.ERROR);
+            return;
+        }
+
+        this._state.apexTickPulseSpeed = speed;
+        logger.log(`Apex tick pulse speed set: ${speed} cycles/sec`, logger.CATEGORY.TIME);
+        this._emitApexTickChanged();
+    }
+
+    /**
+     * Get apex tick pulse width (max expansion)
+     * @returns {number} Pulse width in degrees (1-10)
+     */
+    getApexTickPulseWidth() {
+        return this._state.apexTickPulseWidth;
+    }
+
+    /**
+     * Set apex tick pulse width (max expansion)
+     * @param {number} width - Pulse width in degrees (1-10)
+     */
+    setApexTickPulseWidth(width) {
+        if (typeof width !== 'number' || width < 1 || width > 10) {
+            logger.log('setApexTickPulseWidth: must be 1-10 degrees', logger.CATEGORY.ERROR);
+            return;
+        }
+
+        this._state.apexTickPulseWidth = width;
+        logger.log(`Apex tick pulse width set: ${width} degrees`, logger.CATEGORY.TIME);
+        this._emitApexTickChanged();
+    }
+
+    /**
+     * Get apex tick color
+     * @returns {string} Color as hex string
+     */
+    getApexTickColor() {
+        return this._state.apexTickColor;
+    }
+
+    /**
+     * Set apex tick color
+     * @param {string} color - Color as hex string (e.g., '#FFD700')
+     */
+    setApexTickColor(color) {
+        if (typeof color !== 'string' || !/^#[0-9A-Fa-f]{6}$/.test(color)) {
+            logger.log('setApexTickColor: must be valid hex color (e.g., #FFD700)', logger.CATEGORY.ERROR);
+            return;
+        }
+
+        this._state.apexTickColor = color;
+        logger.log(`Apex tick color set: ${color}`, logger.CATEGORY.TIME);
+        this._emitApexTickChanged();
+    }
+
+    /**
+     * Get apex tick opacity
+     * @returns {number} Opacity (0.1-1.0)
+     */
+    getApexTickOpacity() {
+        return this._state.apexTickOpacity;
+    }
+
+    /**
+     * Set apex tick opacity
+     * @param {number} opacity - Opacity (0.1-1.0)
+     */
+    setApexTickOpacity(opacity) {
+        if (typeof opacity !== 'number' || opacity < 0.1 || opacity > 1.0) {
+            logger.log('setApexTickOpacity: must be 0.1-1.0', logger.CATEGORY.ERROR);
+            return;
+        }
+
+        this._state.apexTickOpacity = opacity;
+        logger.log(`Apex tick opacity set: ${opacity}`, logger.CATEGORY.TIME);
+        this._emitApexTickChanged();
+    }
+
+    /**
+     * Emit apex tick changed event (internal helper)
+     */
+    _emitApexTickChanged() {
+        eventBus.emit('time:apexTick:changed', {
+            apexTickEnabled: this._state.apexTickEnabled,
+            apexTickPulseSpeed: this._state.apexTickPulseSpeed,
+            apexTickPulseWidth: this._state.apexTickPulseWidth,
+            apexTickColor: this._state.apexTickColor,
+            apexTickOpacity: this._state.apexTickOpacity
         });
     }
 

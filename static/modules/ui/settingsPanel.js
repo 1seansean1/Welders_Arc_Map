@@ -20,6 +20,7 @@ import logger from '../utils/logger.js';
 export function initializeSettingsPanel() {
     initializeGroundTrackControls();
     initializeGlowControls();
+    initializeApexTickControls();
     logger.diagnostic('Settings panel initialized', logger.CATEGORY.UI);
 }
 
@@ -151,6 +152,119 @@ function initializeGlowControls() {
             value = Math.max(1, value);
             fadeOutInput.value = value;
             timeState.setGlowFadeOutMinutes(value);
+        });
+    }
+}
+
+/**
+ * Initialize apex tick pulse controls
+ */
+function initializeApexTickControls() {
+    const enabledCheckbox = document.getElementById('apex-tick-enabled-checkbox');
+    const speedInput = document.getElementById('apex-tick-speed-input');
+    const speedUp = document.getElementById('apex-tick-speed-up');
+    const speedDown = document.getElementById('apex-tick-speed-down');
+    const widthInput = document.getElementById('apex-tick-width-input');
+    const widthUp = document.getElementById('apex-tick-width-up');
+    const widthDown = document.getElementById('apex-tick-width-down');
+    const colorInput = document.getElementById('apex-tick-color-input');
+    const opacityInput = document.getElementById('apex-tick-opacity-input');
+    const opacityValue = document.getElementById('apex-tick-opacity-value');
+
+    if (!enabledCheckbox) {
+        logger.warning('Apex tick controls not found', logger.CATEGORY.UI);
+        return;
+    }
+
+    // Set initial values from state
+    enabledCheckbox.checked = timeState.isApexTickEnabled();
+
+    if (speedInput) {
+        speedInput.value = timeState.getApexTickPulseSpeed();
+    }
+    if (widthInput) {
+        widthInput.value = timeState.getApexTickPulseWidth();
+    }
+    if (colorInput) {
+        colorInput.value = timeState.getApexTickColor();
+    }
+    if (opacityInput) {
+        const opacity = timeState.getApexTickOpacity();
+        opacityInput.value = Math.round(opacity * 100);
+        if (opacityValue) {
+            opacityValue.textContent = Math.round(opacity * 100) + '%';
+        }
+    }
+
+    // Enabled checkbox handler
+    enabledCheckbox.addEventListener('change', (e) => {
+        timeState.setApexTickEnabled(e.target.checked);
+    });
+
+    // Pulse Speed controls
+    if (speedInput && speedUp && speedDown) {
+        speedInput.addEventListener('change', (e) => {
+            let value = parseFloat(e.target.value) || 1.0;
+            value = Math.max(0.5, Math.min(5.0, value));
+            speedInput.value = value;
+            timeState.setApexTickPulseSpeed(value);
+        });
+
+        speedUp.addEventListener('click', () => {
+            let value = parseFloat(speedInput.value) + 0.5;
+            value = Math.min(5.0, value);
+            speedInput.value = value;
+            timeState.setApexTickPulseSpeed(value);
+        });
+
+        speedDown.addEventListener('click', () => {
+            let value = parseFloat(speedInput.value) - 0.5;
+            value = Math.max(0.5, value);
+            speedInput.value = value;
+            timeState.setApexTickPulseSpeed(value);
+        });
+    }
+
+    // Pulse Width controls
+    if (widthInput && widthUp && widthDown) {
+        widthInput.addEventListener('change', (e) => {
+            let value = parseFloat(e.target.value) || 3.0;
+            value = Math.max(1, Math.min(10, value));
+            widthInput.value = value;
+            timeState.setApexTickPulseWidth(value);
+        });
+
+        widthUp.addEventListener('click', () => {
+            let value = parseFloat(widthInput.value) + 0.5;
+            value = Math.min(10, value);
+            widthInput.value = value;
+            timeState.setApexTickPulseWidth(value);
+        });
+
+        widthDown.addEventListener('click', () => {
+            let value = parseFloat(widthInput.value) - 0.5;
+            value = Math.max(1, value);
+            widthInput.value = value;
+            timeState.setApexTickPulseWidth(value);
+        });
+    }
+
+    // Color picker handler
+    if (colorInput) {
+        colorInput.addEventListener('change', (e) => {
+            timeState.setApexTickColor(e.target.value);
+        });
+    }
+
+    // Opacity slider handler
+    if (opacityInput) {
+        opacityInput.addEventListener('input', (e) => {
+            const value = parseInt(e.target.value);
+            const opacity = value / 100;
+            timeState.setApexTickOpacity(opacity);
+            if (opacityValue) {
+                opacityValue.textContent = value + '%';
+            }
         });
     }
 }

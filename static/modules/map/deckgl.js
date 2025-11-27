@@ -171,6 +171,14 @@ function setupTimeStateSync() {
         updateDeckOverlay();
     });
 
+    // Update apex tick pulse when settings change
+    eventBus.on('time:apexTick:changed', ({ apexTickEnabled }) => {
+        logger.info('Apex tick settings changed, updating visualization', logger.CATEGORY.SYNC, {
+            enabled: apexTickEnabled
+        });
+        updateDeckOverlay();
+    });
+
     // Update when user list visibility changes
     eventBus.on('list:changed', ({ action, listId }) => {
         logger.info('User list changed, updating visualization', logger.CATEGORY.SYNC, {
@@ -186,6 +194,140 @@ function setupTimeStateSync() {
 // ============================================
 // HELPER FUNCTIONS
 // ============================================
+
+/**
+ * Convert hex color to RGB array
+ * @param {string} hex - Hex color string (e.g., '#FFD700')
+ * @returns {number[]} RGB array [r, g, b]
+ */
+function hexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? [
+        parseInt(result[1], 16),
+        parseInt(result[2], 16),
+        parseInt(result[3], 16)
+    ] : [255, 215, 0]; // Default gold
+}
+
+/**
+ * Create apex tick pulse layers for horizontal pulsing effect at latitude apex points
+ * @param {Array} apexTickData - Array of apex tick data from eventDetector
+ * @param {boolean} apexTickEnabled - Whether apex ticks are enabled
+ * @param {number} apexTickPulseSpeed - Pulse animation speed (cycles/sec)
+ * @param {number} apexTickPulseWidth - Max pulse expansion width (degrees)
+ * @param {string} apexTickColor - Hex color string
+ * @param {number} apexTickOpacity - Opacity (0.1-1.0)
+ * @param {Date} currentTime - Current simulation time
+ * @returns {Array} Array of PathLayer objects
+ */
+function createApexTickPulseLayers(apexTickData, apexTickEnabled, apexTickPulseSpeed, apexTickPulseWidth, apexTickColor, apexTickOpacity, currentTime) {
+    // Parse apex tick color
+    const apexRgb = hexToRgb(apexTickColor);
+
+    // Calculate pulse phase based on time (0-1 oscillating)
+    const pulsePhase = (Math.sin(currentTime.getTime() / 1000 * apexTickPulseSpeed * Math.PI * 2) + 1) / 2;
+
+    // Base tick width in degrees (from eventDetector)
+    const BASE_TICK_WIDTH = 1.5;
+
+    // Calculate pulsing path for each apex point
+    const getPulsingPath = (d, expansionFactor) => {
+        const centerLon = d.position[0];
+        const lat = d.position[1];
+        // Expand from center outward based on pulse phase and expansion factor
+        const halfWidth = (BASE_TICK_WIDTH / 2) + (apexTickPulseWidth * pulsePhase * expansionFactor);
+        return [
+            [centerLon - halfWidth, lat],
+            [centerLon + halfWidth, lat]
+        ];
+    };
+
+    return [
+        // Layer 1: Outer glow (widest, most transparent)
+        new deck.PathLayer({
+            id: 'apex-tick-pulse-outer',
+            data: apexTickData,
+            visible: apexTickEnabled && apexTickData.length > 0,
+            getPath: d => getPulsingPath(d, 1.0),
+            getColor: d => {
+                const alpha = Math.round(d.intensity * 60 * apexTickOpacity);
+                return [...apexRgb, alpha];
+            },
+            getWidth: 8,
+            widthUnits: 'pixels',
+            capRounded: true,
+            wrapLongitude: true,
+            updateTriggers: {
+                visible: `${apexTickEnabled}-${apexTickData.length}`,
+                getPath: `${currentTime.getTime()}-${apexTickPulseSpeed}-${apexTickPulseWidth}`,
+                getColor: `${currentTime.getTime()}-${apexTickOpacity}-${apexTickColor}`
+            }
+        }),
+
+        // Layer 2: Middle glow
+        new deck.PathLayer({
+            id: 'apex-tick-pulse-middle',
+            data: apexTickData,
+            visible: apexTickEnabled && apexTickData.length > 0,
+            getPath: d => getPulsingPath(d, 0.7),
+            getColor: d => {
+                const alpha = Math.round(d.intensity * 120 * apexTickOpacity);
+                return [...apexRgb, alpha];
+            },
+            getWidth: 5,
+            widthUnits: 'pixels',
+            capRounded: true,
+            wrapLongitude: true,
+            updateTriggers: {
+                visible: `${apexTickEnabled}-${apexTickData.length}`,
+                getPath: `${currentTime.getTime()}-${apexTickPulseSpeed}-${apexTickPulseWidth}`,
+                getColor: `${currentTime.getTime()}-${apexTickOpacity}-${apexTickColor}`
+            }
+        }),
+
+        // Layer 3: Inner glow
+        new deck.PathLayer({
+            id: 'apex-tick-pulse-inner',
+            data: apexTickData,
+            visible: apexTickEnabled && apexTickData.length > 0,
+            getPath: d => getPulsingPath(d, 0.4),
+            getColor: d => {
+                const alpha = Math.round(d.intensity * 180 * apexTickOpacity);
+                return [...apexRgb, alpha];
+            },
+            getWidth: 3,
+            widthUnits: 'pixels',
+            capRounded: true,
+            wrapLongitude: true,
+            updateTriggers: {
+                visible: `${apexTickEnabled}-${apexTickData.length}`,
+                getPath: `${currentTime.getTime()}-${apexTickPulseSpeed}-${apexTickPulseWidth}`,
+                getColor: `${currentTime.getTime()}-${apexTickOpacity}-${apexTickColor}`
+            }
+        }),
+
+        // Layer 4: Core (brightest, narrowest)
+        new deck.PathLayer({
+            id: 'apex-tick-pulse-core',
+            data: apexTickData,
+            visible: apexTickEnabled && apexTickData.length > 0,
+            getPath: d => getPulsingPath(d, 0.1),
+            getColor: d => {
+                const alpha = Math.round(d.intensity * 255 * apexTickOpacity);
+                return [...apexRgb, alpha];
+            },
+            getWidth: 2,
+            widthUnits: 'pixels',
+            capRounded: true,
+            wrapLongitude: true,
+            updateTriggers: {
+                visible: `${apexTickEnabled}-${apexTickData.length}`,
+                getPath: `${currentTime.getTime()}-${apexTickPulseSpeed}-${apexTickPulseWidth}`,
+                getColor: `${currentTime.getTime()}-${apexTickOpacity}-${apexTickColor}`
+            }
+        })
+    ];
+}
 
 // Cached chevron atlas canvas
 let chevronAtlasCanvas = null;
@@ -386,6 +528,13 @@ function createLayers() {
     const glowIntensity = timeState.getGlowIntensity();
     const glowFadeInMinutes = timeState.getGlowFadeInMinutes();
     const glowFadeOutMinutes = timeState.getGlowFadeOutMinutes();
+
+    // Apex tick pulse settings
+    const apexTickEnabled = timeState.isApexTickEnabled();
+    const apexTickPulseSpeed = timeState.getApexTickPulseSpeed();
+    const apexTickPulseWidth = timeState.getApexTickPulseWidth();
+    const apexTickColor = timeState.getApexTickColor();
+    const apexTickOpacity = timeState.getApexTickOpacity();
 
     // Prepare ground track data and satellite position data
     const groundTrackData = [];
@@ -845,25 +994,11 @@ function createLayers() {
             }
         }),
 
-        // Latitude Apex Tick Marks - horizontal lines at max/min latitude points
-        new deck.PathLayer({
-            id: 'apex-tick-marks',
-            data: apexTickData,
-            visible: glowEnabled && apexTickData.length > 0,
-            getPath: d => d.path,
-            getColor: d => {
-                // Use intensity from eventDetector (already calculated based on chevron proximity)
-                const alpha = Math.round(d.intensity * 255 * glowIntensity);
-                return [255, 215, 0, alpha]; // Gold color with fade from eventDetector
-            },
-            getWidth: 2,
-            widthUnits: 'pixels',
-            capRounded: true,
-            updateTriggers: {
-                visible: `${glowEnabled}-${apexTickData.length}`,
-                getColor: `${currentTime.getTime()}-${glowIntensity}`
-            }
-        })
+        // ============================================
+        // APEX LATITUDE TICK PULSE LAYERS
+        // Multi-layer horizontal pulsing effect at latitude apex points
+        // ============================================
+        ...createApexTickPulseLayers(apexTickData, apexTickEnabled, apexTickPulseSpeed, apexTickPulseWidth, apexTickColor, apexTickOpacity, currentTime)
     ];
 
     const perfEnd = performance.now();
