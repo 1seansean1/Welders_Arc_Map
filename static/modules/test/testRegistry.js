@@ -1310,7 +1310,7 @@ const SATELLITE_HYPOTHESES = {
         category: 'ui',
         hypothesis: 'Time bar should stretch across full map width',
         symptom: 'Time bar centered with fixed width',
-        prediction: 'Time bar has left:10px and right:10px, no transform',
+        prediction: 'Time bar has left and right set (not auto), no centering transform',
         nullPrediction: 'Time bar would have left:50% and translateX(-50%)',
         threshold: { isFullWidth: true },
         causalChain: [
@@ -1318,7 +1318,7 @@ const SATELLITE_HYPOTHESES = {
             'PROXIMATE: CSS uses centered positioning',
             'ROOT: left:50% transform:translateX(-50%)',
             'MECHANISM: Fixed centering prevents full width',
-            'FIX: Use left:10px right:10px instead'
+            'FIX: Use left and right positioning instead'
         ],
         testFn: async () => {
             const timeBar = document.getElementById('map-time-bar');
@@ -1329,11 +1329,15 @@ const SATELLITE_HYPOTHESES = {
             const left = style.left;
             const right = style.right;
             const transform = style.transform;
-            const isFullWidth = left === '10px' && right === '10px' &&
-                               (transform === 'none' || transform === 'matrix(1, 0, 0, 1, 0, 0)');
+            // Full-width means: left and right are both set to pixel values (not 'auto')
+            // and no centering transform is applied
+            const leftIsSet = left !== 'auto' && left.endsWith('px');
+            const rightIsSet = right !== 'auto' && right.endsWith('px');
+            const noTransform = transform === 'none' || transform === 'matrix(1, 0, 0, 1, 0, 0)';
+            const isFullWidth = leftIsSet && rightIsSet && noTransform;
             return {
                 passed: isFullWidth,
-                details: { left, right, transform, isFullWidth }
+                details: { left, right, transform, leftIsSet, rightIsSet, noTransform, isFullWidth }
             };
         }
     },
@@ -1678,27 +1682,29 @@ const TIME_HYPOTHESES = {
                 return { passed: true, skipped: true, reason: 'Required elements not available' };
             }
 
-            // Set a known time range
-            const testStart = new Date('2025-01-01T00:00:00Z');
-            const testStop = new Date('2025-01-02T00:00:00Z');
+            // Set a known time range (January 15 and 16 for distinct values)
+            const testStart = new Date('2025-01-15T12:00:00Z');
+            const testStop = new Date('2025-01-16T18:00:00Z');
             timeState.setTimeRange(testStart, testStop);
             timeState.applyTimeChanges();
 
             // Allow time for event propagation
-            await new Promise(resolve => setTimeout(resolve, 50));
+            await new Promise(resolve => setTimeout(resolve, 100));
 
-            // Check if inputs contain the expected date portions
-            const startValue = startInput.value; // Format: YYYY-MM-DDTHH:mm
+            // Check if inputs contain the expected compact format values (MM/DD HH:mm)
+            // Start should show "01/15 12:00", Stop should show "01/16 18:00"
+            const startValue = startInput.value;
             const stopValue = stopInput.value;
 
-            const startUpdated = startValue.includes('2025-01-01');
-            const stopUpdated = stopValue.includes('2025-01-02');
+            // Check for compact format: MM/DD HH:mm
+            const startUpdated = startValue.includes('01/15') && startValue.includes('12:00');
+            const stopUpdated = stopValue.includes('01/16') && stopValue.includes('18:00');
 
             return {
                 passed: startUpdated && stopUpdated,
                 details: {
-                    expectedStart: '2025-01-01',
-                    expectedStop: '2025-01-02',
+                    expectedStartContains: '01/15 12:00',
+                    expectedStopContains: '01/16 18:00',
                     actualStartValue: startValue,
                     actualStopValue: stopValue,
                     startUpdated,
@@ -1740,6 +1746,70 @@ const TIME_HYPOTHESES = {
                     buttonExists: true,
                     isVisible,
                     note: 'Full animation test requires manual verification'
+                }
+            };
+        }
+    },
+    'H-TIME-11': {
+        id: 'H-TIME-11',
+        name: 'Compact Time Bar with Flatpickr',
+        category: 'time',
+        hypothesis: 'Map time bar uses Flatpickr and has compact responsive design',
+        symptom: 'Native datetime pickers shown or time bar too wide/cut off',
+        prediction: 'Datetime inputs use Flatpickr, time bar has grouped compact layout',
+        nullPrediction: 'Would show native datetime pickers and fixed-width layout',
+        threshold: { hasFlatpickr: true, hasGroups: true, isCompact: true },
+        causalChain: [
+            'SYMPTOM: Native datetime picker or cut-off time bar',
+            'PROXIMATE: Flatpickr not initialized or CSS not compact',
+            'ROOT: initializeFlatpickr() not called or wrong CSS',
+            'MECHANISM: Flatpickr replaces native input, CSS uses compact classes',
+            'FIX: Call initializeFlatpickr(), use mtb-* classes for compact layout'
+        ],
+        testFn: async () => {
+            const timeBar = document.getElementById('map-time-bar');
+            const startInput = document.getElementById('map-time-start');
+            const stopInput = document.getElementById('map-time-stop');
+
+            if (!timeBar || !startInput || !stopInput) {
+                return { passed: false, details: { error: 'Time bar elements not found' } };
+            }
+
+            // Check Flatpickr is attached to inputs
+            const hasFlatpickrStart = startInput._flatpickr !== undefined;
+            const hasFlatpickrStop = stopInput._flatpickr !== undefined;
+            const hasFlatpickr = hasFlatpickrStart && hasFlatpickrStop;
+
+            // Check for grouped layout (mtb-group classes)
+            const groups = timeBar.querySelectorAll('.mtb-group');
+            const hasGroups = groups.length >= 3; // Window, Transport, Slider at minimum
+
+            // Check for compact styling (verify input types are text, not datetime-local)
+            const startType = startInput.type;
+            const stopType = stopInput.type;
+            const notNativeDatetime = startType === 'text' && stopType === 'text';
+
+            // Check time bar is positioned full-width (left and right set)
+            const computed = window.getComputedStyle(timeBar);
+            const hasLeftRight = computed.left !== 'auto' && computed.right !== 'auto';
+
+            const isCompact = notNativeDatetime && hasLeftRight;
+
+            return {
+                passed: hasFlatpickr && hasGroups && isCompact,
+                details: {
+                    hasFlatpickrStart,
+                    hasFlatpickrStop,
+                    hasFlatpickr,
+                    groupCount: groups.length,
+                    hasGroups,
+                    startInputType: startType,
+                    stopInputType: stopType,
+                    notNativeDatetime,
+                    left: computed.left,
+                    right: computed.right,
+                    hasLeftRight,
+                    isCompact
                 }
             };
         }

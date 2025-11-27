@@ -1,16 +1,18 @@
 /**
- * Map Time Bar Module - Time controls at bottom of map
+ * Map Time Bar Module - Compact time controls at bottom of map
  *
  * DEPENDENCIES:
  * - timeState: Time simulation state management
  * - eventBus: Event communication
  * - logger: Diagnostic logging
+ * - flatpickr: Datetime picker library (global)
  *
  * Features:
+ * - Compact responsive design (hides elements on narrow widths)
+ * - Flatpickr datetime pickers for start/stop (same as control panel)
  * - Play/Stop button for real-time mode
- * - Rewind/Fast Forward animation buttons (step per second)
- * - Step size selector (1s, 10s, 30s, 1m, 5m, 15m, 30m, 1h)
- * - Step back/forward buttons with hold-to-repeat
+ * - Rewind/Fast Forward animation buttons
+ * - Step size and speed selectors
  * - Time slider for scrubbing
  * - Now button to reset to current UTC
  */
@@ -49,6 +51,8 @@ let stepRepeatInterval = null;
 let animationInterval = null;  // Interval for rewind/ffwd animation
 let animationDirection = 0;    // -1 = rewind, 0 = stopped, 1 = fast forward
 let lastWheelTime = 0;         // Timestamp of last wheel event (for throttling)
+let startPicker = null;        // Flatpickr instance for start input
+let stopPicker = null;         // Flatpickr instance for stop input
 const STEP_REPEAT_DELAY = 400;  // ms before repeat starts
 const STEP_REPEAT_RATE = 150;   // ms between repeats
 const REAL_TIME_UPDATE_MS = 1000;  // 1 second updates in real-time mode
@@ -485,36 +489,151 @@ function applyPreset(preset) {
 }
 
 // ============================================
-// DATETIME INPUTS
+// DATETIME INPUTS WITH FLATPICKR
 // ============================================
 
 /**
- * Convert Date to datetime-local input format (YYYY-MM-DDTHH:mm)
+ * Format Date to compact display (MM/DD HH:mm)
  * @param {Date} date - Date to format
- * @returns {string} Formatted string for datetime-local input
+ * @returns {string} Formatted string
  */
-function dateToInputValue(date) {
+function formatCompactDateTime(date) {
     if (!date || !(date instanceof Date)) return '';
-    // datetime-local expects local time, but we work in UTC
-    // Format as ISO and take first 16 chars (YYYY-MM-DDTHH:mm)
-    const year = date.getUTCFullYear();
     const month = String(date.getUTCMonth() + 1).padStart(2, '0');
     const day = String(date.getUTCDate()).padStart(2, '0');
     const hours = String(date.getUTCHours()).padStart(2, '0');
     const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
+    return `${month}/${day} ${hours}:${minutes}`;
 }
 
 /**
- * Convert datetime-local input value to Date (UTC)
- * @param {string} value - Input value (YYYY-MM-DDTHH:mm)
- * @returns {Date|null} Date object or null if invalid
+ * Initialize Flatpickr datetime pickers for compact map time bar
+ * Uses same style as control panel but with compact display format
  */
-function inputValueToDate(value) {
-    if (!value) return null;
-    // Parse as UTC (append :00Z for seconds and timezone)
-    const date = new Date(value + ':00Z');
-    return isNaN(date.getTime()) ? null : date;
+function initializeFlatpickr() {
+    // Only initialize if flatpickr is available
+    if (typeof flatpickr === 'undefined') {
+        logger.warning('Flatpickr not available, datetime inputs disabled', logger.CATEGORY.UI);
+        return;
+    }
+
+    // Common Flatpickr config
+    const commonConfig = {
+        enableTime: true,
+        dateFormat: 'm/d H:i',  // Compact format: MM/DD HH:MM
+        time_24hr: true,
+        theme: 'dark',
+        allowInput: false,  // Read-only input, use picker only
+        disableMobile: true,  // Use Flatpickr on mobile too
+        position: 'above',  // Open above the input (time bar is at bottom)
+        appendTo: container,  // Append to time bar container to prevent z-index issues
+        onClose: () => {
+            // Blur the input to prevent keyboard on mobile
+            document.activeElement?.blur();
+        }
+    };
+
+    // Start time picker
+    if (startInput) {
+        startPicker = flatpickr(startInput, {
+            ...commonConfig,
+            onChange: (selectedDates) => {
+                if (selectedDates.length > 0) {
+                    handleStartDateSelected(selectedDates[0]);
+                }
+            }
+        });
+    }
+
+    // Stop time picker
+    if (stopInput) {
+        stopPicker = flatpickr(stopInput, {
+            ...commonConfig,
+            onChange: (selectedDates) => {
+                if (selectedDates.length > 0) {
+                    handleStopDateSelected(selectedDates[0]);
+                }
+            }
+        });
+    }
+
+    logger.diagnostic('Flatpickr initialized for map time bar', logger.CATEGORY.UI);
+}
+
+/**
+ * Handle start date selection from Flatpickr
+ * @param {Date} selectedDate - Selected date (local time)
+ */
+function handleStartDateSelected(selectedDate) {
+    // Convert to UTC (Flatpickr returns local time)
+    const utcDate = new Date(Date.UTC(
+        selectedDate.getFullYear(),
+        selectedDate.getMonth(),
+        selectedDate.getDate(),
+        selectedDate.getHours(),
+        selectedDate.getMinutes(),
+        0, 0
+    ));
+
+    const state = timeState.getTimeState();
+    const stop = state.stopTime;
+
+    // Validate: start must be before stop
+    if (stop && utcDate >= stop) {
+        logger.error('Start time must be before stop time', logger.CATEGORY.TIME);
+        updateDateTimeInputs();
+        return;
+    }
+
+    // Apply the new time range
+    timeState.setTimeRange(utcDate, stop);
+    timeState.applyTimeChanges();
+
+    // Stop real-time mode
+    if (isRealTime) {
+        stopRealTime();
+    }
+
+    updateSliderFromState();
+    logger.info(`Start time changed: ${utcDate.toISOString()}`, logger.CATEGORY.TIME);
+}
+
+/**
+ * Handle stop date selection from Flatpickr
+ * @param {Date} selectedDate - Selected date (local time)
+ */
+function handleStopDateSelected(selectedDate) {
+    // Convert to UTC (Flatpickr returns local time)
+    const utcDate = new Date(Date.UTC(
+        selectedDate.getFullYear(),
+        selectedDate.getMonth(),
+        selectedDate.getDate(),
+        selectedDate.getHours(),
+        selectedDate.getMinutes(),
+        0, 0
+    ));
+
+    const state = timeState.getTimeState();
+    const start = state.startTime;
+
+    // Validate: stop must be after start
+    if (start && utcDate <= start) {
+        logger.error('Stop time must be after start time', logger.CATEGORY.TIME);
+        updateDateTimeInputs();
+        return;
+    }
+
+    // Apply the new time range
+    timeState.setTimeRange(start, utcDate);
+    timeState.applyTimeChanges();
+
+    // Stop real-time mode
+    if (isRealTime) {
+        stopRealTime();
+    }
+
+    updateSliderFromState();
+    logger.info(`Stop time changed: ${utcDate.toISOString()}`, logger.CATEGORY.TIME);
 }
 
 /**
@@ -524,78 +643,36 @@ function updateDateTimeInputs() {
     const state = timeState.getTimeState();
 
     if (startInput && state.startTime) {
-        startInput.value = dateToInputValue(state.startTime);
+        // Update both display and Flatpickr
+        const displayStr = formatCompactDateTime(state.startTime);
+        startInput.value = displayStr;
+        if (startPicker) {
+            // Convert UTC to local for Flatpickr
+            const localDate = new Date(
+                state.startTime.getUTCFullYear(),
+                state.startTime.getUTCMonth(),
+                state.startTime.getUTCDate(),
+                state.startTime.getUTCHours(),
+                state.startTime.getUTCMinutes()
+            );
+            startPicker.setDate(localDate, false);  // false = don't trigger onChange
+        }
     }
 
     if (stopInput && state.stopTime) {
-        stopInput.value = dateToInputValue(state.stopTime);
+        const displayStr = formatCompactDateTime(state.stopTime);
+        stopInput.value = displayStr;
+        if (stopPicker) {
+            const localDate = new Date(
+                state.stopTime.getUTCFullYear(),
+                state.stopTime.getUTCMonth(),
+                state.stopTime.getUTCDate(),
+                state.stopTime.getUTCHours(),
+                state.stopTime.getUTCMinutes()
+            );
+            stopPicker.setDate(localDate, false);
+        }
     }
-}
-
-/**
- * Handle start datetime input change
- */
-function handleStartInputChange() {
-    const newStart = inputValueToDate(startInput.value);
-    if (!newStart) return;
-
-    const state = timeState.getTimeState();
-    const stop = state.stopTime;
-
-    // Validate: start must be before stop
-    if (stop && newStart >= stop) {
-        logger.error('Start time must be before stop time', logger.CATEGORY.TIME);
-        // Revert to current state
-        updateDateTimeInputs();
-        return;
-    }
-
-    // Apply the new time range
-    timeState.setTimeRange(newStart, stop);
-    timeState.applyTimeChanges();
-
-    // Stop real-time mode when manually setting window
-    if (isRealTime) {
-        stopRealTime();
-    }
-
-    // Update slider
-    updateSliderFromState();
-
-    logger.info(`Start time changed: ${newStart.toISOString()}`, logger.CATEGORY.TIME);
-}
-
-/**
- * Handle stop datetime input change
- */
-function handleStopInputChange() {
-    const newStop = inputValueToDate(stopInput.value);
-    if (!newStop) return;
-
-    const state = timeState.getTimeState();
-    const start = state.startTime;
-
-    // Validate: stop must be after start
-    if (start && newStop <= start) {
-        logger.error('Stop time must be after start time', logger.CATEGORY.TIME);
-        // Revert to current state
-        updateDateTimeInputs();
-        return;
-    }
-
-    // Apply the new time range
-    timeState.setTimeRange(start, newStop);
-    timeState.applyTimeChanges();
-
-    // Stop real-time mode when manually setting window
-    if (isRealTime) {
-        stopRealTime();
-    }
-
-    // Update slider
-    updateSliderFromState();
-
-    logger.info(`Stop time changed: ${newStop.toISOString()}`, logger.CATEGORY.TIME);
 }
 
 // ============================================
@@ -786,21 +863,7 @@ function initializeEventHandlers() {
         });
     }
 
-    // Start datetime input
-    if (startInput) {
-        startInput.addEventListener('change', (e) => {
-            e.stopPropagation();
-            handleStartInputChange();
-        });
-    }
-
-    // Stop datetime input
-    if (stopInput) {
-        stopInput.addEventListener('change', (e) => {
-            e.stopPropagation();
-            handleStopInputChange();
-        });
-    }
+    // Note: datetime inputs use Flatpickr onChange handlers (see initializeFlatpickr)
 
     // Listen for time changes to keep slider in sync
     eventBus.on('time:changed', () => {
@@ -823,6 +886,7 @@ function initializeEventHandlers() {
 export function initializeMapTimeBar() {
     initializeEventHandlers();
     initializeWheelJog();
+    initializeFlatpickr();  // Initialize Flatpickr datetime pickers
     updatePlayButtonState();
     updateDateTimeInputs();
     updateStopButtonState();

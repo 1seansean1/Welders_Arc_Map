@@ -352,206 +352,244 @@
         }
 
         /* ============================================
-           MAP TIME BAR (Bottom of Map)
+           MAP TIME BAR (Bottom of Map) - Compact Responsive
            ============================================ */
 
         .map-time-bar {
             position: absolute;
-            bottom: 10px;
-            left: 10px;
-            right: 10px;
-            background: rgba(10, 10, 10, 0.9);
-            border: 1px solid #333333;
-            border-radius: 6px;
-            padding: 6px 10px;
+            bottom: 6px;
+            left: 6px;
+            right: 6px;
+            background: rgba(10, 10, 10, 0.92);
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 3px 4px;
             z-index: 1000;
             display: flex;
             align-items: center;
-            gap: 8px;
-            pointer-events: auto;  /* Capture all pointer events */
+            gap: 2px;
+            pointer-events: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            overflow: hidden;
         }
 
-        .map-time-btn {
+        /* Group containers */
+        .mtb-group {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            flex-shrink: 0;
+        }
+
+        .mtb-slider-group {
+            flex: 1;
+            min-width: 80px;
+        }
+
+        /* Compact buttons */
+        .mtb-btn {
             background: var(--bg-secondary);
             border: 1px solid var(--border-color);
-            border-radius: 4px;
+            border-radius: 3px;
             color: var(--text-secondary);
-            font-size: 12px;
-            padding: 4px 8px;
+            font-size: 9px;
+            padding: 2px 4px;
             cursor: pointer;
-            transition: all 0.15s ease;
-            min-width: 28px;
-            height: 28px;
+            transition: all 0.1s ease;
+            min-width: 20px;
+            height: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
+            line-height: 1;
         }
 
-        .map-time-btn:hover {
+        .mtb-btn:hover {
             background: var(--bg-tertiary);
             color: var(--text-primary);
             border-color: var(--accent-blue-grey);
         }
 
-        .map-time-btn:active {
-            transform: scale(0.95);
+        .mtb-btn:active { transform: scale(0.92); }
+
+        /* Transport controls */
+        .mtb-anim {
+            font-size: 8px;
+            letter-spacing: -2px;
+            padding: 2px 3px;
         }
 
-        /* Play/Stop button special styling */
-        .map-time-play-btn {
+        .mtb-anim.animating {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+            color: var(--bg-primary);
+        }
+
+        .mtb-play {
             background: var(--accent-blue-grey);
             border-color: var(--accent-blue-grey);
             color: var(--bg-primary);
-            font-size: 10px;
+            font-size: 8px;
+            min-width: 22px;
         }
 
-        .map-time-play-btn:hover {
+        .mtb-play:hover {
             background: var(--accent-primary);
             border-color: var(--accent-primary);
         }
 
-        .map-time-play-btn.simulation-mode {
+        .mtb-play.simulation-mode {
             background: #8b4513;
             border-color: #a0522d;
             color: #fff;
         }
 
-        .map-time-play-btn.simulation-mode:hover {
-            background: #a0522d;
-        }
+        .mtb-stop { font-size: 8px; }
 
-        /* Animation buttons (rewind/fast-forward) */
-        .map-time-anim-btn {
-            font-size: 10px;
-            padding: 0 6px;
-        }
-
-        .map-time-anim-btn .anim-icon {
-            font-family: inherit;
+        .mtb-step-btn {
             font-size: 11px;
-            font-weight: 600;
-            letter-spacing: -2px;
-            color: var(--text-secondary);
+            font-weight: bold;
+            min-width: 18px;
+            padding: 1px 3px;
         }
 
-        .map-time-anim-btn:hover .anim-icon {
-            color: var(--text-primary);
+        .mtb-now {
+            font-size: 10px;
+            min-width: 18px;
+            color: var(--accent-primary);
         }
 
-        .map-time-anim-btn.animating {
-            background: var(--accent-primary);
-            border-color: var(--accent-primary);
-            color: var(--bg-primary);
-        }
-
-        .map-time-anim-btn.animating:hover {
-            background: var(--accent-blue-grey);
-            border-color: var(--accent-blue-grey);
-        }
-
-        /* Separator between button groups */
-        .map-time-separator {
-            width: 1px;
-            height: 20px;
-            background: var(--border-color);
-            margin: 0 4px;
-        }
-
-        .map-time-step-select {
+        /* Compact selects */
+        .mtb-select {
             background: var(--bg-secondary);
             border: 1px solid var(--border-color);
-            border-radius: 4px;
+            border-radius: 3px;
             color: var(--text-secondary);
-            font-size: 11px;
-            padding: 4px 6px;
+            font-size: 9px;
+            padding: 1px 2px;
             cursor: pointer;
-            height: 28px;
+            height: 20px;
+            min-width: 32px;
         }
 
-        .map-time-step-select:focus {
+        .mtb-select:focus {
             outline: none;
             border-color: var(--accent-blue-grey);
         }
 
-        /* Inline datetime inputs */
-        .map-time-datetime {
+        /* Datetime inputs with Flatpickr */
+        .mtb-datetime {
             background: var(--bg-secondary);
             border: 1px solid var(--border-color);
-            border-radius: 4px;
+            border-radius: 3px;
             color: var(--text-secondary);
-            font-size: 11px;
-            padding: 2px 6px;
-            height: 28px;
-            width: 145px;
+            font-size: 9px;
+            padding: 1px 4px;
+            height: 20px;
+            width: 95px;
             cursor: pointer;
+            text-align: center;
         }
 
-        .map-time-datetime:focus {
+        .mtb-datetime:focus {
             outline: none;
             border-color: var(--accent-blue-grey);
             color: var(--text-primary);
         }
 
-        .map-time-datetime::-webkit-calendar-picker-indicator {
-            filter: invert(0.7);
-            cursor: pointer;
+        .mtb-datetime.pending {
+            border-color: var(--accent-orange);
         }
 
-        /* Datetime label */
-        .map-time-label {
-            color: var(--text-muted);
-            font-size: 10px;
-            margin-right: 2px;
-        }
-
-        /* Separator between sections */
-        .map-time-separator {
-            width: 1px;
-            height: 20px;
-            background: var(--border-color);
-            margin: 0 4px;
-        }
-
-        /* Stop button */
-        .map-time-stop-btn {
-            font-size: 10px;
-        }
-
-        .map-time-slider {
+        /* Compact slider */
+        .mtb-slider {
             flex: 1;
-            min-width: 100px;
-            height: 4px;
+            min-width: 50px;
+            height: 3px;
             -webkit-appearance: none;
             appearance: none;
             background: var(--bg-tertiary);
             border-radius: 2px;
             cursor: pointer;
+            margin: 0 2px;
         }
 
-        .map-time-slider::-webkit-slider-thumb {
+        .mtb-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 14px;
-            height: 14px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
             background: var(--accent-blue-grey);
             cursor: pointer;
-            border: 2px solid var(--bg-primary);
+            border: 1px solid var(--bg-primary);
         }
 
-        .map-time-slider::-moz-range-thumb {
-            width: 14px;
-            height: 14px;
+        .mtb-slider::-moz-range-thumb {
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
             background: var(--accent-blue-grey);
             cursor: pointer;
-            border: 2px solid var(--bg-primary);
+            border: 1px solid var(--bg-primary);
         }
 
-        .map-time-now-btn {
-            padding: 4px 10px;
-            font-size: 11px;
-            font-weight: 500;
+        /* Responsive: hide elements on narrow widths */
+        @media (max-width: 700px) {
+            .mtb-window-group { display: none; }
+        }
+
+        @media (max-width: 500px) {
+            .mtb-rate-group { display: none; }
+        }
+
+        @media (max-width: 350px) {
+            .mtb-anim { display: none; }
+        }
+
+        /* Flatpickr overrides for dark theme */
+        .flatpickr-calendar {
+            background: var(--bg-secondary) !important;
+            border: 1px solid var(--border-color) !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important;
+            font-size: 11px !important;
+        }
+
+        .flatpickr-months, .flatpickr-weekdays, .flatpickr-days {
+            background: var(--bg-secondary) !important;
+        }
+
+        .flatpickr-day {
+            color: var(--text-secondary) !important;
+            border-radius: 3px !important;
+        }
+
+        .flatpickr-day:hover {
+            background: var(--bg-tertiary) !important;
+            color: var(--text-primary) !important;
+        }
+
+        .flatpickr-day.selected {
+            background: var(--accent-blue-grey) !important;
+            border-color: var(--accent-blue-grey) !important;
+        }
+
+        .flatpickr-current-month {
+            color: var(--text-primary) !important;
+        }
+
+        .flatpickr-time input {
+            background: var(--bg-tertiary) !important;
+            color: var(--text-primary) !important;
+            border: none !important;
+        }
+
+        .numInputWrapper span {
+            border-color: var(--border-color) !important;
+        }
+
+        .numInputWrapper span:hover {
+            background: var(--bg-tertiary) !important;
         }
 
         /* Maximized state */
@@ -2368,59 +2406,55 @@
                 <button id="map-fit-view-btn" title="Fit map to Earth bounds">
                     <span>FIT</span>
                 </button>
-                <!-- Map Time Bar (bottom of map) -->
+                <!-- Map Time Bar (bottom of map) - Compact Responsive Design -->
                 <div id="map-time-bar" class="map-time-bar">
-                    <!-- 1. Time window presets -->
-                    <select class="map-time-step-select" id="map-time-preset-select" title="Quick time window presets">
-                        <option value="" disabled selected>Window</option>
-                        <option value="last-1h">Last 1h</option>
-                        <option value="last-6h">Last 6h</option>
-                        <option value="last-24h">Last 24h</option>
-                        <option value="next-6h">Next 6h</option>
-                        <option value="next-24h">Next 24h</option>
-                    </select>
-                    <!-- 2. Start datetime picker -->
-                    <span class="map-time-label">Start:</span>
-                    <input type="datetime-local" class="map-time-datetime" id="map-time-start" title="Analysis window start time" />
-                    <!-- 3. Stop datetime picker -->
-                    <span class="map-time-label">Stop:</span>
-                    <input type="datetime-local" class="map-time-datetime" id="map-time-stop" title="Analysis window stop time" />
-                    <!-- Separator -->
-                    <div class="map-time-separator"></div>
-                    <!-- 4-7. Animation controls: RW, Play/Pause, Stop, FF -->
-                    <button class="map-time-btn map-time-anim-btn" id="map-time-rewind" title="Rewind animation"><span class="anim-icon">««</span></button>
-                    <button class="map-time-btn map-time-play-btn" id="map-time-play-btn" title="Play/Pause real-time">
-                        <span id="map-time-play-icon">▶</span>
-                    </button>
-                    <button class="map-time-btn map-time-stop-btn" id="map-time-stop-btn" title="Stop animation">■</button>
-                    <button class="map-time-btn map-time-anim-btn" id="map-time-ffwd" title="Fast forward animation"><span class="anim-icon">»»</span></button>
-                    <!-- 8. Speed multiplier selector -->
-                    <select class="map-time-step-select" id="map-time-speed-select" title="Playback speed multiplier">
-                        <option value="0.5">0.5x</option>
-                        <option value="1" selected>1x</option>
-                        <option value="2">2x</option>
-                        <option value="4">4x</option>
-                        <option value="8">8x</option>
-                        <option value="16">16x</option>
-                        <option value="60">60x</option>
-                        <option value="600">600x</option>
-                    </select>
-                    <!-- 9. Step size selector -->
-                    <select class="map-time-step-select" id="map-time-step-select" title="Step size">
-                        <option value="0.0167">1s</option>
-                        <option value="0.1667">10s</option>
-                        <option value="0.5">30s</option>
-                        <option value="1">1m</option>
-                        <option value="5" selected>5m</option>
-                        <option value="15">15m</option>
-                        <option value="30">30m</option>
-                        <option value="60">1h</option>
-                    </select>
-                    <!-- 10-13. Step/Slider/Now -->
-                    <button class="map-time-btn" id="map-time-step-back" title="Step backward">&lt;</button>
-                    <input type="range" class="map-time-slider" id="map-time-slider" min="0" max="1000" value="1000" />
-                    <button class="map-time-btn" id="map-time-step-forward" title="Step forward">&gt;</button>
-                    <button class="map-time-btn map-time-now-btn" id="map-time-now-btn" title="Reset to now">Now</button>
+                    <!-- Group 1: Time Window -->
+                    <div class="mtb-group mtb-window-group">
+                        <select class="mtb-select" id="map-time-preset-select" title="Quick time window presets">
+                            <option value="" disabled selected>Win</option>
+                            <option value="last-1h">-1h</option>
+                            <option value="last-6h">-6h</option>
+                            <option value="last-24h">-24h</option>
+                            <option value="next-6h">+6h</option>
+                            <option value="next-24h">+24h</option>
+                        </select>
+                        <input type="text" class="mtb-datetime" id="map-time-start" title="Start time (UTC)" placeholder="Start" readonly />
+                        <input type="text" class="mtb-datetime" id="map-time-stop" title="Stop time (UTC)" placeholder="Stop" readonly />
+                    </div>
+                    <!-- Group 2: Transport Controls -->
+                    <div class="mtb-group mtb-transport-group">
+                        <button class="mtb-btn mtb-anim" id="map-time-rewind" title="Rewind">◀◀</button>
+                        <button class="mtb-btn mtb-play" id="map-time-play-btn" title="Play/Pause">
+                            <span id="map-time-play-icon">▶</span>
+                        </button>
+                        <button class="mtb-btn mtb-stop" id="map-time-stop-btn" title="Stop">■</button>
+                        <button class="mtb-btn mtb-anim" id="map-time-ffwd" title="Fast Forward">▶▶</button>
+                    </div>
+                    <!-- Group 3: Speed/Step -->
+                    <div class="mtb-group mtb-rate-group">
+                        <select class="mtb-select mtb-speed" id="map-time-speed-select" title="Playback speed">
+                            <option value="1" selected>1×</option>
+                            <option value="2">2×</option>
+                            <option value="4">4×</option>
+                            <option value="10">10×</option>
+                            <option value="60">60×</option>
+                        </select>
+                        <select class="mtb-select mtb-step" id="map-time-step-select" title="Step size">
+                            <option value="0.0167">1s</option>
+                            <option value="0.1667">10s</option>
+                            <option value="1">1m</option>
+                            <option value="5" selected>5m</option>
+                            <option value="15">15m</option>
+                            <option value="60">1h</option>
+                        </select>
+                    </div>
+                    <!-- Group 4: Slider -->
+                    <div class="mtb-group mtb-slider-group">
+                        <button class="mtb-btn mtb-step-btn" id="map-time-step-back" title="Step back">‹</button>
+                        <input type="range" class="mtb-slider" id="map-time-slider" min="0" max="1000" value="1000" />
+                        <button class="mtb-btn mtb-step-btn" id="map-time-step-forward" title="Step forward">›</button>
+                        <button class="mtb-btn mtb-now" id="map-time-now-btn" title="Now">⦿</button>
+                    </div>
                 </div>
             </div>
         </div>

@@ -128,6 +128,7 @@
 | TIME-026 | Time Window Presets | P1 | S | DONE | TIME-001 |
 | TIME-027 | Inline Start/Stop DateTime Pickers | P1 | S | DONE | TIME-026 |
 | TIME-028 | Time Bar Reorder + Stop Button | P1 | S | DONE | TIME-027 |
+| TIME-029 | Compact Time Bar with Flatpickr | P1 | M | DONE | TIME-027, TIME-003 |
 
 ### Control Panel (UI)
 
@@ -263,15 +264,15 @@
 | MAP | 13 | 13 | 0 | 0 | 0 |
 | SAT | 18 | 16 | 0 | 1 | 1 |
 | SEN | 9 | 8 | 0 | 0 | 1 |
-| TIME | 28 | 28 | 0 | 0 | 0 |
+| TIME | 29 | 29 | 0 | 0 | 0 |
 | UI | 17 | 15 | 0 | 2 | 0 |
 | LOG | 10 | 8 | 0 | 0 | 2 |
 | TEST | 15 | 13 | 0 | 1 | 0 |
 | BACK | 9 | 3 | 0 | 4 | 2 |
 | ARCH | 5 | 5 | 0 | 0 | 0 |
-| **TOTAL** | **125** | **110** | **0** | **8** | **6** |
+| **TOTAL** | **126** | **111** | **0** | **8** | **6** |
 
-**Completion Rate**: 88% (110/125 features complete)
+**Completion Rate**: 88% (111/126 features complete)
 
 ---
 
@@ -279,6 +280,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.8 | 2025-11-27 | TIME-029 DONE: Compact time bar redesign with Flatpickr, responsive groups |
 | 2.7 | 2025-11-27 | TIME-027/TIME-028 DONE: Inline start/stop datetime pickers, time bar reorder, stop button |
 | 2.6 | 2025-11-27 | Added TIME-023 to TIME-026: Playback rate, jog wheel, seek stubs, presets |
 | 2.5 | 2025-11-26 | Added SAT-019: Watch List Color Assignment (table + chevron/track coloring) |

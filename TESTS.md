@@ -1,7 +1,7 @@
 # WA_map Test Documentation
 
 > **Document Type**: TESTS
-> **Version**: 1.4
+> **Version**: 1.5
 > **Last Updated**: 2025-11-27
 > **Maintainer**: AI Governor System
 
@@ -27,8 +27,8 @@ All tests follow a **hypothesis-driven** approach inspired by the scientific met
 | Event | H-EVENT-* | 2 | Event bus functionality |
 | UI | H-UI-* | 3 | User interface components |
 | Validation | H-VALID-* | 2 | Input validation |
-| Time | H-TIME-* | 6 | Time control functionality |
-| **Total** | | **23** | |
+| Time | H-TIME-* | 7 | Time control functionality |
+| **Total** | | **24** | |
 
 ---
 
@@ -85,8 +85,9 @@ All tests follow a **hypothesis-driven** approach inspired by the scientific met
 | H-TIME-6 | Preset Sets Analysis Window | PENDING | Time presets apply correct start/stop times |
 | H-TIME-7 | Seek Points API | PENDING | addSeekPoint/getSeekPoints/removeSeekPoint work |
 | H-TIME-8 | Valid Playback Rates Enforced | PENDING | Invalid rates rejected with error |
-| H-TIME-9 | DateTime Inputs Sync with State | PENDING | Inputs update when presets applied |
+| H-TIME-9 | DateTime Inputs Sync with State | PENDING | Inputs update when presets applied (compact MM/DD format) |
 | H-TIME-10 | Stop Button Halts Animation | PENDING | Stop (■) button exists and is visible |
+| H-TIME-11 | Compact Time Bar with Flatpickr | PENDING | Flatpickr replaces native datetime, compact layout |
 
 ---
 
@@ -307,6 +308,7 @@ The test suite is complete when:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.5 | 2025-11-27 | Added H-TIME-11 (compact time bar with Flatpickr); updated H-TIME-9 for compact date format |
 | 1.4 | 2025-11-27 | Changed H-PERF-1 to ADVISORY (stress test too environment-sensitive for pass/fail) |
 | 1.3 | 2025-11-27 | Fixed H-TIME-1/H-UI-5 real-time interference; relaxed H-PERF-1 threshold (10%→60%) |
 | 1.2 | 2025-11-27 | Added TIME tests H-TIME-9, H-TIME-10 (datetime sync, stop button) |
