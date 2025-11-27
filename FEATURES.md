@@ -77,6 +77,7 @@
 | SAT-015 | Multi-layer Glow Effect | P2 | S | DONE | SAT-014 |
 | SAT-016 | Chevron-Based Glow Enhancement | P2 | M | DONE | SAT-014, SAT-015 |
 | SAT-017 | Anti-Meridian Segment Wrapping | P2 | S | DONE | SAT-005, SAT-008 |
+| SAT-018 | Latitude Apex Glow Ticks | P2 | M | DONE | SAT-014, SAT-015 |
 
 ### Sensor Management (SEN)
 
@@ -264,6 +265,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.1 | 2025-11-26 | Added SAT-018: Latitude apex glow ticks |
 | 2.0 | 2025-11-26 | Added SAT-017: Anti-meridian wrapping, MAP-011: Equator line, TIME-021: Full-width bar, UI-013: Styled icons |
 | 1.9 | 2025-11-26 | Added TIME-019: Rewind/Fast Forward animation buttons |
 | 1.8 | 2025-11-26 | Added TIME-018: Dual Clock Display (UTC + Sim), moved to top-left of map |

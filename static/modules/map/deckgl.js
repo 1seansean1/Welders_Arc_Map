@@ -362,6 +362,116 @@ function detectEquatorCrossings(tailPoints, headPoints, currentPosition, current
 }
 
 /**
+ * Detect latitude apex points (maxima and minima) in the ground track
+ * Returns apex data with position and time for glow tick marks
+ */
+function detectLatitudeApexes(tailPoints, headPoints, currentPosition, currentTime, fadeInMinutes = 5, fadeOutMinutes = 5) {
+    const apexes = [];
+    const currentTimeMs = currentTime ? currentTime.getTime() : Date.now();
+    const fadeInMs = fadeInMinutes * 60 * 1000;
+    const fadeOutMs = fadeOutMinutes * 60 * 1000;
+    const TICK_WIDTH_DEG = 1.5; // Horizontal tick width in degrees longitude
+
+    // Build array with all points including timestamps
+    const allPoints = [
+        ...tailPoints.map((p, i) => ({
+            ...p,
+            isHistory: true,
+            index: i,
+            time: p.timestamp ? new Date(p.timestamp).getTime() : null
+        })),
+        ...(currentPosition ? [{
+            position: [currentPosition.lon, currentPosition.lat],
+            progress: 1,
+            isHistory: false,
+            isCurrent: true,
+            time: currentTimeMs
+        }] : []),
+        ...headPoints.map((p, i) => ({
+            ...p,
+            isHistory: false,
+            index: i,
+            time: p.timestamp ? new Date(p.timestamp).getTime() : null
+        }))
+    ];
+
+    // Find ALL latitude apexes (local maxima and minima)
+    const allApexes = [];
+    for (let i = 1; i < allPoints.length - 1; i++) {
+        const prev = allPoints[i - 1];
+        const curr = allPoints[i];
+        const next = allPoints[i + 1];
+
+        const lat_prev = prev.position[1];
+        const lat_curr = curr.position[1];
+        const lat_next = next.position[1];
+
+        // Check for local maximum (latitude increasing then decreasing)
+        const isMax = lat_curr > lat_prev && lat_curr > lat_next;
+        // Check for local minimum (latitude decreasing then increasing)
+        const isMin = lat_curr < lat_prev && lat_curr < lat_next;
+
+        if (isMax || isMin) {
+            const lon = curr.position[0];
+            const lat = curr.position[1];
+            const apexTime = curr.time || currentTimeMs;
+            const timeDelta = apexTime - currentTimeMs;
+
+            allApexes.push({
+                position: [lon, lat],
+                apexTime,
+                timeDelta,
+                type: isMax ? 'max' : 'min',
+                // Horizontal tick path at the apex latitude
+                path: [[lon - TICK_WIDTH_DEG / 2, lat], [lon + TICK_WIDTH_DEG / 2, lat]]
+            });
+        }
+    }
+
+    // Find nearest past and future apexes
+    let nearestPast = null;
+    let nearestFuture = null;
+
+    for (const apex of allApexes) {
+        if (apex.timeDelta <= 0) {
+            if (!nearestPast || apex.timeDelta > nearestPast.timeDelta) {
+                nearestPast = apex;
+            }
+        } else {
+            if (!nearestFuture || apex.timeDelta < nearestFuture.timeDelta) {
+                nearestFuture = apex;
+            }
+        }
+    }
+
+    // Process nearest past apex (fading out)
+    if (nearestPast && Math.abs(nearestPast.timeDelta) <= fadeOutMs) {
+        apexes.push({
+            path: nearestPast.path,
+            position: nearestPast.position,
+            type: nearestPast.type,
+            time: new Date(nearestPast.apexTime),
+            timeDelta: nearestPast.timeDelta / 60000,
+            isHistory: true
+        });
+    }
+
+    // Process nearest future apex (fading in)
+    if (nearestFuture && nearestFuture.timeDelta <= fadeInMs) {
+        apexes.push({
+            path: nearestFuture.path,
+            position: nearestFuture.position,
+            type: nearestFuture.type,
+            time: new Date(nearestFuture.apexTime),
+            timeDelta: nearestFuture.timeDelta / 60000,
+            isFuture: true
+        });
+    }
+
+    return apexes;
+}
+
+/**
  * Calculate glow proximity factor for a track segment
  * Returns a value 0-1 indicating how close the segment is to an equator crossing
  * Used to enhance ground track gradient near crossings
@@ -524,6 +634,7 @@ function createLayers() {
     const groundTrackData = [];
     const satellitePositionData = [];
     const equatorCrossingData = [];
+    const apexTickData = [];
     const GREY = [128, 128, 128];
 
     satellitesToRender.forEach((sat) => {
@@ -550,6 +661,31 @@ function createLayers() {
                 isHistory: crossing.isHistory,
                 isFuture: crossing.isFuture,
                 timeDelta: crossing.timeDelta
+            });
+        });
+
+        // Detect latitude apexes for tick marks
+        const apexes = detectLatitudeApexes(
+            trackResult.tailPoints || [],
+            trackResult.headPoints || [],
+            trackResult.currentPosition,
+            currentTime,
+            glowFadeInMinutes,
+            glowFadeOutMinutes
+        );
+
+        // Store apexes for tick mark layer
+        apexes.forEach(apex => {
+            apexTickData.push({
+                path: apex.path,
+                position: apex.position,
+                type: apex.type,
+                time: apex.time,
+                timeDelta: apex.timeDelta,
+                satellite: sat,
+                name: sat.name,
+                isHistory: apex.isHistory,
+                isFuture: apex.isFuture
             });
         });
 
@@ -991,6 +1127,37 @@ function createLayers() {
                         timeDelta: object.timeDelta?.toFixed(1) + 'min'
                     });
                 }
+            }
+        }),
+
+        // Latitude Apex Tick Marks - horizontal lines at max/min latitude points
+        new deck.PathLayer({
+            id: 'apex-tick-marks',
+            data: apexTickData,
+            visible: glowEnabled && apexTickData.length > 0,
+            getPath: d => d.path,
+            getColor: d => {
+                // Same fade logic as equator glow
+                const timeDelta = (currentTime - d.time) / 60000; // minutes
+                const fadeStart = glowFadeDuration * 0.3;
+                const fadeEnd = glowFadeDuration;
+
+                let alpha = 0;
+                if (timeDelta >= 0 && timeDelta < fadeStart) {
+                    alpha = 255;
+                } else if (timeDelta >= fadeStart && timeDelta < fadeEnd) {
+                    const fadeProgress = (timeDelta - fadeStart) / (fadeEnd - fadeStart);
+                    alpha = Math.round(255 * (1 - (1 - Math.cos(fadeProgress * Math.PI)) / 2));
+                }
+
+                return [255, 215, 0, alpha]; // Gold color matching equator glow
+            },
+            getWidth: 2,
+            widthUnits: 'pixels',
+            capRounded: true,
+            updateTriggers: {
+                visible: `${glowEnabled}-${apexTickData.length}`,
+                getColor: `${currentTime.getTime()}-${glowFadeDuration}`
             }
         })
     ];
