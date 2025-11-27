@@ -1834,37 +1834,50 @@ const TIME_HYPOTHESES = {
     },
     'H-TIME-10': {
         id: 'H-TIME-10',
-        name: 'Stop Button Halts Animation',
+        name: 'Play/Pause Toggle',
         category: 'time',
-        hypothesis: 'Stop button halts running animation without returning to real-time',
-        symptom: 'Stop button does nothing or returns to real-time',
-        prediction: 'Click stop during FF: animation stops, time holds, not real-time',
-        nullPrediction: 'Animation would continue or real-time would resume',
-        threshold: { animationStopped: true, notRealTime: true },
+        hypothesis: 'Play button toggles between real-time (‖) and paused (▶) states',
+        symptom: 'Play button does not toggle or shows wrong icon',
+        prediction: 'Button shows ‖ when playing real-time, ▶ when paused',
+        nullPrediction: 'Icon would not change on toggle',
+        threshold: { hasPlayBtn: true, iconChanges: true },
         causalChain: [
-            'SYMPTOM: Cannot pause animation at current time',
-            'PROXIMATE: Stop button not wired or calls wrong function',
-            'ROOT: handleStopButton() not implemented correctly',
-            'MECHANISM: Should call stopAnimation() only, not startRealTime()',
-            'FIX: Wire stop button to handleStopButton()'
+            'SYMPTOM: Play/Pause does not visually indicate state',
+            'PROXIMATE: Icon not updating on toggle',
+            'ROOT: updatePlayButtonState() not setting correct icon',
+            'MECHANISM: isRealTime determines icon: ‖ for playing, ▶ for paused',
+            'FIX: Update playIcon.textContent based on isRealTime'
         ],
         testFn: async () => {
-            // This test requires UI interaction - verify button exists and has handler
-            const stopBtn = document.getElementById('map-time-stop-btn');
+            // Verify play button exists (stop button was removed in TIME-031)
+            const playBtn = document.getElementById('map-time-play-btn');
+            const playIcon = document.getElementById('map-time-play-icon');
 
-            if (!stopBtn) {
-                return { passed: false, skipped: false, reason: 'Stop button not found in DOM' };
+            if (!playBtn || !playIcon) {
+                return { passed: false, reason: 'Play button or icon not found in DOM' };
             }
 
             // Check button is visible
-            const isVisible = stopBtn.offsetParent !== null;
+            const isVisible = playBtn.offsetParent !== null;
+
+            // Check icon is one of the expected values
+            const iconText = playIcon.textContent;
+            const validIcons = ['‖', '▶', '■'];  // Pause, Play, or legacy Stop
+            const hasValidIcon = validIcons.includes(iconText);
+
+            // Verify stop button was removed (TIME-031)
+            const stopBtn = document.getElementById('map-time-stop-btn');
+            const stopRemoved = stopBtn === null;
 
             return {
-                passed: isVisible,
+                passed: isVisible && hasValidIcon && stopRemoved,
                 details: {
-                    buttonExists: true,
+                    playButtonExists: true,
                     isVisible,
-                    note: 'Full animation test requires manual verification'
+                    currentIcon: iconText,
+                    hasValidIcon,
+                    stopButtonRemoved: stopRemoved,
+                    note: 'Play/Pause toggle: ‖ = real-time playing, ▶ = paused'
                 }
             };
         }

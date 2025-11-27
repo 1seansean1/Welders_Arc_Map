@@ -100,7 +100,7 @@ All tests follow a **hypothesis-driven** approach inspired by the scientific met
 | H-TIME-7 | Seek Points API | PENDING | addSeekPoint/getSeekPoints/removeSeekPoint work |
 | H-TIME-8 | Valid Playback Rates Enforced | PENDING | Invalid rates rejected with error |
 | H-TIME-9 | DateTime Inputs Sync with State | PENDING | Inputs update when presets applied (compact MM/DD format) |
-| H-TIME-10 | Stop Button Halts Animation | PENDING | Stop (■) button exists and is visible |
+| H-TIME-10 | Play/Pause Toggle | PENDING | Play button toggles ‖/▶, stop button removed |
 | H-TIME-11 | Compact Time Bar with Flatpickr | PENDING | Flatpickr replaces native datetime, compact layout |
 | H-TIME-12 | Ctrl+Wheel Jog Control | PENDING | Ctrl+wheel scrubs time, blocks map zoom |
 
