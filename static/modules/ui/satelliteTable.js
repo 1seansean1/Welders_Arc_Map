@@ -21,7 +21,7 @@ let updateMapCallback = null;
 
 export function renderSatelliteTable() {
     const tbody = document.querySelector('#satellite-table tbody');
-    if (\!tbody) return;
+    if (!tbody) return;
     tbody.innerHTML = '';
     const satellites = getSortedSatellites();
     satellites.forEach((sat, index) => {
@@ -73,7 +73,7 @@ function createSatelliteRow(sat, index) {
 
 function getSortedSatellites() {
     const sortState = satelliteState.getSortState();
-    if (\!sortState.column || \!sortState.direction) {
+    if (!sortState.column || !sortState.direction) {
         return satelliteState.getAllSatellites();
     }
     const sorted = satelliteState.getAllSatellites();
@@ -123,7 +123,7 @@ function updateColumnHeaderIndicators() {
     const labelMap = { 'noradId': 'NORAD', 'name': 'Name' };
     headers.forEach((header, index) => {
         const columnName = columnMap[index];
-        if (\!columnName) return;
+        if (!columnName) return;
         let text = labelMap[columnName];
         const sortState = satelliteState.getSortState();
         if (sortState.column === columnName) {
