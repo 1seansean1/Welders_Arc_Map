@@ -141,6 +141,7 @@
 | UI-014 | Button Highlight Consistency | P2 | XS | DONE | UI-002 |
 | UI-015 | Double-Click Panel Close | P2 | XS | DONE | UI-002 |
 | UI-016 | Table Column Alignment | P2 | XS | DONE | SEN-003, SAT-004 |
+| UI-017 | Table Height Consistency | P2 | XS | DONE | UI-002 |
 
 ### Logging System (LOG)
 
@@ -255,14 +256,14 @@
 | SAT | 17 | 15 | 0 | 1 | 1 |
 | SEN | 9 | 8 | 0 | 0 | 1 |
 | TIME | 22 | 22 | 0 | 0 | 0 |
-| UI | 16 | 14 | 0 | 2 | 0 |
+| UI | 17 | 15 | 0 | 2 | 0 |
 | LOG | 10 | 8 | 0 | 0 | 2 |
 | TEST | 15 | 13 | 0 | 1 | 0 |
 | BACK | 9 | 3 | 0 | 4 | 2 |
 | ARCH | 5 | 5 | 0 | 0 | 0 |
-| **TOTAL** | **116** | **101** | **0** | **8** | **6** |
+| **TOTAL** | **117** | **102** | **0** | **8** | **6** |
 
-**Completion Rate**: 87% (101/116 features complete)
+**Completion Rate**: 87% (102/117 features complete)
 
 ---
 
@@ -270,6 +271,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.3 | 2025-11-26 | Added UI-017: Table height consistency, H-UI-9 test |
 | 2.2 | 2025-11-26 | Added MAP-012: Fit Earth Button, TIME-022: Enhanced clock display, UI-014/015/016: Button/panel/table fixes |
 | 2.1 | 2025-11-26 | Added SAT-018: Latitude apex glow ticks |
 | 2.0 | 2025-11-26 | Added SAT-017: Anti-meridian wrapping, MAP-011: Equator line, TIME-021: Full-width bar, UI-013: Styled icons |

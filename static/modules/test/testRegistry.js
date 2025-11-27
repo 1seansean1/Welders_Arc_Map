@@ -774,6 +774,39 @@ const UI_HYPOTHESES = {
                 }
             };
         }
+    },
+    'H-UI-9': {
+        id: 'H-UI-9',
+        name: 'Control Panel Table Heights',
+        category: 'ui',
+        hypothesis: 'All control panel tables have consistent minimum height',
+        symptom: 'Tables appear different sizes when empty or with few rows',
+        prediction: 'All .sensor-table-wrapper elements have min-height >= 280px',
+        nullPrediction: 'Tables would have no minimum and shrink to content',
+        threshold: { minHeight: 280 },
+        causalChain: [
+            'SYMPTOM: Inconsistent table heights across panels',
+            'PROXIMATE: No min-height defined on table wrapper',
+            'ROOT: CSS only had max-height constraint',
+            'MECHANISM: Empty tables collapse to zero height',
+            'FIX: Add min-height: 280px to .sensor-table-wrapper'
+        ],
+        testFn: async () => {
+            const wrappers = document.querySelectorAll('.sensor-table-wrapper');
+            if (wrappers.length === 0) {
+                return { passed: false, details: { error: 'No .sensor-table-wrapper elements found' } };
+            }
+            const results = Array.from(wrappers).map((wrapper, idx) => {
+                const computed = window.getComputedStyle(wrapper);
+                const minHeight = parseFloat(computed.minHeight) || 0;
+                return { index: idx, minHeight: minHeight, meetsThreshold: minHeight >= 280 };
+            });
+            const allMeetThreshold = results.every(r => r.meetsThreshold);
+            return {
+                passed: allMeetThreshold,
+                details: { wrapperCount: wrappers.length, allMeetThreshold, results }
+            };
+        }
     }
 };
 
