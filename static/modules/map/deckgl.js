@@ -664,23 +664,24 @@ function createLayers() {
 
     // Create layers - always include all with 'visible' prop
     const layers = [
-        // Equator reference line
+        // Equator reference line - split into segments for proper rendering
         new deck.PathLayer({
             id: 'equator-line',
-            data: [{
-                path: [[-180, 0], [180, 0]],
-                name: 'Equator'
-            }],
+            data: [
+                { path: [[-180, 0], [-90, 0]] },
+                { path: [[-90, 0], [0, 0]] },
+                { path: [[0, 0], [90, 0]] },
+                { path: [[90, 0], [180, 0]] }
+            ],
             visible: true,
             coordinateSystem: deck.COORDINATE_SYSTEM.LNGLAT,
             wrapLongitude: true,
             pickable: false,
-            widthScale: 1,
             widthMinPixels: 2,
             widthMaxPixels: 2,
             getPath: d => d.path,
             getColor: [100, 120, 140, 150],  // Subtle blue-gray
-            getWidth: 1
+            getWidth: 2
         }),
 
         // FOV polygon layer
