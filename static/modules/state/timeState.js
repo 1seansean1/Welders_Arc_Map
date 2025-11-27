@@ -67,7 +67,11 @@ class TimeState {
             // Pending changes tracking
             hasPendingChanges: false,
             committedStartTime: null,
-            committedStopTime: null
+            committedStopTime: null,
+
+            // Seek points - named time bookmarks for navigation
+            // Future use: AOS/LOS events, conjunction times, user bookmarks
+            seekPoints: []
         };
 
         logger.log('Time State initialized', logger.CATEGORY.SYSTEM);
@@ -313,6 +317,165 @@ class TimeState {
         eventBus.emit('time:step:changed', {
             timeStepMinutes: minutes
         });
+    }
+
+    /**
+     * Valid playback rate multipliers
+     * @type {number[]}
+     */
+    static VALID_PLAYBACK_RATES = [0.5, 1, 2, 4, 8, 16, 60, 600];
+
+    /**
+     * Get playback rate multiplier
+     * @returns {number} Current playback rate (0.5x to 600x)
+     */
+    getPlaybackRate() {
+        return this._state.playbackSpeed;
+    }
+
+    /**
+     * Set playback rate multiplier
+     * @param {number} rate - Playback rate (0.5, 1, 2, 4, 8, 16, 60, 600)
+     */
+    setPlaybackRate(rate) {
+        if (!TimeState.VALID_PLAYBACK_RATES.includes(rate)) {
+            logger.log(`setPlaybackRate: must be one of ${TimeState.VALID_PLAYBACK_RATES.join(', ')}`, logger.CATEGORY.ERROR);
+            return;
+        }
+
+        this._state.playbackSpeed = rate;
+        logger.log(`Playback rate set: ${rate}x`, logger.CATEGORY.TIME);
+
+        eventBus.emit('time:playback:changed', {
+            playbackRate: rate
+        });
+    }
+
+    // ============================================
+    // SEEK POINTS (STUB - Future Feature)
+    // ============================================
+    // Seek points are named time bookmarks for quick navigation.
+    // Future use cases:
+    // - Satellite pass AOS/LOS (Acquisition/Loss of Signal) times
+    // - Conjunction/close approach events
+    // - User-defined analysis bookmarks
+    // - Analysis window start/end bounds
+    // - Ground station contact windows
+
+    /**
+     * Get all seek points sorted chronologically
+     * @returns {Array<{name: string, time: Date, type: string}>} Seek points
+     */
+    getSeekPoints() {
+        return this._state.seekPoints
+            .map(sp => ({ ...sp, time: new Date(sp.time) }))
+            .sort((a, b) => a.time.getTime() - b.time.getTime());
+    }
+
+    /**
+     * Add a seek point
+     * @param {string} name - Unique name for the seek point
+     * @param {Date} time - Time of the seek point
+     * @param {string} [type='user'] - Type: 'user', 'aos', 'los', 'conjunction', etc.
+     * @returns {boolean} True if added successfully
+     */
+    addSeekPoint(name, time, type = 'user') {
+        if (!name || typeof name !== 'string') {
+            logger.log('addSeekPoint: name required', logger.CATEGORY.ERROR);
+            return false;
+        }
+        if (!(time instanceof Date) || isNaN(time)) {
+            logger.log('addSeekPoint: valid date required', logger.CATEGORY.ERROR);
+            return false;
+        }
+
+        // Remove existing point with same name
+        this.removeSeekPoint(name);
+
+        this._state.seekPoints.push({
+            name,
+            time: new Date(time),
+            type
+        });
+
+        logger.log(`Seek point added: ${name} at ${time.toISOString()}`, logger.CATEGORY.TIME);
+        eventBus.emit('time:seekpoints:changed', { seekPoints: this.getSeekPoints() });
+        return true;
+    }
+
+    /**
+     * Remove a seek point by name
+     * @param {string} name - Name of seek point to remove
+     * @returns {boolean} True if removed
+     */
+    removeSeekPoint(name) {
+        const index = this._state.seekPoints.findIndex(sp => sp.name === name);
+        if (index !== -1) {
+            this._state.seekPoints.splice(index, 1);
+            logger.log(`Seek point removed: ${name}`, logger.CATEGORY.TIME);
+            eventBus.emit('time:seekpoints:changed', { seekPoints: this.getSeekPoints() });
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Clear all seek points
+     */
+    clearSeekPoints() {
+        this._state.seekPoints = [];
+        logger.log('All seek points cleared', logger.CATEGORY.TIME);
+        eventBus.emit('time:seekpoints:changed', { seekPoints: [] });
+    }
+
+    /**
+     * Seek to a named point
+     * @param {string} name - Name of seek point
+     * @returns {boolean} True if found and seeked
+     */
+    seekToPoint(name) {
+        const point = this._state.seekPoints.find(sp => sp.name === name);
+        if (point) {
+            this.setCurrentTime(new Date(point.time));
+            logger.log(`Seeked to: ${name}`, logger.CATEGORY.TIME);
+            return true;
+        }
+        logger.log(`Seek point not found: ${name}`, logger.CATEGORY.ERROR);
+        return false;
+    }
+
+    /**
+     * Seek to next point after current time
+     * @returns {boolean} True if found and seeked
+     */
+    seekNext() {
+        const currentMs = this._state.currentTime.getTime();
+        const points = this.getSeekPoints();
+        const next = points.find(sp => sp.time.getTime() > currentMs);
+        if (next) {
+            this.setCurrentTime(next.time);
+            logger.log(`Seeked to next: ${next.name}`, logger.CATEGORY.TIME);
+            return true;
+        }
+        logger.log('No seek points ahead', logger.CATEGORY.TIME);
+        return false;
+    }
+
+    /**
+     * Seek to previous point before current time
+     * @returns {boolean} True if found and seeked
+     */
+    seekPrevious() {
+        const currentMs = this._state.currentTime.getTime();
+        const points = this.getSeekPoints().reverse();
+        const prev = points.find(sp => sp.time.getTime() < currentMs);
+        if (prev) {
+            this.setCurrentTime(prev.time);
+            logger.log(`Seeked to previous: ${prev.name}`, logger.CATEGORY.TIME);
+            return true;
+        }
+        logger.log('No seek points behind', logger.CATEGORY.TIME);
+        return false;
     }
 
     /**

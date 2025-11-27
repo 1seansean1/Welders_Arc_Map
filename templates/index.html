@@ -2332,6 +2332,17 @@
                         <span id="map-time-play-icon">▶</span>
                     </button>
                     <button class="map-time-btn map-time-anim-btn" id="map-time-ffwd" title="Fast forward animation"><span class="anim-icon">»»</span></button>
+                    <!-- Speed multiplier selector -->
+                    <select class="map-time-step-select" id="map-time-speed-select" title="Playback speed multiplier">
+                        <option value="0.5">0.5x</option>
+                        <option value="1" selected>1x</option>
+                        <option value="2">2x</option>
+                        <option value="4">4x</option>
+                        <option value="8">8x</option>
+                        <option value="16">16x</option>
+                        <option value="60">60x</option>
+                        <option value="600">600x</option>
+                    </select>
                     <!-- Separator -->
                     <div class="map-time-separator"></div>
                     <!-- Step control group: Dropdown, Step buttons, Slider, Now -->
@@ -2349,6 +2360,15 @@
                     <input type="range" class="map-time-slider" id="map-time-slider" min="0" max="1000" value="1000" />
                     <button class="map-time-btn" id="map-time-step-forward" title="Step forward">&gt;</button>
                     <button class="map-time-btn map-time-now-btn" id="map-time-now-btn" title="Reset to now">Now</button>
+                    <!-- Time window presets -->
+                    <select class="map-time-step-select" id="map-time-preset-select" title="Quick time window presets">
+                        <option value="" disabled selected>Window</option>
+                        <option value="last-1h">Last 1h</option>
+                        <option value="last-6h">Last 6h</option>
+                        <option value="last-24h">Last 24h</option>
+                        <option value="next-6h">Next 6h</option>
+                        <option value="next-24h">Next 24h</option>
+                    </select>
                 </div>
             </div>
         </div>

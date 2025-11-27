@@ -122,10 +122,10 @@
 | TIME-020 | Time Bar Button Reorder | P2 | XS | DONE | TIME-015 |
 | TIME-021 | Full-Width Time Bar | P2 | XS | DONE | TIME-015 |
 | TIME-022 | Clock with Date + T+Offset | P2 | S | DONE | TIME-001 |
-| TIME-023 | Variable Playback Rate | P1 | S | PLAN | TIME-015 |
-| TIME-024 | Mouse Wheel Jog Control | P2 | S | PLAN | TIME-023 |
-| TIME-025 | Seek Points System (Stub) | P3 | XS | PLAN | TIME-001 |
-| TIME-026 | Time Window Presets | P1 | S | PLAN | TIME-001 |
+| TIME-023 | Variable Playback Rate | P1 | S | DONE | TIME-015 |
+| TIME-024 | Mouse Wheel Jog Control | P2 | S | DONE | TIME-023 |
+| TIME-025 | Seek Points System (Stub) | P3 | XS | DONE | TIME-001 |
+| TIME-026 | Time Window Presets | P1 | S | DONE | TIME-001 |
 | TIME-027 | Analysis Window Panel UI | P1 | M | PLAN | TIME-026 |
 | TIME-028 | Analysis Window Day Steppers | P1 | S | PLAN | TIME-027 |
 
@@ -263,15 +263,15 @@
 | MAP | 13 | 13 | 0 | 0 | 0 |
 | SAT | 18 | 16 | 0 | 1 | 1 |
 | SEN | 9 | 8 | 0 | 0 | 1 |
-| TIME | 28 | 22 | 0 | 6 | 0 |
+| TIME | 28 | 26 | 0 | 2 | 0 |
 | UI | 17 | 15 | 0 | 2 | 0 |
 | LOG | 10 | 8 | 0 | 0 | 2 |
 | TEST | 15 | 13 | 0 | 1 | 0 |
 | BACK | 9 | 3 | 0 | 4 | 2 |
 | ARCH | 5 | 5 | 0 | 0 | 0 |
-| **TOTAL** | **125** | **104** | **0** | **14** | **6** |
+| **TOTAL** | **125** | **108** | **0** | **10** | **6** |
 
-**Completion Rate**: 83% (104/125 features complete)
+**Completion Rate**: 86% (108/125 features complete)
 
 ---
 

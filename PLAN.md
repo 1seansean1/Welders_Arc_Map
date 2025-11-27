@@ -46,11 +46,11 @@
 - Expandable Analysis Window panel with start/stop pickers, calendar, day steppers
 
 **3. How will we know we're done?**
-- [ ] Speed selector visible, changes actual playback rate
-- [ ] Mouse wheel scrubs time when Ctrl+wheel over map
-- [ ] Hold < or > steps at selected rate × speed multiplier
-- [ ] Preset buttons set analysis window bounds instantly
-- [ ] Start/Stop pickers expand from time bar, work with calendar
+- [x] Speed selector visible, changes actual playback rate
+- [x] Mouse wheel scrubs time when Ctrl+wheel over map
+- [x] Hold < or > steps at selected rate × speed multiplier
+- [x] Preset buttons set analysis window bounds instantly
+- [ ] Start/Stop pickers expand from time bar, work with calendar (PAUSED)
 - [ ] All controls interact coherently (no conflicting states)
 - [ ] 6 hypothesis tests pass (H-TIME-5 through H-TIME-10)
 
@@ -239,6 +239,7 @@ Rollback: git checkout HEAD -- static/modules/ui/mapTimeBar.js
 #### PHASE 5: Analysis Window Panel (TIME-027, TIME-028)
 **Complexity**: M (1-3 days)
 **Dependencies**: Phase 4
+**⚠️ PAUSE POINT**: User requested to revisit design before implementing. Complete Phases 1-4 first, then discuss TIME-027/TIME-028 approach.
 
 ```
 STEP 5.1: Design Expandable Panel
