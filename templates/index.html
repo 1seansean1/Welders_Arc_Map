@@ -378,6 +378,14 @@
             border-color: var(--accent-blue-grey);
         }
 
+        /* Separator between button groups */
+        .map-time-separator {
+            width: 1px;
+            height: 20px;
+            background: var(--border-color);
+            margin: 0 4px;
+        }
+
         .map-time-step-select {
             background: var(--bg-secondary);
             border: 1px solid var(--border-color);
@@ -2191,11 +2199,15 @@
                 </button>
                 <!-- Map Time Bar (bottom of map) -->
                 <div id="map-time-bar" class="map-time-bar">
-                    <!-- Play/Stop button -->
+                    <!-- Animation control group: RW, Play/Stop, FF -->
+                    <button class="map-time-btn map-time-anim-btn" id="map-time-rewind" title="Rewind animation">⏪</button>
                     <button class="map-time-btn map-time-play-btn" id="map-time-play-btn" title="Play/Stop real-time">
                         <span id="map-time-play-icon">▶</span>
                     </button>
-                    <!-- Step size selector -->
+                    <button class="map-time-btn map-time-anim-btn" id="map-time-ffwd" title="Fast forward animation">⏩</button>
+                    <!-- Separator -->
+                    <div class="map-time-separator"></div>
+                    <!-- Step control group: Dropdown, Step buttons, Slider, Now -->
                     <select class="map-time-step-select" id="map-time-step-select" title="Step size">
                         <option value="0.0167">1s</option>
                         <option value="0.1667">10s</option>
@@ -2206,17 +2218,9 @@
                         <option value="30">30m</option>
                         <option value="60">1h</option>
                     </select>
-                    <!-- Rewind animation button -->
-                    <button class="map-time-btn map-time-anim-btn" id="map-time-rewind" title="Rewind animation">⏪</button>
-                    <!-- Step back button -->
                     <button class="map-time-btn" id="map-time-step-back" title="Step backward">&lt;</button>
-                    <!-- Time slider -->
                     <input type="range" class="map-time-slider" id="map-time-slider" min="0" max="1000" value="1000" />
-                    <!-- Step forward button -->
                     <button class="map-time-btn" id="map-time-step-forward" title="Step forward">&gt;</button>
-                    <!-- Fast forward animation button -->
-                    <button class="map-time-btn map-time-anim-btn" id="map-time-ffwd" title="Fast forward animation">⏩</button>
-                    <!-- Now button -->
                     <button class="map-time-btn map-time-now-btn" id="map-time-now-btn" title="Reset to now">Now</button>
                 </div>
             </div>

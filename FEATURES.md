@@ -112,6 +112,7 @@
 | TIME-017 | Sub-minute Time Steps | P2 | S | DONE | TIME-015 |
 | TIME-018 | Dual Clock Display (UTC + Sim) | P2 | S | DONE | TIME-001 |
 | TIME-019 | Rewind/Fast Forward Animation | P2 | S | DONE | TIME-015 |
+| TIME-020 | Time Bar Button Reorder | P2 | XS | DONE | TIME-015 |
 
 ### Control Panel (UI)
 
@@ -242,15 +243,15 @@
 | MAP | 10 | 10 | 0 | 0 | 0 |
 | SAT | 15 | 13 | 0 | 1 | 1 |
 | SEN | 9 | 8 | 0 | 0 | 1 |
-| TIME | 19 | 19 | 0 | 0 | 0 |
+| TIME | 20 | 20 | 0 | 0 | 0 |
 | UI | 12 | 10 | 0 | 2 | 0 |
 | LOG | 10 | 8 | 0 | 0 | 2 |
 | TEST | 15 | 13 | 0 | 1 | 0 |
 | BACK | 9 | 3 | 0 | 4 | 2 |
 | ARCH | 5 | 5 | 0 | 0 | 0 |
-| **TOTAL** | **104** | **89** | **0** | **8** | **6** |
+| **TOTAL** | **105** | **90** | **0** | **8** | **6** |
 
-**Completion Rate**: 86% (89/104 features complete)
+**Completion Rate**: 86% (90/105 features complete)
 
 ---
 
