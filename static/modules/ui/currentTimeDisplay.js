@@ -83,21 +83,19 @@ function isSimInSync() {
 }
 
 /**
- * Update the UTC time display (wall clock)
+ * Update both UTC and SIM displays simultaneously
+ * Uses a single timestamp to ensure perfect sync
  */
-function updateUtcDisplay() {
-    if (utcTimeElement) {
-        utcTimeElement.textContent = formatTimeCompact(new Date(), true);
-    }
-}
-
-/**
- * Update the simulation time display
- */
-function updateSimDisplay() {
+function updateTimeDisplay() {
+    const utcTime = new Date();  // Capture once for sync
     const simTime = timeState.getCurrentTime();
-    const utcTime = new Date();
 
+    // Update UTC display
+    if (utcTimeElement) {
+        utcTimeElement.textContent = formatTimeCompact(utcTime, true);
+    }
+
+    // Update SIM display
     if (simTimeElement) {
         const timeText = formatTimeCompact(simTime, true);
         const offsetMinutes = (simTime.getTime() - utcTime.getTime()) / 60000;
@@ -106,20 +104,15 @@ function updateSimDisplay() {
         simTimeElement.textContent = offsetText ? `${timeText} ${offsetText}` : timeText;
 
         // Add/remove sim-mode class based on sync status
-        if (isSimInSync()) {
+        const diffMs = Math.abs(simTime.getTime() - utcTime.getTime());
+        const isInSync = diffMs < 2000;
+
+        if (isInSync) {
             simTimeElement.classList.remove('sim-mode');
         } else {
             simTimeElement.classList.add('sim-mode');
         }
     }
-}
-
-/**
- * Update both time displays
- */
-function updateTimeDisplay() {
-    updateUtcDisplay();
-    updateSimDisplay();
 }
 
 /**
@@ -134,23 +127,23 @@ export function initializeCurrentTimeDisplay() {
     // Initial update
     updateTimeDisplay();
 
-    // Start UTC update interval (every second)
+    // Start unified update interval (every second) - updates both UTC and SIM together
     if (utcUpdateInterval) {
         clearInterval(utcUpdateInterval);
     }
-    utcUpdateInterval = setInterval(updateUtcDisplay, 1000);
+    utcUpdateInterval = setInterval(updateTimeDisplay, 1000);
 
-    // Subscribe to time changes for sim time
+    // Subscribe to time changes for immediate SIM updates
     eventBus.on('time:changed', () => {
-        updateSimDisplay();
+        updateTimeDisplay();
     });
 
     // Also update when time is applied
     eventBus.on('time:applied', () => {
-        updateSimDisplay();
+        updateTimeDisplay();
     });
 
-    logger.success('Time display initialized (UTC + Sim)', logger.CATEGORY.UI);
+    logger.success('Time display initialized (UTC + Sim synced)', logger.CATEGORY.UI);
 }
 
 // Auto-initialize when module loads

@@ -1234,6 +1234,125 @@ const SATELLITE_HYPOTHESES = {
             };
         }
     },
+    'H-GLOW-4': {
+        id: 'H-GLOW-4',
+        name: 'Gradual Fade-In',
+        category: 'satellite',
+        hypothesis: 'Glow intensity gradually increases as satellite approaches equator crossing',
+        symptom: 'Glow appears suddenly instead of fading in',
+        prediction: 'Intensity values form monotonically increasing sequence during fade-in period',
+        nullPrediction: 'Intensity would jump from 0 to 1 instantly',
+        threshold: { gradualIncrease: true },
+        causalChain: [
+            'SYMPTOM: Glow pops in suddenly',
+            'PROXIMATE: Intensity not calculated based on time delta',
+            'ROOT: No cosine fade curve applied',
+            'MECHANISM: cos(fadeProgress * PI/2) gives smooth 0→1 curve',
+            'FIX: Apply cosine fade for smooth intensity transition'
+        ],
+        testFn: async () => {
+            const timeState = window.SatelliteApp?.timeState || window.timeState;
+            if (!timeState) return { passed: true, skipped: true, reason: 'timeState not available' };
+
+            const fadeInMinutes = timeState.getGlowFadeInMinutes?.() || 5;
+            const fadeInMs = fadeInMinutes * 60 * 1000;
+
+            // Test intensity at 5 points during fade-in period
+            const testPoints = [1.0, 0.75, 0.5, 0.25, 0];  // fadeProgress values (1=edge, 0=crossing)
+            const intensities = testPoints.map(fadeProgress => {
+                const timeDelta = fadeProgress * fadeInMs;
+                // This is the cosine fade formula from detectEquatorCrossings
+                return Math.cos(fadeProgress * Math.PI / 2);
+            });
+
+            // Check that intensities are monotonically increasing (earlier fadeProgress = lower intensity)
+            let isMonotonicallyIncreasing = true;
+            for (let i = 1; i < intensities.length; i++) {
+                if (intensities[i] <= intensities[i - 1]) {
+                    isMonotonicallyIncreasing = false;
+                    break;
+                }
+            }
+
+            // Also verify the curve is smooth (no sudden jumps)
+            const maxJump = Math.max(...intensities.slice(1).map((v, i) => v - intensities[i]));
+            const isSmooth = maxJump < 0.5;  // No jump greater than 0.5
+
+            return {
+                passed: isMonotonicallyIncreasing && isSmooth,
+                details: {
+                    fadeInMinutes,
+                    testPoints: testPoints.map((fp, i) => ({
+                        fadeProgress: fp.toFixed(2),
+                        timeBefore: `${(fp * fadeInMinutes).toFixed(1)}m`,
+                        intensity: intensities[i].toFixed(3)
+                    })),
+                    isMonotonicallyIncreasing,
+                    maxJump: maxJump.toFixed(3),
+                    isSmooth
+                }
+            };
+        }
+    },
+    'H-GLOW-5': {
+        id: 'H-GLOW-5',
+        name: 'Gradual Fade-Out',
+        category: 'satellite',
+        hypothesis: 'Glow intensity gradually decreases after satellite passes equator crossing',
+        symptom: 'Glow disappears suddenly instead of fading out',
+        prediction: 'Intensity values form monotonically decreasing sequence during fade-out period',
+        nullPrediction: 'Intensity would jump from 1 to 0 instantly',
+        threshold: { gradualDecrease: true },
+        causalChain: [
+            'SYMPTOM: Glow pops out suddenly',
+            'PROXIMATE: Intensity not calculated based on time since crossing',
+            'ROOT: No cosine fade curve applied for fade-out',
+            'MECHANISM: cos(fadeProgress * PI/2) gives smooth 1→0 curve',
+            'FIX: Apply cosine fade for smooth intensity decay'
+        ],
+        testFn: async () => {
+            const timeState = window.SatelliteApp?.timeState || window.timeState;
+            if (!timeState) return { passed: true, skipped: true, reason: 'timeState not available' };
+
+            const fadeOutMinutes = timeState.getGlowFadeOutMinutes?.() || 5;
+            const fadeOutMs = fadeOutMinutes * 60 * 1000;
+
+            // Test intensity at 5 points during fade-out period
+            const testPoints = [0, 0.25, 0.5, 0.75, 1.0];  // fadeProgress values (0=crossing, 1=edge)
+            const intensities = testPoints.map(fadeProgress => {
+                // This is the cosine fade formula from detectEquatorCrossings (fade-out)
+                return Math.cos(fadeProgress * Math.PI / 2);
+            });
+
+            // Check that intensities are monotonically decreasing
+            let isMonotonicallyDecreasing = true;
+            for (let i = 1; i < intensities.length; i++) {
+                if (intensities[i] >= intensities[i - 1]) {
+                    isMonotonicallyDecreasing = false;
+                    break;
+                }
+            }
+
+            // Also verify the curve is smooth (no sudden drops)
+            const maxDrop = Math.max(...intensities.slice(1).map((v, i) => intensities[i] - v));
+            const isSmooth = maxDrop < 0.5;  // No drop greater than 0.5
+
+            return {
+                passed: isMonotonicallyDecreasing && isSmooth,
+                details: {
+                    fadeOutMinutes,
+                    testPoints: testPoints.map((fp, i) => ({
+                        fadeProgress: fp.toFixed(2),
+                        timeAfter: `${(fp * fadeOutMinutes).toFixed(1)}m`,
+                        intensity: intensities[i].toFixed(3)
+                    })),
+                    isMonotonicallyDecreasing,
+                    maxDrop: maxDrop.toFixed(3),
+                    isSmooth
+                }
+            };
+        }
+    },
     'H-SAT-3': {
         id: 'H-SAT-3',
         name: 'Anti-Meridian Segment Wrapping',

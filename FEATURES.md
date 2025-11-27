@@ -1,8 +1,8 @@
 # WA_map Feature Registry
 
 > **Document Type**: FEATURES
-> **Version**: 1.0
-> **Last Updated**: 2025-11-26
+> **Version**: 3.0
+> **Last Updated**: 2025-11-27
 > **Maintainer**: AI Governor System
 
 ---
@@ -57,6 +57,8 @@
 | MAP-011 | Equator Reference Line | P2 | XS | DONE | MAP-003 |
 | MAP-012 | Fit Earth Button | P2 | S | DONE | MAP-001, MAP-005 |
 | MAP-013 | Fit View Button | P2 | XS | DONE | MAP-001 |
+| MAP-014 | Remove + from Fit Button | P2 | XS | DONE | MAP-013 |
+| MAP-015 | Clock Overlay Styling | P2 | XS | DONE | TIME-018 |
 
 ### Satellite Management (SAT)
 
@@ -82,6 +84,7 @@
 | SAT-018 | Latitude Apex Glow Ticks | P2 | M | DONE | SAT-014, SAT-015 |
 | SAT-019 | Watch List Color Assignment | P2 | M | DONE | SAT-007, MAP-003 |
 | SAT-020 | User Lists Feature | P2 | M | DONE | SAT-001, LIST-001 |
+| SAT-021 | Aggressive Tail Gradient Taper | P2 | XS | DONE | SAT-012 |
 
 ### User Lists (LIST)
 
@@ -141,6 +144,8 @@
 | TIME-027 | Inline Start/Stop DateTime Pickers | P1 | S | DONE | TIME-026 |
 | TIME-028 | Time Bar Reorder + Stop Button | P1 | S | DONE | TIME-027 |
 | TIME-029 | Compact Time Bar with Flatpickr | P1 | M | DONE | TIME-027, TIME-003 |
+| TIME-030 | Map Time Bar Calendar Popups | P1 | S | DONE | TIME-029, TIME-003 |
+| TIME-031 | Play/Pause Toggle (Remove Stop) | P2 | XS | DONE | TIME-016 |
 
 ### Control Panel (UI)
 
@@ -163,6 +168,8 @@
 | UI-015 | Double-Click Panel Close | P2 | XS | DONE | UI-002 |
 | UI-016 | Table Column Alignment | P2 | XS | DONE | SEN-003, SAT-004 |
 | UI-017 | Table Height Consistency | P2 | XS | DONE | UI-002 |
+| UI-018 | Brighter Time Bar Borders | P2 | XS | DONE | TIME-015 |
+| UI-019 | Ctrl+Wheel Jog Hint Text | P2 | XS | DONE | TIME-024 |
 
 ### Logging System (LOG)
 
@@ -273,19 +280,19 @@
 
 | Category | Total | DONE | WIP | PLAN | IDEA |
 |----------|-------|------|-----|------|------|
-| MAP | 13 | 13 | 0 | 0 | 0 |
-| SAT | 19 | 17 | 0 | 1 | 1 |
+| MAP | 15 | 15 | 0 | 0 | 0 |
+| SAT | 21 | 19 | 0 | 1 | 1 |
 | SEN | 9 | 8 | 0 | 0 | 1 |
-| TIME | 29 | 29 | 0 | 0 | 0 |
-| UI | 17 | 15 | 0 | 2 | 0 |
+| TIME | 31 | 31 | 0 | 0 | 0 |
+| UI | 19 | 17 | 0 | 2 | 0 |
 | LOG | 10 | 8 | 0 | 0 | 2 |
 | TEST | 15 | 13 | 0 | 1 | 0 |
 | BACK | 9 | 3 | 0 | 4 | 2 |
 | ARCH | 5 | 5 | 0 | 0 | 0 |
 | LIST | 6 | 6 | 0 | 0 | 0 |
-| **TOTAL** | **133** | **118** | **0** | **8** | **6** |
+| **TOTAL** | **140** | **125** | **0** | **8** | **6** |
 
-**Completion Rate**: 89% (118/133 features complete)
+**Completion Rate**: 89% (125/140 features complete)
 
 ---
 
@@ -293,6 +300,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 3.0 | 2025-11-27 | MAP polish: Fit button fix (maximized), clock overlay styling, aggressive tail gradient, Play/Pause toggle, brighter borders, jog hint, calendar popups, UTC/SIM sync |
 | 2.9 | 2025-11-27 | LIST-001 to LIST-006 DONE: User Lists feature with CRUD, visibility, localStorage |
 | 2.8 | 2025-11-27 | TIME-029 DONE: Compact time bar redesign with Flatpickr, responsive groups |
 | 2.7 | 2025-11-27 | TIME-027/TIME-028 DONE: Inline start/stop datetime pickers, time bar reorder, stop button |

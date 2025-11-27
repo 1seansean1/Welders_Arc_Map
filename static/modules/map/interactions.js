@@ -505,6 +505,23 @@ export function initializeFitEarthButton() {
             L.latLng(85.051, 180)     // NE corner (Mercator limit)
         );
 
+        // Check if map is maximized - if so, skip grid resize
+        const isMaximized = mainContainer.classList.contains('maximized');
+
+        if (isMaximized) {
+            // In maximized mode, just fit bounds without grid resize
+            map.invalidateSize({ animate: false });
+            resizeDeckCanvas();
+            map.fitBounds(EARTH_BOUNDS, {
+                animate: true,
+                duration: 0.5,
+                padding: [0, 0],
+                maxZoom: 2
+            });
+            logger.diagnostic('Fit to Earth (maximized mode)', logger.CATEGORY.MAP);
+            return;
+        }
+
         // Full Web Mercator is 1:1 aspect ratio
         const MERCATOR_ASPECT_RATIO = 1.0;
 

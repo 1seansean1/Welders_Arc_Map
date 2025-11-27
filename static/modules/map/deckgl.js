@@ -728,9 +728,10 @@ function createLayers() {
                 const wrappedSegments = wrapAntiMeridianSegment(startPoint.position, endPoint.position);
 
                 // Calculate opacity based on progress (older = more transparent)
+                // Use power curve (^1.8) for more aggressive taper at tail end
                 const avgProgress = (startPoint.progress + endPoint.progress) / 2;
                 const avgLat = (startPoint.position[1] + endPoint.position[1]) / 2;
-                const alpha = Math.floor(avgProgress * 200 + 55); // Range: 55-255
+                const alpha = Math.floor(Math.pow(avgProgress, 1.8) * 200 + 55); // Range: 55-255 with aggressive taper
 
                 // Calculate glow proximity for this segment
                 const glowProximity = glowEnabled ?

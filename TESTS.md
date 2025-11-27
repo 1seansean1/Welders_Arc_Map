@@ -1,7 +1,7 @@
 # WA_map Test Documentation
 
 > **Document Type**: TESTS
-> **Version**: 1.5
+> **Version**: 1.6
 > **Last Updated**: 2025-11-27
 > **Maintainer**: AI Governor System
 
@@ -27,9 +27,10 @@ All tests follow a **hypothesis-driven** approach inspired by the scientific met
 | Event | H-EVENT-* | 2 | Event bus functionality |
 | UI | H-UI-* | 3 | User interface components |
 | Validation | H-VALID-* | 2 | Input validation |
+| Satellite | H-SAT-*, H-GLOW-* | 7 | Satellite rendering and glow effects |
 | Time | H-TIME-* | 8 | Time control functionality |
 | List | H-LIST-* | 4 | User list functionality |
-| **Total** | | **29** | |
+| **Total** | | **36** | |
 
 ---
 
@@ -76,6 +77,18 @@ All tests follow a **hypothesis-driven** approach inspired by the scientific met
 |----|------|--------|-------------|
 | H-VALID-1 | Coordinate Bounds | PASS | Lat >90 or <-90 rejected |
 | H-VALID-2 | TLE Checksum | PASS | Invalid checksum rejected |
+
+### Satellite Tests (H-SAT-*, H-GLOW-*)
+
+| ID | Name | Status | Description |
+|----|------|--------|-------------|
+| H-SAT-1 | Satellite Selection | PASS | Selected sats appear on map |
+| H-SAT-3 | Anti-Meridian Wrapping | PASS | Tracks wrap at date line |
+| H-GLOW-1 | Equator Crossing Detection | PASS | Crossings detected when lat changes sign |
+| H-GLOW-2 | Glow Fade Timing | PASS | Intensity = 0 beyond fade window |
+| H-GLOW-3 | Glow Enable Toggle | PASS | setGlowEnabled toggles correctly |
+| H-GLOW-4 | Gradual Fade-In | PENDING | Intensity monotonically increases approaching crossing |
+| H-GLOW-5 | Gradual Fade-Out | PENDING | Intensity monotonically decreases after crossing |
 
 ### Time Tests (H-TIME-*)
 

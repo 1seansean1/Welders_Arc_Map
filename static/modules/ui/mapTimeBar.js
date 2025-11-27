@@ -35,7 +35,7 @@ const rewindBtn = document.getElementById('map-time-rewind');
 const stepBackBtn = document.getElementById('map-time-step-back');
 const stepForwardBtn = document.getElementById('map-time-step-forward');
 const ffwdBtn = document.getElementById('map-time-ffwd');
-const stopBtn = document.getElementById('map-time-stop-btn');
+// Stop button removed - play/pause toggle is sufficient
 const timeSlider = document.getElementById('map-time-slider');
 const nowBtn = document.getElementById('map-time-now-btn');
 const startInput = document.getElementById('map-time-start');
@@ -121,21 +121,23 @@ function toggleRealTime() {
 }
 
 /**
- * Update the play/stop button appearance based on mode
+ * Update the play/pause button appearance based on mode
+ * Real-time mode: show pause icon (‖) - click to freeze time
+ * Paused/Simulation mode: show play icon (▶) - click to resume real-time
  */
 function updatePlayButtonState() {
     if (!playBtn || !playIcon) return;
 
     if (isRealTime) {
-        // Real-time mode: show play icon, normal styling
-        playIcon.textContent = '▶';
+        // Real-time mode: show pause icon (time is advancing)
+        playIcon.textContent = '‖';
         playBtn.classList.remove('simulation-mode');
-        playBtn.title = 'Playing real-time (click to pause)';
+        playBtn.title = 'Real-time playing (click to pause)';
     } else {
-        // Simulation mode: show stop icon, orange styling
-        playIcon.textContent = '■';
+        // Simulation/paused mode: show play icon (time is frozen)
+        playIcon.textContent = '▶';
         playBtn.classList.add('simulation-mode');
-        playBtn.title = 'Simulation mode (click to return to real-time)';
+        playBtn.title = 'Paused (click to resume real-time)';
     }
 }
 
@@ -261,7 +263,6 @@ function startAnimation(direction) {
 
     // Update button appearance
     updateAnimationButtonState();
-    updateStopButtonState();
 
     // Perform initial step
     stepTime(direction);
@@ -293,7 +294,6 @@ function stopAnimation() {
     }
     animationDirection = 0;
     updateAnimationButtonState();
-    updateStopButtonState();
 }
 
 /**
@@ -516,9 +516,17 @@ function initializeFlatpickr() {
         time_24hr: true,
         theme: 'dark',
         allowInput: false,  // Read-only input, use picker only
+        clickOpens: true,   // Ensure clicking opens calendar
         disableMobile: true,  // Use Flatpickr on mobile too
         position: 'above',  // Open above the input (time bar is at bottom)
-        appendTo: container,  // Append to time bar container to prevent z-index issues
+        static: false,      // Use default body append (better z-index behavior)
+        onOpen: () => {
+            // Ensure calendar is visible above time bar
+            const calendars = document.querySelectorAll('.flatpickr-calendar');
+            calendars.forEach(cal => {
+                cal.style.zIndex = '10000';
+            });
+        },
         onClose: () => {
             // Blur the input to prevent keyboard on mobile
             document.activeElement?.blur();
@@ -667,34 +675,7 @@ function updateDateTimeInputs() {
     }
 }
 
-// ============================================
-// STOP BUTTON
-// ============================================
-
-/**
- * Stop any running animation (does not return to real-time)
- */
-function handleStopButton() {
-    if (animationDirection !== 0) {
-        stopAnimation();
-        logger.info('Animation stopped', logger.CATEGORY.TIME);
-    }
-}
-
-/**
- * Update stop button visual state
- */
-function updateStopButtonState() {
-    if (stopBtn) {
-        if (animationDirection !== 0) {
-            stopBtn.classList.add('active');
-            stopBtn.disabled = false;
-        } else {
-            stopBtn.classList.remove('active');
-            // Don't disable - user might want to click it anyway
-        }
-    }
-}
+// Stop button removed - play/pause toggle is sufficient for user workflow
 
 // ============================================
 // EVENT HANDLERS
@@ -847,14 +828,6 @@ function initializeEventHandlers() {
         });
     }
 
-    // Stop animation button
-    if (stopBtn) {
-        stopBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            handleStopButton();
-        });
-    }
-
     // Note: datetime inputs use Flatpickr onChange handlers (see initializeFlatpickr)
 
     // Listen for time changes to keep slider in sync
@@ -881,7 +854,6 @@ export function initializeMapTimeBar() {
     initializeFlatpickr();  // Initialize Flatpickr datetime pickers
     updatePlayButtonState();
     updateDateTimeInputs();
-    updateStopButtonState();
 
     // Start in real-time mode
     startRealTime();

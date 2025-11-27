@@ -263,25 +263,25 @@
             color: #9dd4ff;
         }
 
-        /* Fit View button - just fit (below fit earth) */
+        /* Fit View button - just fit (below fit earth) - works in maximized mode */
         #map-fit-view-btn {
             position: absolute;
-            top: 130px;
+            top: 124px;
             right: 10px;
-            width: 30px;
-            height: 30px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
+            width: 24px;
+            height: 24px;
+            background: #1a1a1a;
+            border: 1px solid #333333;
+            border-radius: 3px;
             cursor: pointer;
             z-index: 1000;
-            color: var(--text-secondary);
-            font-size: 11px;
+            color: #f5f5f5;
+            font-size: 12px;
             font-weight: bold;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s ease;
+            transition: background 0.2s, color 0.2s;
         }
 
         #map-fit-view-btn:hover {
@@ -300,45 +300,44 @@
         }
 
         /* ============================================
-           CURRENT TIME DISPLAY
+           CURRENT TIME DISPLAY - Direct overlay on map
            ============================================ */
 
         .current-time-display {
             position: absolute;
-            top: 0;
-            left: 0;
-            background: rgba(10, 10, 10, 0.9);
-            border: 1px solid #333333;
-            border-top: none;
-            border-left: none;
-            border-radius: 0 0 4px 0;
-            padding: 4px 10px;
+            top: 4px;
+            left: 4px;
+            background: transparent;
+            border: none;
+            padding: 0;
             z-index: 1000;
             display: flex;
             flex-direction: column;
-            gap: 1px;
-            min-width: 180px;  /* Wider for date + offset */
+            gap: 0;
+            pointer-events: none;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.7);
         }
 
         .time-row {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 4px;
         }
 
         .time-label {
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 600;
             color: var(--text-muted);
             text-transform: uppercase;
-            width: 24px;
+            width: 22px;
+            font-family: var(--font-sans);
         }
 
         .time-value {
-            font-size: 12px;
+            font-size: 10px;
             font-weight: 500;
-            color: var(--accent-blue-grey);
-            font-family: var(--font-mono);
+            color: var(--text-secondary);
+            font-family: var(--font-sans);
         }
 
         .time-value.sim-mode {
@@ -389,7 +388,7 @@
         /* Compact buttons */
         .mtb-btn {
             background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
+            border: 1px solid #555555;
             border-radius: 3px;
             color: var(--text-secondary);
             font-size: 9px;
@@ -2442,7 +2441,7 @@
                 </button>
                 <!-- Fit View button (just fit, works when maximized) -->
                 <button id="map-fit-view-btn" title="Fit map to Earth bounds">
-                    <span style="font-size: 14px;">+</span>
+                    <span style="font-size: 11px;">⬚</span>
                 </button>
                 <!-- Map Time Bar (bottom of map) - Compact Responsive Design -->
                 <div id="map-time-bar" class="map-time-bar">
@@ -2461,10 +2460,9 @@
                     <!-- Group 2: Transport Controls -->
                     <div class="mtb-group mtb-transport-group">
                         <button class="mtb-btn mtb-anim" id="map-time-rewind" title="Rewind">◀◀</button>
-                        <button class="mtb-btn mtb-play" id="map-time-play-btn" title="Play/Pause">
+                        <button class="mtb-btn mtb-play" id="map-time-play-btn" title="Play/Pause real-time">
                             <span id="map-time-play-icon">▶</span>
                         </button>
-                        <button class="mtb-btn mtb-stop" id="map-time-stop-btn" title="Stop">■</button>
                         <button class="mtb-btn mtb-anim" id="map-time-ffwd" title="Fast Forward">▶▶</button>
                     </div>
                     <!-- Group 3: Speed/Step -->
@@ -2492,6 +2490,8 @@
                         <button class="mtb-btn mtb-step-btn" id="map-time-step-forward" title="Step forward">›</button>
                         <button class="mtb-btn mtb-now" id="map-time-now-btn" title="Now">⦿</button>
                     </div>
+                    <!-- Ctrl+wheel hint -->
+                    <span class="mtb-hint" style="font-size: 8px; color: #666; margin-left: 4px; white-space: nowrap;">Ctrl+⌽ jog</span>
                 </div>
             </div>
         </div>
