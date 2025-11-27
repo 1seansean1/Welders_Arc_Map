@@ -8,8 +8,9 @@
  * - logger: Diagnostic logging
  * - sensorState: Sensor data for rendering
  * - satelliteState: Satellite data for rendering
+ * - eventDetector: Generalized proximity-based event detection (equator crossings, apexes)
  * - calculateFOVCircle: FOV geometry calculations
- * - calculateGroundTrack: Satellite propagation
+ * - calculateGroundTrack: Satellite propagation (for display track only)
  * - deck (global): Deck.gl library
  * - DeckGlLeaflet (global): deck.gl-leaflet integration (note lowercase 'l' in 'Gl')
  *
@@ -17,6 +18,8 @@
  * - LeafletLayer handles all synchronization automatically
  * - Single integration point via map.addLayer()
  * - No manual canvas positioning or resize handling needed
+ * - Event detection (crossings, apexes) uses INDEPENDENT propagation based on
+ *   fade parameters, decoupled from display track length (see eventDetector.js)
  */
 
 import logger from '../utils/logger.js';
@@ -27,6 +30,7 @@ import timeState from '../state/timeState.js';
 import listState from '../state/listState.js';
 import { calculateFOVCircle } from '../utils/geometry.js';
 import { calculateGroundTrack } from '../data/propagation.js';
+import eventDetector from '../events/eventDetector.js';
 
 // Store reference to the LeafletLayer instance
 let deckLayer = null;
@@ -239,273 +243,6 @@ function createChevronAtlas() {
 }
 
 /**
- * Detect the NEAREST equator crossing relative to chevron (current position)
- * Only returns crossings within fade range of the chevron's current time
- *
- * @param {Array} tailPoints - Tail track points (with timestamp property)
- * @param {Array} headPoints - Head track points (with timestamp property)
- * @param {Object} currentPosition - Current satellite position (chevron)
- * @param {Date} currentTime - Current simulation time
- * @param {number} fadeInMinutes - Minutes before crossing to start fade in
- * @param {number} fadeOutMinutes - Minutes after crossing to fade out
- * @returns {Object} Single crossing data with intensity based on chevron proximity
- */
-function detectEquatorCrossings(tailPoints, headPoints, currentPosition, currentTime, fadeInMinutes = 5, fadeOutMinutes = 5) {
-    const crossings = [];
-    const currentTimeMs = currentTime ? currentTime.getTime() : Date.now();
-    const fadeInMs = fadeInMinutes * 60 * 1000;
-    const fadeOutMs = fadeOutMinutes * 60 * 1000;
-    const maxRangeMs = Math.max(fadeInMs, fadeOutMs);
-
-    // Build array with all points including timestamps
-    const allPoints = [
-        ...tailPoints.map((p, i) => ({
-            ...p,
-            isHistory: true,
-            index: i,
-            time: p.timestamp ? new Date(p.timestamp).getTime() : null
-        })),
-        ...(currentPosition ? [{
-            position: [currentPosition.lon, currentPosition.lat],
-            progress: 1,
-            isHistory: false,
-            isCurrent: true,
-            time: currentTimeMs
-        }] : []),
-        ...headPoints.map((p, i) => ({
-            ...p,
-            isHistory: false,
-            index: i,
-            time: p.timestamp ? new Date(p.timestamp).getTime() : null
-        }))
-    ];
-
-    // Find ALL equator crossings first
-    const allCrossings = [];
-    for (let i = 0; i < allPoints.length - 1; i++) {
-        const current = allPoints[i];
-        const next = allPoints[i + 1];
-
-        const lat1 = current.position[1];
-        const lat2 = next.position[1];
-
-        if ((lat1 >= 0 && lat2 < 0) || (lat1 < 0 && lat2 >= 0)) {
-            const t = Math.abs(lat1) / (Math.abs(lat1) + Math.abs(lat2));
-            const crossingLon = current.position[0] + t * (next.position[0] - current.position[0]);
-
-            let crossingTime = currentTimeMs;
-            if (current.time && next.time) {
-                crossingTime = current.time + t * (next.time - current.time);
-            }
-
-            const direction = lat2 > lat1 ? 'north' : 'south';
-            const timeDelta = crossingTime - currentTimeMs;
-
-            allCrossings.push({
-                position: [crossingLon, 0],
-                crossingTime,
-                timeDelta,
-                direction
-            });
-        }
-    }
-
-    // Find the NEAREST crossing to current time (chevron position)
-    // We want at most one past and one future crossing
-    let nearestPast = null;
-    let nearestFuture = null;
-
-    for (const crossing of allCrossings) {
-        if (crossing.timeDelta <= 0) {
-            // Past crossing
-            if (!nearestPast || crossing.timeDelta > nearestPast.timeDelta) {
-                nearestPast = crossing;
-            }
-        } else {
-            // Future crossing
-            if (!nearestFuture || crossing.timeDelta < nearestFuture.timeDelta) {
-                nearestFuture = crossing;
-            }
-        }
-    }
-
-    // Process nearest past crossing (fading out)
-    if (nearestPast && Math.abs(nearestPast.timeDelta) <= fadeOutMs) {
-        const absTimeDelta = Math.abs(nearestPast.timeDelta);
-        const fadeProgress = absTimeDelta / fadeOutMs;
-        // Smooth cosine fade: 1 at crossing, 0 at edge
-        const intensity = Math.cos(fadeProgress * Math.PI / 2);
-
-        if (intensity > 0) {
-            crossings.push({
-                position: nearestPast.position,
-                intensity: Math.max(0, Math.min(1, intensity)),
-                direction: nearestPast.direction,
-                isHistory: true,
-                isFuture: false,
-                timeDelta: nearestPast.timeDelta / 60000,
-                crossingTimeMs: nearestPast.crossingTime
-            });
-        }
-    }
-
-    // Process nearest future crossing (fading in)
-    if (nearestFuture && nearestFuture.timeDelta <= fadeInMs) {
-        const fadeProgress = nearestFuture.timeDelta / fadeInMs;
-        // Smooth cosine fade: 0 at edge, 1 at crossing
-        const intensity = Math.cos(fadeProgress * Math.PI / 2);
-
-        if (intensity > 0) {
-            crossings.push({
-                position: nearestFuture.position,
-                intensity: Math.max(0, Math.min(1, intensity)),
-                direction: nearestFuture.direction,
-                isHistory: false,
-                isFuture: true,
-                timeDelta: nearestFuture.timeDelta / 60000,
-                crossingTimeMs: nearestFuture.crossingTime
-            });
-        }
-    }
-
-    return crossings;
-}
-
-/**
- * Detect latitude apex points (maxima and minima) in the ground track
- * Returns apex data with position and time for glow tick marks
- */
-function detectLatitudeApexes(tailPoints, headPoints, currentPosition, currentTime, fadeInMinutes = 5, fadeOutMinutes = 5) {
-    const apexes = [];
-    const currentTimeMs = currentTime ? currentTime.getTime() : Date.now();
-    const fadeInMs = fadeInMinutes * 60 * 1000;
-    const fadeOutMs = fadeOutMinutes * 60 * 1000;
-    const TICK_WIDTH_DEG = 1.5; // Horizontal tick width in degrees longitude
-
-    // Build array with all points including timestamps
-    const allPoints = [
-        ...tailPoints.map((p, i) => ({
-            ...p,
-            isHistory: true,
-            index: i,
-            time: p.timestamp ? new Date(p.timestamp).getTime() : null
-        })),
-        ...(currentPosition ? [{
-            position: [currentPosition.lon, currentPosition.lat],
-            progress: 1,
-            isHistory: false,
-            isCurrent: true,
-            time: currentTimeMs
-        }] : []),
-        ...headPoints.map((p, i) => ({
-            ...p,
-            isHistory: false,
-            index: i,
-            time: p.timestamp ? new Date(p.timestamp).getTime() : null
-        }))
-    ];
-
-    // Find ALL latitude apexes (local maxima and minima)
-    const allApexes = [];
-    for (let i = 1; i < allPoints.length - 1; i++) {
-        const prev = allPoints[i - 1];
-        const curr = allPoints[i];
-        const next = allPoints[i + 1];
-
-        const lat_prev = prev.position[1];
-        const lat_curr = curr.position[1];
-        const lat_next = next.position[1];
-
-        // Check for local maximum (latitude increasing then decreasing)
-        const isMax = lat_curr > lat_prev && lat_curr > lat_next;
-        // Check for local minimum (latitude decreasing then increasing)
-        const isMin = lat_curr < lat_prev && lat_curr < lat_next;
-
-        if (isMax || isMin) {
-            const lon = curr.position[0];
-            const lat = curr.position[1];
-            const apexTime = curr.time || currentTimeMs;
-            const timeDelta = apexTime - currentTimeMs;
-
-            allApexes.push({
-                position: [lon, lat],
-                apexTime,
-                timeDelta,
-                type: isMax ? 'max' : 'min',
-                // Horizontal tick path at the apex latitude
-                path: [[lon - TICK_WIDTH_DEG / 2, lat], [lon + TICK_WIDTH_DEG / 2, lat]]
-            });
-        }
-    }
-
-    // Find nearest past and future apexes
-    let nearestPast = null;
-    let nearestFuture = null;
-
-    for (const apex of allApexes) {
-        if (apex.timeDelta <= 0) {
-            if (!nearestPast || apex.timeDelta > nearestPast.timeDelta) {
-                nearestPast = apex;
-            }
-        } else {
-            if (!nearestFuture || apex.timeDelta < nearestFuture.timeDelta) {
-                nearestFuture = apex;
-            }
-        }
-    }
-
-    // Process nearest past apex (fading out)
-    if (nearestPast && Math.abs(nearestPast.timeDelta) <= fadeOutMs) {
-        apexes.push({
-            path: nearestPast.path,
-            position: nearestPast.position,
-            type: nearestPast.type,
-            time: new Date(nearestPast.apexTime),
-            timeDelta: nearestPast.timeDelta / 60000,
-            isHistory: true
-        });
-    }
-
-    // Process nearest future apex (fading in)
-    if (nearestFuture && nearestFuture.timeDelta <= fadeInMs) {
-        apexes.push({
-            path: nearestFuture.path,
-            position: nearestFuture.position,
-            type: nearestFuture.type,
-            time: new Date(nearestFuture.apexTime),
-            timeDelta: nearestFuture.timeDelta / 60000,
-            isFuture: true
-        });
-    }
-
-    return apexes;
-}
-
-/**
- * Calculate glow proximity factor for a track segment
- * Returns a value 0-1 indicating how close the segment is to an equator crossing
- * Used to enhance ground track gradient near crossings
- */
-function calculateGlowProximity(segmentLat, crossings, glowIntensity) {
-    if (!crossings || crossings.length === 0 || glowIntensity === 0) {
-        return 0;
-    }
-
-    // Check if segment latitude is near equator (within ±5 degrees)
-    const latDistance = Math.abs(segmentLat);
-    if (latDistance > 5) {
-        return 0;
-    }
-
-    // Get the maximum crossing intensity
-    const maxCrossingIntensity = Math.max(...crossings.map(c => c.intensity));
-
-    // Proximity is stronger closer to equator, scaled by crossing intensity
-    const latProximity = 1 - (latDistance / 5);
-    return latProximity * maxCrossingIntensity * glowIntensity;
-}
-
-/**
  * Calculate bearing (heading direction) from tail points to current position
  * @param {Array} tailPoints - Array of tail point objects with position
  * @param {Object} currentPosition - Current position {lon, lat}
@@ -669,53 +406,28 @@ function createLayers() {
         // Get base color from watchColor property (defaults to grey)
         const baseColor = WATCH_COLORS[sat.watchColor] || WATCH_COLORS.grey;
 
-        // Detect equator crossings FIRST (based on chevron proximity)
-        const crossings = detectEquatorCrossings(
-            trackResult.tailPoints || [],
-            trackResult.headPoints || [],
-            trackResult.currentPosition,
-            currentTime,
-            glowFadeInMinutes,
-            glowFadeOutMinutes
-        );
-
-        // Store crossings for glow layers
-        crossings.forEach(crossing => {
-            equatorCrossingData.push({
-                position: crossing.position,
-                intensity: crossing.intensity,
-                direction: crossing.direction,
-                satellite: sat,
-                name: sat.name,
-                isHistory: crossing.isHistory,
-                isFuture: crossing.isFuture,
-                timeDelta: crossing.timeDelta
-            });
+        // Detect equator crossings using EventDetector
+        // This propagates independently using fade parameters, NOT display track length
+        const crossings = eventDetector.detectLatitudeCrossing(sat, currentTime, {
+            latitude: 0,  // Equator
+            fadeInMinutes: glowFadeInMinutes,
+            fadeOutMinutes: glowFadeOutMinutes
         });
 
-        // Detect latitude apexes for tick marks
-        const apexes = detectLatitudeApexes(
-            trackResult.tailPoints || [],
-            trackResult.headPoints || [],
-            trackResult.currentPosition,
-            currentTime,
-            glowFadeInMinutes,
-            glowFadeOutMinutes
-        );
+        // Store crossings for glow layers (eventDetector already includes all needed fields)
+        crossings.forEach(crossing => {
+            equatorCrossingData.push(crossing);
+        });
 
-        // Store apexes for tick mark layer
+        // Detect latitude apexes for tick marks using EventDetector
+        const apexes = eventDetector.detectLatitudeApex(sat, currentTime, {
+            fadeInMinutes: glowFadeInMinutes,
+            fadeOutMinutes: glowFadeOutMinutes
+        });
+
+        // Store apexes for tick mark layer (eventDetector already includes all needed fields)
         apexes.forEach(apex => {
-            apexTickData.push({
-                path: apex.path,
-                position: apex.position,
-                type: apex.type,
-                time: apex.time,
-                timeDelta: apex.timeDelta,
-                satellite: sat,
-                name: sat.name,
-                isHistory: apex.isHistory,
-                isFuture: apex.isFuture
-            });
+            apexTickData.push(apex);
         });
 
         // Create gradient segments from tail points with glow-enhanced coloring
@@ -730,45 +442,23 @@ function createLayers() {
                 // Calculate opacity based on progress (older = more transparent)
                 // Use power curve (^1.8) for more aggressive taper at tail end
                 const avgProgress = (startPoint.progress + endPoint.progress) / 2;
-                const avgLat = (startPoint.position[1] + endPoint.position[1]) / 2;
                 const alpha = Math.floor(Math.pow(avgProgress, 1.8) * 200 + 55); // Range: 55-255 with aggressive taper
-
-                // Calculate glow proximity for this segment
-                const glowProximity = glowEnabled ?
-                    calculateGlowProximity(avgLat, crossings, glowIntensity) : 0;
-
-                // Enhanced coloring: blend towards bright blue/white near equator during glow
-                let r = baseColor[0];
-                let g = baseColor[1];
-                let b = baseColor[2];
-                let segmentAlpha = alpha;
-
-                if (glowProximity > 0) {
-                    // Blend towards bright cyan-blue based on glow proximity
-                    const blendFactor = glowProximity * 0.8;
-                    r = Math.floor(r + (180 - r) * blendFactor);
-                    g = Math.floor(g + (220 - g) * blendFactor);
-                    b = Math.floor(b + (255 - b) * blendFactor);
-                    // Also boost alpha for visibility
-                    segmentAlpha = Math.min(255, alpha + Math.floor(glowProximity * 80));
-                }
 
                 // Add each wrapped segment (1 for normal, 2 for date line crossing)
                 wrappedSegments.forEach((segPath, segIdx) => {
                     groundTrackData.push({
                         path: segPath,
                         name: sat.name,
-                        color: [r, g, b, segmentAlpha],
+                        color: [baseColor[0], baseColor[1], baseColor[2], alpha],
                         satellite: sat,
                         segmentIndex: i * 10 + segIdx,
-                        isTail: true,
-                        glowProximity
+                        isTail: true
                     });
                 });
             }
         }
 
-        // Add head segments with glow-enhanced coloring
+        // Add head segments (lighter color, decreasing opacity into future)
         if (trackResult.headPoints && trackResult.headPoints.length >= 2) {
             for (let i = 0; i < trackResult.headPoints.length - 1; i++) {
                 const startPoint = trackResult.headPoints[i];
@@ -779,39 +469,22 @@ function createLayers() {
 
                 // Head uses lighter color and decreasing opacity into future
                 const avgProgress = (startPoint.progress + endPoint.progress) / 2;
-                const avgLat = (startPoint.position[1] + endPoint.position[1]) / 2;
                 const alpha = Math.floor((1 - avgProgress) * 150 + 80);
 
-                // Calculate glow proximity for this segment
-                const glowProximity = glowEnabled ?
-                    calculateGlowProximity(avgLat, crossings, glowIntensity) : 0;
-
-                // Enhanced coloring for head segments - lighter version of base color
-                // Blend base color towards white for head segments
-                let r = Math.floor(baseColor[0] + (255 - baseColor[0]) * 0.4);
-                let g = Math.floor(baseColor[1] + (255 - baseColor[1]) * 0.4);
-                let b = Math.floor(baseColor[2] + (255 - baseColor[2]) * 0.4);
-                let segmentAlpha = alpha;
-
-                if (glowProximity > 0) {
-                    // Blend towards brighter white-blue
-                    const blendFactor = glowProximity * 0.6;
-                    r = Math.floor(r + (220 - r) * blendFactor);
-                    g = Math.floor(g + (240 - g) * blendFactor);
-                    b = 255;
-                    segmentAlpha = Math.min(255, alpha + Math.floor(glowProximity * 60));
-                }
+                // Lighter version of base color for head
+                const r = Math.floor(baseColor[0] + (255 - baseColor[0]) * 0.4);
+                const g = Math.floor(baseColor[1] + (255 - baseColor[1]) * 0.4);
+                const b = Math.floor(baseColor[2] + (255 - baseColor[2]) * 0.4);
 
                 // Add each wrapped segment (1 for normal, 2 for date line crossing)
                 wrappedSegments.forEach((segPath, segIdx) => {
                     groundTrackData.push({
                         path: segPath,
                         name: sat.name,
-                        color: [r, g, b, segmentAlpha],
+                        color: [r, g, b, alpha],
                         satellite: sat,
                         segmentIndex: i * 10 + segIdx,
-                        isHead: true,
-                        glowProximity
+                        isHead: true
                     });
                 });
             }
@@ -1179,27 +852,16 @@ function createLayers() {
             visible: glowEnabled && apexTickData.length > 0,
             getPath: d => d.path,
             getColor: d => {
-                // Same fade logic as equator glow
-                const timeDelta = (currentTime - d.time) / 60000; // minutes
-                const fadeStart = glowFadeOutMinutes * 0.3;
-                const fadeEnd = glowFadeOutMinutes;
-
-                let alpha = 0;
-                if (timeDelta >= 0 && timeDelta < fadeStart) {
-                    alpha = 255;
-                } else if (timeDelta >= fadeStart && timeDelta < fadeEnd) {
-                    const fadeProgress = (timeDelta - fadeStart) / (fadeEnd - fadeStart);
-                    alpha = Math.round(255 * (1 - (1 - Math.cos(fadeProgress * Math.PI)) / 2));
-                }
-
-                return [255, 215, 0, alpha]; // Gold color matching equator glow
+                // Use intensity from eventDetector (already calculated based on chevron proximity)
+                const alpha = Math.round(d.intensity * 255 * glowIntensity);
+                return [255, 215, 0, alpha]; // Gold color with fade from eventDetector
             },
             getWidth: 2,
             widthUnits: 'pixels',
             capRounded: true,
             updateTriggers: {
                 visible: `${glowEnabled}-${apexTickData.length}`,
-                getColor: `${currentTime.getTime()}-${glowFadeOutMinutes}`
+                getColor: `${currentTime.getTime()}-${glowIntensity}`
             }
         })
     ];

@@ -1,7 +1,7 @@
 # WA_map Feature Registry
 
 > **Document Type**: FEATURES
-> **Version**: 3.1
+> **Version**: 3.2
 > **Last Updated**: 2025-11-27
 > **Maintainer**: AI Governor System
 
@@ -86,6 +86,7 @@
 | SAT-019 | Watch List Color Assignment | P2 | M | DONE | SAT-007, MAP-003 |
 | SAT-020 | User Lists Feature | P2 | M | DONE | SAT-001, LIST-001 |
 | SAT-021 | Aggressive Tail Gradient Taper | P2 | XS | DONE | SAT-012 |
+| SAT-022 | EventDetector Module | P1 | M | DONE | SAT-014 |
 
 ### User Lists (LIST)
 
@@ -282,7 +283,7 @@
 | Category | Total | DONE | WIP | PLAN | IDEA |
 |----------|-------|------|-----|------|------|
 | MAP | 15 | 15 | 0 | 0 | 0 |
-| SAT | 21 | 19 | 0 | 1 | 1 |
+| SAT | 22 | 20 | 0 | 1 | 1 |
 | SEN | 9 | 8 | 0 | 0 | 1 |
 | TIME | 31 | 31 | 0 | 0 | 0 |
 | UI | 19 | 17 | 0 | 2 | 0 |
@@ -291,11 +292,11 @@
 | BACK | 9 | 3 | 0 | 4 | 2 |
 | ARCH | 5 | 5 | 0 | 0 | 0 |
 | LIST | 6 | 6 | 0 | 0 | 0 |
-| **TOTAL** | **140** | **125** | **0** | **8** | **6** |
+| **TOTAL** | **141** | **126** | **0** | **8** | **6** |
 
 *Note: MAP-013 REMOVED (superseded by MAP-012+MAP-016), MAP-016 added - net zero change*
 
-**Completion Rate**: 89% (125/140 features complete)
+**Completion Rate**: 89% (126/141 features complete)
 
 ---
 
@@ -303,6 +304,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 3.2 | 2025-11-27 | SAT-022 DONE: EventDetector module for decoupled event detection |
 | 3.1 | 2025-11-27 | MAP-013 REMOVED (fit-view-btn), MAP-016 DONE (fit button maximized mode fix) |
 | 3.0 | 2025-11-27 | MAP polish: Fit button fix (maximized), clock overlay styling, aggressive tail gradient, Play/Pause toggle, brighter borders, jog hint, calendar popups, UTC/SIM sync |
 | 2.9 | 2025-11-27 | LIST-001 to LIST-006 DONE: User Lists feature with CRUD, visibility, localStorage |

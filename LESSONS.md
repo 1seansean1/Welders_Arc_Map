@@ -25,6 +25,7 @@ This document captures debugging knowledge, integration patterns, and hard-won i
 | LL-006 | deck.gl-leaflet Integration vs Manual Sync | Architecture | 2025-11-26 |
 | LL-007 | Test Visual Properties Not Just Existence | Testing | 2025-11-26 |
 | LL-008 | Time Control Paradigms from Industry Standards | Architecture | 2025-11-27 |
+| LL-009 | Decouple Event Detection from Display Parameters | Architecture | 2025-11-27 |
 
 ---
 
@@ -576,3 +577,100 @@ seekNext() / seekPrevious()
 3. **Separate state concerns** - Current time vs analysis window serve different purposes
 4. **Use multipliers over absolutes** - 2x is more intuitive than "500ms per frame"
 5. **Modifier keys for overloaded inputs** - Ctrl+wheel for jog vs regular wheel for zoom
+
+---
+
+## LL-009: Decouple Event Detection from Display Parameters
+
+**Date**: 2025-11-27
+**Category**: Architecture
+**Status**: RESOLVED
+
+### Problem
+
+Equator crossing glow feature had multiple reports of incorrect behavior:
+1. Glow appeared/disappeared suddenly instead of smooth fade-in/fade-out
+2. Ground track tail/head length affected when glow appeared (shouldn't)
+3. Glow only appeared when crossing was within the visible track segment
+
+### Key Observation
+
+> "I do NOT want the ground track TAIL to affect the glow in any way. I do NOT want the ground track HEAD to affect the glow in any way. I ONLY want the satellite chevron icon to be considered."
+
+### Root Cause
+
+The equator crossing detection algorithm searched for crossings within the **display ground track** (bounded by `tailMinutes`/`headMinutes`), but the fade effect required detecting crossings within the **fade range** (bounded by `fadeInMinutes`/`fadeOutMinutes`).
+
+These are independent concerns that were incorrectly coupled:
+- **Display track**: How much of the orbit path to render (visual preference)
+- **Event detection window**: How far to look for events that affect glow (functional requirement)
+
+```javascript
+// BUG: Event detection inherits display bounds
+const track = calculateGroundTrack(sat, currentTime, tailMinutes, headMinutes);
+const crossings = detectCrossings(track.points); // Limited to display range!
+
+// If headMinutes=5 but fadeInMinutes=15, crossings at +10min are NEVER FOUND
+```
+
+### Solution
+
+Created `EventDetector` module that propagates **independently** using fade parameters:
+
+```javascript
+// FIXED: Event detection uses its own propagation window
+const crossings = eventDetector.detectLatitudeCrossing(satellite, currentTime, {
+    latitude: 0,  // Equator
+    fadeInMinutes: 15,  // Search 15 min into future
+    fadeOutMinutes: 4   // Search 4 min into past
+});
+// Crossings at +10min ARE detected, regardless of display head length
+```
+
+### Key Design Pattern
+
+**Independent Detection Windows**: Event detection should use its own time window based on effect requirements, not inherit from display parameters.
+
+```
+Display Parameters          Effect Parameters
+(tailMinutes, headMinutes)  (fadeInMinutes, fadeOutMinutes)
+         │                           │
+         ▼                           ▼
+  calculateGroundTrack()      eventDetector.detect()
+         │                           │
+         ▼                           ▼
+  [Render track path]         [Calculate glow intensity]
+```
+
+### Prevention
+
+1. **Identify concerns**: Display vs detection are separate concerns
+2. **Don't share bounds**: Effect parameters shouldn't inherit from display parameters
+3. **Create dedicated modules**: EventDetector handles all proximity-based event detection
+4. **Design for reuse**: Same pattern works for equator crossings, nodal crossings, maneuvers, etc.
+
+### Anti-Pattern
+
+```javascript
+// DON'T: Use display track for event detection
+const track = calculateGroundTrack(..., tailMinutes, headMinutes);
+const events = detectEvents(track.points);
+```
+
+### Good Pattern
+
+```javascript
+// DO: Use dedicated event detection with effect-specific parameters
+const events = eventDetector.detect(satellite, currentTime, {
+    fadeInMinutes: fadeConfig.in,
+    fadeOutMinutes: fadeConfig.out
+});
+```
+
+### Files Created
+
+- `static/modules/events/eventDetector.js` - Generalized proximity-based event detection
+
+### Files Modified
+
+- `static/modules/map/deckgl.js` - Uses eventDetector for crossings and apexes
