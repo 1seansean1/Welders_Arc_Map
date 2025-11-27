@@ -254,34 +254,43 @@
 
         .current-time-display {
             position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(10, 10, 10, 0.85);
+            top: 0;
+            left: 0;
+            background: rgba(10, 10, 10, 0.9);
             border: 1px solid #333333;
-            border-radius: 4px;
-            padding: 6px 12px;
+            border-top: none;
+            border-left: none;
+            border-radius: 0 0 4px 0;
+            padding: 4px 8px;
             z-index: 1000;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            gap: 2px;
-            min-width: 140px;
+            gap: 1px;
         }
 
-        #current-time-label {
-            font-size: 8px;
+        .time-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .time-label {
+            font-size: 10px;
             font-weight: 600;
             color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 1px;
+            width: 24px;
         }
 
-        #current-time-value {
-            font-size: 14px;
+        .time-value {
+            font-size: 12px;
             font-weight: 500;
             color: var(--accent-blue-grey);
             font-family: var(--font-mono);
+        }
+
+        .time-value.sim-mode {
+            color: #cd853f;  /* Orange for simulation mode */
         }
 
         /* ============================================
@@ -2149,10 +2158,16 @@
         <div id="pane-top-left" class="pane">
             <div id="map-container">
                 <!-- Deck.gl will create its canvas here -->
-                <!-- Current time display overlay -->
+                <!-- Current time display overlay (top-left, adjacent to control panel) -->
                 <div id="current-time-display" class="current-time-display">
-                    <span id="current-time-label">SIM TIME</span>
-                    <span id="current-time-value">--:--:-- UTC</span>
+                    <div class="time-row">
+                        <span class="time-label">UTC</span>
+                        <span class="time-value" id="utc-time-value">--:--:--</span>
+                    </div>
+                    <div class="time-row">
+                        <span class="time-label">Sim</span>
+                        <span class="time-value" id="sim-time-value">--:--:--</span>
+                    </div>
                 </div>
                 <!-- Map maximize button -->
                 <button id="map-maximize-btn" title="Maximize map">
