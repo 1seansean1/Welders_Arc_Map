@@ -329,13 +329,16 @@ function detectEquatorCrossings(tailPoints, headPoints, currentPosition, current
  * @returns {number} Bearing in degrees (0-360, 0 = North)
  */
 function calculateBearing(tailPoints, currentPosition) {
-    // Need at least one tail point to calculate bearing
-    if (!tailPoints || tailPoints.length === 0 || !currentPosition) {
+    // Need at least 2 tail points to calculate bearing
+    // (last point is at currentTime, so we need second-to-last for direction)
+    if (!tailPoints || tailPoints.length < 2 || !currentPosition) {
         return 0; // Default to North if we can't calculate
     }
 
-    // Get the most recent tail point (last one before current)
-    const prevPoint = tailPoints[tailPoints.length - 1];
+    // Get the second-to-last tail point (the last one is at currentTime, same as currentPosition)
+    // Use a point a few steps back for more stable direction
+    const pointIndex = Math.max(0, tailPoints.length - 3); // 3 steps back (~60 seconds at 20s intervals)
+    const prevPoint = tailPoints[pointIndex];
     if (!prevPoint || !prevPoint.position) {
         return 0;
     }
