@@ -510,15 +510,20 @@ export function initializeFitEarthButton() {
 
         if (isMaximized) {
             // In maximized mode, just fit bounds without grid resize
-            map.invalidateSize({ animate: false });
-            resizeDeckCanvas();
-            map.fitBounds(EARTH_BOUNDS, {
-                animate: true,
-                duration: 0.5,
-                padding: [0, 0],
-                maxZoom: 2
+            // Need to wait for layout to settle (like non-maximized path)
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    map.invalidateSize({ animate: false });
+                    resizeDeckCanvas();
+                    map.fitBounds(EARTH_BOUNDS, {
+                        animate: true,
+                        duration: 0.5,
+                        padding: [0, 0],
+                        maxZoom: 2
+                    });
+                    logger.diagnostic('Fit to Earth (maximized mode)', logger.CATEGORY.MAP);
+                });
             });
-            logger.diagnostic('Fit to Earth (maximized mode)', logger.CATEGORY.MAP);
             return;
         }
 
@@ -577,50 +582,4 @@ export function initializeFitEarthButton() {
 }
 
 // ============================================
-// FIT VIEW BUTTON (works in any state)
-// ============================================
 
-/**
- * Initialize Fit View button - fits map to Earth bounds without resizing grid
- * Works in normal mode AND maximized mode
- */
-export function initializeFitViewButton() {
-    const fitViewBtn = document.getElementById('map-fit-view-btn');
-
-    if (!fitViewBtn) {
-        logger.warning('Fit View button not found', logger.CATEGORY.PANEL);
-        return;
-    }
-
-    fitViewBtn.addEventListener('click', () => {
-        const map = window.leafletMap;
-        if (!map) return;
-
-        // Full Web Mercator bounds
-        const EARTH_BOUNDS = L.latLngBounds(
-            L.latLng(-85.051, -180),
-            L.latLng(85.051, 180)
-        );
-
-        // Just fit to bounds - works regardless of container shape
-        map.fitBounds(EARTH_BOUNDS, {
-            animate: true,
-            duration: 0.5,
-            padding: [0, 0],
-            maxZoom: 2  // Allow slightly higher zoom for non-square containers
-        });
-
-        // Sync Deck.gl
-        resizeDeckCanvas();
-
-        const mapContainer = document.getElementById('map-container');
-        const rect = mapContainer.getBoundingClientRect();
-
-        logger.diagnostic('Fit to Earth bounds', logger.CATEGORY.MAP, {
-            mapSize: `${Math.round(rect.width)}x${Math.round(rect.height)}`,
-            zoom: map.getZoom().toFixed(2)
-        });
-    });
-
-    logger.success('Fit View button initialized', logger.CATEGORY.PANEL);
-}

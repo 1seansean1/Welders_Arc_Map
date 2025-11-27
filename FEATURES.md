@@ -1,7 +1,7 @@
 # WA_map Feature Registry
 
 > **Document Type**: FEATURES
-> **Version**: 3.0
+> **Version**: 3.1
 > **Last Updated**: 2025-11-27
 > **Maintainer**: AI Governor System
 
@@ -56,9 +56,10 @@
 | MAP-010 | Smart Aspect Ratio Zoom | P3 | S | DONE | MAP-005 |
 | MAP-011 | Equator Reference Line | P2 | XS | DONE | MAP-003 |
 | MAP-012 | Fit Earth Button | P2 | S | DONE | MAP-001, MAP-005 |
-| MAP-013 | Fit View Button | P2 | XS | DONE | MAP-001 |
-| MAP-014 | Remove + from Fit Button | P2 | XS | DONE | MAP-013 |
+| MAP-013 | ~~Fit View Button~~ | P2 | XS | REMOVED | ~~MAP-001~~ |
+| MAP-014 | Remove + from Fit Button | P2 | XS | DONE | MAP-012 |
 | MAP-015 | Clock Overlay Styling | P2 | XS | DONE | TIME-018 |
+| MAP-016 | Fit Button Maximized Mode | P2 | XS | DONE | MAP-012 |
 
 ### Satellite Management (SAT)
 
@@ -292,6 +293,8 @@
 | LIST | 6 | 6 | 0 | 0 | 0 |
 | **TOTAL** | **140** | **125** | **0** | **8** | **6** |
 
+*Note: MAP-013 REMOVED (superseded by MAP-012+MAP-016), MAP-016 added - net zero change*
+
 **Completion Rate**: 89% (125/140 features complete)
 
 ---
@@ -300,6 +303,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 3.1 | 2025-11-27 | MAP-013 REMOVED (fit-view-btn), MAP-016 DONE (fit button maximized mode fix) |
 | 3.0 | 2025-11-27 | MAP polish: Fit button fix (maximized), clock overlay styling, aggressive tail gradient, Play/Pause toggle, brighter borders, jog hint, calendar popups, UTC/SIM sync |
 | 2.9 | 2025-11-27 | LIST-001 to LIST-006 DONE: User Lists feature with CRUD, visibility, localStorage |
 | 2.8 | 2025-11-27 | TIME-029 DONE: Compact time bar redesign with Flatpickr, responsive groups |
