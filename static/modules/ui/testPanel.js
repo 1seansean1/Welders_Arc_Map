@@ -39,7 +39,14 @@ const TEST_LIST = [
     { id: 'ui-highlight', hypId: 'H-UI-4', fn: () => runRegistryTest('H-UI-4') },
     // Validation tests (new)
     { id: 'valid-coords', hypId: 'H-VALID-1', fn: () => runRegistryTest('H-VALID-1') },
-    { id: 'valid-tle', hypId: 'H-VALID-2', fn: () => runRegistryTest('H-VALID-2') }
+    { id: 'valid-tle', hypId: 'H-VALID-2', fn: () => runRegistryTest('H-VALID-2') },
+    // Satellite tests (new)
+    { id: 'sat-selection', hypId: 'H-SAT-1', fn: () => runRegistryTest('H-SAT-1') },
+    { id: 'sat-propagation', hypId: 'H-SAT-2', fn: () => runRegistryTest('H-SAT-2') },
+    { id: 'chevron-bearing', hypId: 'H-CHEV-1', fn: () => runRegistryTest('H-CHEV-1') },
+    { id: 'glow-crossing', hypId: 'H-GLOW-1', fn: () => runRegistryTest('H-GLOW-1') },
+    { id: 'glow-fade', hypId: 'H-GLOW-2', fn: () => runRegistryTest('H-GLOW-2') },
+    { id: 'glow-toggle', hypId: 'H-GLOW-3', fn: () => runRegistryTest('H-GLOW-3') }
 ];
 
 let isRunning = false;
@@ -86,9 +93,9 @@ async function runRegistryTest(hypId) {
  * Initialize test panel UI
  */
 export function initTestPanel() {
-    const contentSection = document.getElementById('content-settings');
+    const contentSection = document.getElementById('content-tests');
     if (!contentSection) {
-        logger.warning('Settings content section not found', logger.CATEGORY.SYNC);
+        logger.warning('Tests content section not found', logger.CATEGORY.SYNC);
         return;
     }
 
