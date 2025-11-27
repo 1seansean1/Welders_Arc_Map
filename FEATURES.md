@@ -74,6 +74,7 @@
 | SAT-013 | Chevron Satellite Icon | P2 | M | DONE | SAT-005 |
 | SAT-014 | Equator Crossing Glow | P2 | M | DONE | SAT-005 |
 | SAT-015 | Multi-layer Glow Effect | P2 | S | DONE | SAT-014 |
+| SAT-016 | Chevron-Based Glow Enhancement | P2 | M | DONE | SAT-014, SAT-015 |
 
 ### Sensor Management (SEN)
 
@@ -241,7 +242,7 @@
 | Category | Total | DONE | WIP | PLAN | IDEA |
 |----------|-------|------|-----|------|------|
 | MAP | 10 | 10 | 0 | 0 | 0 |
-| SAT | 15 | 13 | 0 | 1 | 1 |
+| SAT | 16 | 14 | 0 | 1 | 1 |
 | SEN | 9 | 8 | 0 | 0 | 1 |
 | TIME | 20 | 20 | 0 | 0 | 0 |
 | UI | 12 | 10 | 0 | 2 | 0 |
@@ -249,9 +250,9 @@
 | TEST | 15 | 13 | 0 | 1 | 0 |
 | BACK | 9 | 3 | 0 | 4 | 2 |
 | ARCH | 5 | 5 | 0 | 0 | 0 |
-| **TOTAL** | **105** | **90** | **0** | **8** | **6** |
+| **TOTAL** | **106** | **91** | **0** | **8** | **6** |
 
-**Completion Rate**: 86% (90/105 features complete)
+**Completion Rate**: 86% (91/106 features complete)
 
 ---
 
