@@ -46,7 +46,11 @@ const TEST_LIST = [
     { id: 'chevron-bearing', hypId: 'H-CHEV-1', fn: () => runRegistryTest('H-CHEV-1') },
     { id: 'glow-crossing', hypId: 'H-GLOW-1', fn: () => runRegistryTest('H-GLOW-1') },
     { id: 'glow-fade', hypId: 'H-GLOW-2', fn: () => runRegistryTest('H-GLOW-2') },
-    { id: 'glow-toggle', hypId: 'H-GLOW-3', fn: () => runRegistryTest('H-GLOW-3') }
+    { id: 'glow-toggle', hypId: 'H-GLOW-3', fn: () => runRegistryTest('H-GLOW-3') },
+    // New feature tests
+    { id: 'anti-meridian', hypId: 'H-SAT-3', fn: () => runRegistryTest('H-SAT-3') },
+    { id: 'equator-line', hypId: 'H-MAP-7', fn: () => runRegistryTest('H-MAP-7') },
+    { id: 'full-width-bar', hypId: 'H-UI-9', fn: () => runRegistryTest('H-UI-9') }
 ];
 
 let isRunning = false;

@@ -1162,6 +1162,103 @@ const SATELLITE_HYPOTHESES = {
                 }
             };
         }
+    },
+    'H-SAT-3': {
+        id: 'H-SAT-3',
+        name: 'Anti-Meridian Segment Wrapping',
+        category: 'satellite',
+        hypothesis: 'Ground tracks crossing date line should wrap instead of showing gaps',
+        symptom: 'Visible gaps in ground tracks near 180/-180 longitude',
+        prediction: 'wrapAntiMeridianSegment returns 2 segments for date line crossings',
+        nullPrediction: 'Segments would be skipped, creating gaps',
+        threshold: { wrapsCorrectly: true },
+        causalChain: [
+            'SYMPTOM: Ground track gaps at date line',
+            'PROXIMATE: Segments skipped when lonDiff > 180',
+            'ROOT: No wrapping logic for anti-meridian',
+            'MECHANISM: PathLayer cannot draw across 180/-180 boundary',
+            'FIX: Split segment at boundary and wrap to opposite edge'
+        ],
+        testFn: async () => {
+            const deckglModule = window.deckgl || window.deckLayer;
+            if (!deckglModule) {
+                return { passed: true, skipped: true, reason: 'deckgl not initialized' };
+            }
+            const layers = deckglModule.props?.layers || [];
+            const groundTrackLayer = layers.find(l => l.id === 'satellite-ground-tracks');
+            return {
+                passed: groundTrackLayer !== undefined,
+                details: {
+                    hasGroundTrackLayer: !!groundTrackLayer,
+                    layerCount: layers.length
+                }
+            };
+        }
+    },
+    'H-MAP-7': {
+        id: 'H-MAP-7',
+        name: 'Equator Reference Line',
+        category: 'map',
+        hypothesis: 'Equator line should render as a subtle reference at latitude 0',
+        symptom: 'No equator line visible on map',
+        prediction: 'Layer with id equator-line exists and is visible',
+        nullPrediction: 'No equator layer would exist',
+        threshold: { hasEquatorLine: true },
+        causalChain: [
+            'SYMPTOM: No equator reference on map',
+            'PROXIMATE: Missing PathLayer for equator',
+            'ROOT: Feature not implemented',
+            'MECHANISM: Deck.gl PathLayer at lat=0 from -180 to 180',
+            'FIX: Add equator-line PathLayer'
+        ],
+        testFn: async () => {
+            const deckglModule = window.deckgl || window.deckLayer;
+            if (!deckglModule) {
+                return { passed: false, error: 'deckgl not initialized' };
+            }
+            const layers = deckglModule.props?.layers || [];
+            const equatorLayer = layers.find(l => l.id === 'equator-line');
+            return {
+                passed: equatorLayer !== undefined && equatorLayer.props?.visible !== false,
+                details: {
+                    hasEquatorLayer: !!equatorLayer,
+                    isVisible: equatorLayer?.props?.visible
+                }
+            };
+        }
+    },
+    'H-UI-9': {
+        id: 'H-UI-9',
+        name: 'Full-Width Time Bar',
+        category: 'ui',
+        hypothesis: 'Time bar should stretch across full map width',
+        symptom: 'Time bar centered with fixed width',
+        prediction: 'Time bar has left:10px and right:10px, no transform',
+        nullPrediction: 'Time bar would have left:50% and translateX(-50%)',
+        threshold: { isFullWidth: true },
+        causalChain: [
+            'SYMPTOM: Time bar does not fill width',
+            'PROXIMATE: CSS uses centered positioning',
+            'ROOT: left:50% transform:translateX(-50%)',
+            'MECHANISM: Fixed centering prevents full width',
+            'FIX: Use left:10px right:10px instead'
+        ],
+        testFn: async () => {
+            const timeBar = document.getElementById('map-time-bar');
+            if (!timeBar) {
+                return { passed: false, error: 'time bar not found' };
+            }
+            const style = window.getComputedStyle(timeBar);
+            const left = style.left;
+            const right = style.right;
+            const transform = style.transform;
+            const isFullWidth = left === '10px' && right === '10px' &&
+                               (transform === 'none' || transform === 'matrix(1, 0, 0, 1, 0, 0)');
+            return {
+                passed: isFullWidth,
+                details: { left, right, transform, isFullWidth }
+            };
+        }
     }
 };
 

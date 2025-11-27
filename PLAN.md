@@ -27,6 +27,7 @@
 
 | Task | Priority | Completed | Notes |
 |------|----------|-----------|-------|
+| Map & Time Control Enhancements | P2 | 2025-11-26 | Anti-meridian wrapping, equator line, full-width time bar, styled icons |
 | UI/UX Improvements Batch | P2 | 2025-11-26 | Hold-to-repeat, glow fade controls, Tests/Watch List panels, defaults fix |
 | Time Slider with Step Controls | P1 | 2025-11-26 | TIME-011: Slider bar, step buttons, Now button, step size selector |
 | TLE Rendering Features | P1 | 2025-11-26 | Current time display, tail/head controls, gradient fade, chevron icon, equator glow |
