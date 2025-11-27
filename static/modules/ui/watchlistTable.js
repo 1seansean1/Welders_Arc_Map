@@ -13,8 +13,10 @@
  */
 
 import satelliteState from '../state/satelliteState.js';
+import listState from '../state/listState.js';
 import logger from '../utils/logger.js';
 import eventBus from '../events/eventBus.js';
+import { showSatelliteAddModal, showListEditorModal } from './modals.js';
 
 // ============================================
 // DEPENDENCIES (injected during initialization)
@@ -294,6 +296,51 @@ export function initializeWatchlistTable(options = {}) {
             updateMapCallback();
         }
     });
+
+    // Initialize +Sat button in watchlist section
+    const addSatBtn = document.getElementById('watchlist-add-sat-btn');
+    if (addSatBtn) {
+        addSatBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showSatelliteAddModal((data) => {
+                const result = satelliteState.addSatellite({
+                    name: data.name,
+                    noradId: data.noradId,
+                    tleLine1: data.tleLine1,
+                    tleLine2: data.tleLine2,
+                    watchColor: data.watchColor || 'grey',
+                    watchlisted: true,
+                    selected: true
+                });
+                if (result.success) {
+                    if (data.listId) {
+                        listState.addSatelliteToList(data.listId, result.satellite.id);
+                    }
+                    renderWatchlistTable();
+                    if (updateMapCallback) updateMapCallback();
+                    logger.success('Satellite "' + result.satellite.name + '" added to watchlist', logger.CATEGORY.SATELLITE);
+                } else {
+                    logger.error('Failed to add satellite', logger.CATEGORY.SATELLITE, result.errors);
+                }
+            });
+        });
+    }
+
+    // Initialize +List button in watchlist section
+    const addListBtn = document.getElementById('watchlist-add-list-btn');
+    if (addListBtn) {
+        addListBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showListEditorModal(null, (data) => {
+                const list = listState.createList(data.name);
+                data.satelliteIds.forEach(satId => {
+                    listState.addSatelliteToList(list.id, satId);
+                });
+                if (updateMapCallback) updateMapCallback();
+                logger.success('List "' + data.name + '" created with ' + data.satelliteIds.length + ' satellites', logger.CATEGORY.DATA);
+            });
+        });
+    }
 
     // Initial render
     renderWatchlistTable();
