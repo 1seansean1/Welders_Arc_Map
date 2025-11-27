@@ -50,7 +50,8 @@ const defaultSatellites = [
         tleLine1: '1 07530U 74089B   25328.63325197 -.00000040  00000-0  41462-4 0  9995',
         tleLine2: '2 07530 101.9973 334.7103 0012252 160.6151 316.0496 12.53693653334888',
         selected: false,
-        watchlisted: false
+        watchlisted: false,
+        watchColor: 'grey'  // 'grey' | 'red' | 'blue'
     },
     {
         id: 2,
@@ -59,7 +60,8 @@ const defaultSatellites = [
         tleLine1: '1 14781U 84021B   25328.66253352  .00001879  00000-0  20018-3 0  9997',
         tleLine2: '2 14781  97.7788 291.9758 0008716 131.8357 228.3606 14.90050575226665',
         selected: false,
-        watchlisted: false
+        watchlisted: false,
+        watchColor: 'grey'  // 'grey' | 'red' | 'blue'
     },
     {
         id: 3,
@@ -68,7 +70,8 @@ const defaultSatellites = [
         tleLine1: '1 22825U 93061C   25328.67770117  .00000155  00000-0  76280-4 0  9992',
         tleLine2: '2 22825  98.7168  30.9001 0008029 347.9707  12.1282 14.30867005677751',
         selected: false,
-        watchlisted: false
+        watchlisted: false,
+        watchColor: 'grey'  // 'grey' | 'red' | 'blue'
     },
     {
         id: 4,
@@ -77,7 +80,8 @@ const defaultSatellites = [
         tleLine1: '1 24278U 96046B   25328.65866373 -.00000024  00000-0  14798-4 0  9992',
         tleLine2: '2 24278  98.5474 200.2186 0348829 266.9954  89.1225 13.53261232445509',
         selected: false,
-        watchlisted: false
+        watchlisted: false,
+        watchColor: 'grey'  // 'grey' | 'red' | 'blue'
     },
     {
         id: 5,
@@ -86,7 +90,8 @@ const defaultSatellites = [
         tleLine1: '1 25397U 98043D   25328.51312778  .00000102  00000-0  64392-4 0  9995',
         tleLine2: '2 25397  98.9906 311.3060 0002394  85.3934 274.7517 14.24369423422192',
         selected: false,
-        watchlisted: false
+        watchlisted: false,
+        watchColor: 'grey'  // 'grey' | 'red' | 'blue'
     },
     {
         id: 6,
@@ -95,7 +100,8 @@ const defaultSatellites = [
         tleLine1: '1 25544U 98067A   25328.54472231  .00014120  00000-0  26353-3 0  9998',
         tleLine2: '2 25544  51.6316 232.5414 0003895 163.7073 196.4042 15.49046550540034',
         selected: false,
-        watchlisted: false
+        watchlisted: false,
+        watchColor: 'grey'  // 'grey' | 'red' | 'blue'
     },
     {
         id: 7,
@@ -113,7 +119,8 @@ const defaultSatellites = [
         tleLine1: '1 44717U 19074E   25328.95352045  .00631300  20175-3  93240-3 0  9999',
         tleLine2: '2 44717  53.0444 263.8732 0002501 109.2764 250.8538 16.04408418333425',
         selected: false,
-        watchlisted: false
+        watchlisted: false,
+        watchColor: 'grey'  // 'grey' | 'red' | 'blue'
     },
     {
         id: 9,
@@ -122,7 +129,8 @@ const defaultSatellites = [
         tleLine1: '1 44718U 19074F   25328.92107844  .00002207  00000+0  16702-3 0  9999',
         tleLine2: '2 44718  53.0550 296.9433 0001550  81.2238 278.8927 15.06392614332957',
         selected: false,
-        watchlisted: false
+        watchlisted: false,
+        watchColor: 'grey'  // 'grey' | 'red' | 'blue'
     },
     {
         id: 10,
@@ -131,7 +139,8 @@ const defaultSatellites = [
         tleLine1: '1 44723U 19074L   25328.61120294  .00048318  00000+0  24266-2 0  9991',
         tleLine2: '2 44723  53.0523 293.3290 0005002  34.1557 325.9757 15.16828388332983',
         selected: false,
-        watchlisted: false
+        watchlisted: false,
+        watchColor: 'grey'  // 'grey' | 'red' | 'blue'
     },
     {
         id: 11,
@@ -140,7 +149,8 @@ const defaultSatellites = [
         tleLine1: '1 44724U 19074M   25328.93994605  .00173374  00000+0  26843-2 0  9996',
         tleLine2: '2 44724  53.0539 291.4658 0002130  93.4344 266.6909 15.52955184333031',
         selected: false,
-        watchlisted: false
+        watchlisted: false,
+        watchColor: 'grey'  // 'grey' | 'red' | 'blue'
     },
     {
         id: 12,
@@ -149,7 +159,8 @@ const defaultSatellites = [
         tleLine1: '1 24876U 97035A   25328.28519723  .00000044  00000+0  00000+0 0  9994',
         tleLine2: '2 24876  55.8862 106.5908 0096588  57.0386 303.8639  2.00563532207846',
         selected: false,
-        watchlisted: false
+        watchlisted: false,
+        watchColor: 'grey'  // 'grey' | 'red' | 'blue'
     },
     {
         id: 13,
@@ -158,7 +169,8 @@ const defaultSatellites = [
         tleLine1: '1 26360U 00025A   25328.89436072 -.00000069  00000+0  00000+0 0  9997',
         tleLine2: '2 26360  55.0347  27.5601 0038683 240.2350 292.1594  2.00569260187174',
         selected: false,
-        watchlisted: false
+        watchlisted: false,
+        watchColor: 'grey'  // 'grey' | 'red' | 'blue'
     },
     {
         id: 14,
@@ -167,7 +179,8 @@ const defaultSatellites = [
         tleLine1: '1 26407U 00040A   25328.88736902  .00000025  00000+0  00000+0 0  9991',
         tleLine2: '2 26407  54.8953 223.2790 0126997 301.4772  65.4421  2.00567703185857',
         selected: false,
-        watchlisted: false
+        watchlisted: false,
+        watchColor: 'grey'  // 'grey' | 'red' | 'blue'
     },
     {
         id: 15,
@@ -176,7 +189,8 @@ const defaultSatellites = [
         tleLine1: '1 25590U 98076A   25328.62868021  .00000071  00000+0  60348-4 0  9996',
         tleLine2: '2 25590  82.9349 357.4824 0030455 318.0128 189.5315 13.73214848348627',
         selected: false,
-        watchlisted: false
+        watchlisted: false,
+        watchColor: 'grey'  // 'grey' | 'red' | 'blue'
     },
     {
         id: 16,
@@ -185,7 +199,8 @@ const defaultSatellites = [
         tleLine1: '1 26818U 01023A   25328.92282861  .00000066  00000+0  53741-4 0  9994',
         tleLine2: '2 26818  82.9289  12.9356 0031638 255.9971 278.2569 13.74139809226789',
         selected: false,
-        watchlisted: false
+        watchlisted: false,
+        watchColor: 'grey'  // 'grey' | 'red' | 'blue'
     },
     {
         id: 17,
@@ -194,7 +209,8 @@ const defaultSatellites = [
         tleLine1: '1 27436U 02026A   25329.00848685  .00000036  00000+0  20795-4 0  9997',
         tleLine2: '2 27436  82.9490 320.1133 0047713 108.7796 271.3848 13.75151921179059',
         selected: false,
-        watchlisted: false
+        watchlisted: false,
+        watchColor: 'grey'  // 'grey' | 'red' | 'blue'
     },
     {
         id: 18,
@@ -453,6 +469,44 @@ class SatelliteState {
         });
 
         return satellite.watchlisted;
+    }
+
+    /**
+     * Cycle satellite watch color
+     * Cycles: grey → red → blue → grey
+     * @param {number} id - Satellite ID
+     * @returns {string|null} New watch color, or null if not found
+     */
+    cycleSatelliteWatchColor(id) {
+        const satellite = this._state.satellites.find(s => s.id === id);
+        if (!satellite) {
+            return null;
+        }
+
+        // Cycle: grey → red → blue → grey
+        const colorCycle = { 'grey': 'red', 'red': 'blue', 'blue': 'grey' };
+        const oldColor = satellite.watchColor || 'grey';
+        satellite.watchColor = colorCycle[oldColor] || 'grey';
+
+        logger.log(`Satellite ${satellite.name} watch color: ${satellite.watchColor}`, logger.CATEGORY.SATELLITE);
+
+        // Emit event
+        eventBus.emit('satellite:watchcolor:changed', {
+            id,
+            watchColor: satellite.watchColor
+        });
+
+        return satellite.watchColor;
+    }
+
+    /**
+     * Get satellite watch color
+     * @param {number} id - Satellite ID
+     * @returns {string} Watch color ('grey', 'red', 'blue')
+     */
+    getSatelliteWatchColor(id) {
+        const satellite = this._state.satellites.find(s => s.id === id);
+        return satellite?.watchColor || 'grey';
     }
 
     /**

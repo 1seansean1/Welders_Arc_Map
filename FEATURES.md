@@ -80,6 +80,7 @@
 | SAT-016 | Chevron-Based Glow Enhancement | P2 | M | DONE | SAT-014, SAT-015 |
 | SAT-017 | Anti-Meridian Segment Wrapping | P2 | S | DONE | SAT-005, SAT-008 |
 | SAT-018 | Latitude Apex Glow Ticks | P2 | M | DONE | SAT-014, SAT-015 |
+| SAT-019 | Watch List Color Assignment | P2 | M | DONE | SAT-007, MAP-003 |
 
 ### Sensor Management (SEN)
 
@@ -254,7 +255,7 @@
 | Category | Total | DONE | WIP | PLAN | IDEA |
 |----------|-------|------|-----|------|------|
 | MAP | 13 | 13 | 0 | 0 | 0 |
-| SAT | 17 | 15 | 0 | 1 | 1 |
+| SAT | 18 | 16 | 0 | 1 | 1 |
 | SEN | 9 | 8 | 0 | 0 | 1 |
 | TIME | 22 | 22 | 0 | 0 | 0 |
 | UI | 17 | 15 | 0 | 2 | 0 |
@@ -262,9 +263,9 @@
 | TEST | 15 | 13 | 0 | 1 | 0 |
 | BACK | 9 | 3 | 0 | 4 | 2 |
 | ARCH | 5 | 5 | 0 | 0 | 0 |
-| **TOTAL** | **118** | **103** | **0** | **8** | **6** |
+| **TOTAL** | **119** | **104** | **0** | **8** | **6** |
 
-**Completion Rate**: 87% (103/118 features complete)
+**Completion Rate**: 87% (104/119 features complete)
 
 ---
 
@@ -272,6 +273,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.5 | 2025-11-26 | Added SAT-019: Watch List Color Assignment (table + chevron/track coloring) |
 | 2.4 | 2025-11-26 | Added MAP-013: Fit View Button, H-MAP-7 test, fixed grid state sync |
 | 2.3 | 2025-11-26 | Added UI-017: Table height consistency, H-UI-9 test |
 | 2.2 | 2025-11-26 | Added MAP-012: Fit Earth Button, TIME-022: Enhanced clock display, UI-014/015/016: Button/panel/table fixes |

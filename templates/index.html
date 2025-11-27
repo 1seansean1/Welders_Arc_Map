@@ -2222,10 +2222,26 @@
             </div>
 
             <div id="content-watchlist" style="display: none;">
-                <p style="color: var(--text-muted);">Watch list coming soon...</p>
-                <p style="color: var(--text-secondary); font-size: 10px; margin-top: 8px;">
-                    Starred satellites will appear here.
-                </p>
+                <!-- Watchlist table -->
+                <div class="sensor-controls">
+                    <div class="sensor-table-wrapper">
+                        <table class="sensor-table" id="watchlist-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-color" style="width: 24px;"></th>
+                                    <th class="col-norad" style="width: 50px;">NORAD</th>
+                                    <th class="col-name">Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <p style="color: var(--text-muted); font-size: 9px; margin-top: 8px;">
+                        Click color box to cycle: Grey → Red → Blue
+                    </p>
+                </div>
             </div>
 
             <div id="content-settings" style="display: none;">

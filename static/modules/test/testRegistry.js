@@ -1298,6 +1298,133 @@ const SATELLITE_HYPOTHESES = {
                 details: { left, right, transform, isFullWidth }
             };
         }
+    },
+    'H-WATCH-1': {
+        id: 'H-WATCH-1',
+        name: 'Watchlist Table Displays Starred Satellites',
+        category: 'satellite',
+        hypothesis: 'Watch list table shows only satellites with watchlisted=true',
+        symptom: 'Watch list table empty or shows wrong satellites',
+        prediction: 'Watchlist table row count matches satelliteState.getWatchlistedSatellites().length',
+        nullPrediction: 'Table would show all satellites or none',
+        threshold: { matchesState: true },
+        causalChain: [
+            'SYMPTOM: Wrong satellites in watchlist table',
+            'PROXIMATE: Table not filtering by watchlisted property',
+            'ROOT: renderWatchlistTable() not using getWatchlistedSatellites()',
+            'MECHANISM: Table shows unfiltered satellite list',
+            'FIX: Use satelliteState.getWatchlistedSatellites() for table data'
+        ],
+        testFn: async () => {
+            const satelliteState = window.SatelliteApp?.satelliteState;
+            if (!satelliteState) return { passed: false, error: 'satelliteState not available' };
+
+            const watchlistedSats = satelliteState.getWatchlistedSatellites();
+            const tableRows = document.querySelectorAll('#watchlist-table tbody tr');
+
+            const matchesState = tableRows.length === watchlistedSats.length;
+
+            return {
+                passed: matchesState,
+                details: {
+                    watchlistedCount: watchlistedSats.length,
+                    tableRowCount: tableRows.length,
+                    matchesState
+                }
+            };
+        }
+    },
+    'H-WATCH-2': {
+        id: 'H-WATCH-2',
+        name: 'Watch Color Cycling',
+        category: 'satellite',
+        hypothesis: 'cycleSatelliteWatchColor cycles grey → red → blue → grey',
+        symptom: 'Color does not change or cycles incorrectly',
+        prediction: 'Cycling 3 times returns to original color',
+        nullPrediction: 'Color would stay the same or follow wrong sequence',
+        threshold: { cyclesCorrectly: true },
+        causalChain: [
+            'SYMPTOM: Watch color does not cycle',
+            'PROXIMATE: cycleSatelliteWatchColor() not working',
+            'ROOT: Color map incorrect or method not called',
+            'MECHANISM: colorCycle = { grey: red, red: blue, blue: grey }',
+            'FIX: Ensure color cycle map is correct'
+        ],
+        testFn: async () => {
+            const satelliteState = window.SatelliteApp?.satelliteState;
+            if (!satelliteState) return { passed: false, error: 'satelliteState not available' };
+
+            // Get a watchlisted satellite or first satellite
+            const sats = satelliteState.getAllSatellites();
+            if (sats.length === 0) return { passed: false, error: 'No satellites available' };
+
+            const testSat = sats[0];
+            const originalColor = testSat.watchColor || 'grey';
+
+            // Cycle 3 times and record each color
+            const color1 = satelliteState.cycleSatelliteWatchColor(testSat.id);
+            const color2 = satelliteState.cycleSatelliteWatchColor(testSat.id);
+            const color3 = satelliteState.cycleSatelliteWatchColor(testSat.id);
+
+            // After 3 cycles, should be back to original
+            const cyclesCorrectly = color3 === originalColor &&
+                ((originalColor === 'grey' && color1 === 'red' && color2 === 'blue') ||
+                 (originalColor === 'red' && color1 === 'blue' && color2 === 'grey') ||
+                 (originalColor === 'blue' && color1 === 'grey' && color2 === 'red'));
+
+            return {
+                passed: cyclesCorrectly,
+                details: {
+                    originalColor,
+                    afterCycle1: color1,
+                    afterCycle2: color2,
+                    afterCycle3: color3,
+                    cyclesCorrectly
+                }
+            };
+        }
+    },
+    'H-WATCH-3': {
+        id: 'H-WATCH-3',
+        name: 'Watch Color Affects Chevron Rendering',
+        category: 'satellite',
+        hypothesis: 'Chevron color matches satellite watchColor property',
+        symptom: 'All chevrons same color regardless of watch color setting',
+        prediction: 'satellitePositionData includes watchColor property for each satellite',
+        nullPrediction: 'Chevrons would all be default blue-grey color',
+        threshold: { colorInData: true },
+        causalChain: [
+            'SYMPTOM: Chevrons all same color',
+            'PROXIMATE: getColor not using watchColor',
+            'ROOT: satellitePositionData missing watchColor',
+            'MECHANISM: IconLayer getColor needs watchColor in data',
+            'FIX: Include watchColor in satellitePositionData push'
+        ],
+        testFn: async () => {
+            const satelliteState = window.SatelliteApp?.satelliteState;
+            if (!satelliteState) return { passed: false, error: 'satelliteState not available' };
+
+            // Check that getSatelliteWatchColor method exists
+            const hasMethod = typeof satelliteState.getSatelliteWatchColor === 'function';
+
+            // Get a satellite and check its watchColor
+            const sats = satelliteState.getAllSatellites();
+            const hasWatchColorProp = sats.length > 0 && sats[0].hasOwnProperty('watchColor');
+
+            // Check valid color values
+            const validColors = ['grey', 'red', 'blue'];
+            const allValidColors = sats.every(s => validColors.includes(s.watchColor || 'grey'));
+
+            return {
+                passed: hasMethod && hasWatchColorProp && allValidColors,
+                details: {
+                    hasGetWatchColorMethod: hasMethod,
+                    hasWatchColorProperty: hasWatchColorProp,
+                    allValidColors,
+                    sampleColor: sats[0]?.watchColor
+                }
+            };
+        }
     }
 };
 

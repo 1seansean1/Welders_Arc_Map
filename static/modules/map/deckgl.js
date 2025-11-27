@@ -635,10 +635,19 @@ function createLayers() {
     const satellitePositionData = [];
     const equatorCrossingData = [];
     const apexTickData = [];
-    const GREY = [128, 128, 128];
+
+    // Watch color definitions (RGB)
+    const WATCH_COLORS = {
+        grey: [128, 128, 128],
+        red: [255, 68, 68],
+        blue: [68, 136, 255]
+    };
 
     satellitesToRender.forEach((sat) => {
         const trackResult = calculateGroundTrack(sat.tleLine1, sat.tleLine2, currentTime, tailMinutes, headMinutes);
+
+        // Get base color from watchColor property (defaults to grey)
+        const baseColor = WATCH_COLORS[sat.watchColor] || WATCH_COLORS.grey;
 
         // Detect equator crossings FIRST (based on chevron proximity)
         const crossings = detectEquatorCrossings(
@@ -708,9 +717,9 @@ function createLayers() {
                     calculateGlowProximity(avgLat, crossings, glowIntensity) : 0;
 
                 // Enhanced coloring: blend towards bright blue/white near equator during glow
-                let r = GREY[0];
-                let g = GREY[1];
-                let b = GREY[2];
+                let r = baseColor[0];
+                let g = baseColor[1];
+                let b = baseColor[2];
                 let segmentAlpha = alpha;
 
                 if (glowProximity > 0) {
@@ -756,10 +765,11 @@ function createLayers() {
                 const glowProximity = glowEnabled ?
                     calculateGlowProximity(avgLat, crossings, glowIntensity) : 0;
 
-                // Enhanced coloring for head segments near equator
-                let r = 180;
-                let g = 200;
-                let b = 255;
+                // Enhanced coloring for head segments - lighter version of base color
+                // Blend base color towards white for head segments
+                let r = Math.floor(baseColor[0] + (255 - baseColor[0]) * 0.4);
+                let g = Math.floor(baseColor[1] + (255 - baseColor[1]) * 0.4);
+                let b = Math.floor(baseColor[2] + (255 - baseColor[2]) * 0.4);
                 let segmentAlpha = alpha;
 
                 if (glowProximity > 0) {
@@ -793,7 +803,9 @@ function createLayers() {
                 name: sat.name,
                 satellite: sat,
                 // Calculate bearing for chevron direction (from previous point)
-                bearing: calculateBearing(trackResult.tailPoints, trackResult.currentPosition)
+                bearing: calculateBearing(trackResult.tailPoints, trackResult.currentPosition),
+                // Watch color for chevron
+                watchColor: sat.watchColor || 'grey'
             });
         }
     });
@@ -943,7 +955,15 @@ function createLayers() {
             getIcon: () => 'chevron',
             getSize: 20,
             getAngle: d => -d.bearing, // Negative = clockwise rotation (bearing 0° = north, 90° = east)
-            getColor: [157, 212, 255, 255],
+            getColor: d => {
+                // Use watch color for chevron tint
+                const colorMap = {
+                    grey: [180, 180, 180, 255],
+                    red: [255, 100, 100, 255],
+                    blue: [100, 170, 255, 255]
+                };
+                return colorMap[d.watchColor] || colorMap.grey;
+            },
             iconAtlas: createChevronAtlas(),
             iconMapping: {
                 chevron: {
@@ -958,7 +978,8 @@ function createLayers() {
             updateTriggers: {
                 visible: satellitesToRender.length,
                 getPosition: `${satellitesToRender.map(s => s.id).join(',')}-${currentTime.getTime()}`,
-                getAngle: `${satellitesToRender.map(s => s.id).join(',')}-${currentTime.getTime()}`
+                getAngle: `${satellitesToRender.map(s => s.id).join(',')}-${currentTime.getTime()}`,
+                getColor: `${satellitesToRender.map(s => `${s.id}:${s.watchColor}`).join(',')}`
             },
             onHover: ({object}) => {
                 if (object) {
