@@ -39,6 +39,7 @@ import { initializeSatelliteTable } from '../ui/satelliteTable.js';
 import { initializeLogPanel } from '../ui/logPanel.js';
 import { initializeCurrentTimeDisplay } from '../ui/currentTimeDisplay.js';
 import { initializeSettingsPanel } from '../ui/settingsPanel.js';
+import { initializeMapTimeBar } from '../ui/mapTimeBar.js';
 
 // Sensor & Satellite CRUD
 import { initializeSensors, initializeSensorButtons, editSensor } from '../data/sensorCRUD.js';

@@ -107,6 +107,9 @@
 | TIME-012 | Hold-to-Repeat Step Buttons | P2 | S | DONE | TIME-011 |
 | TIME-013 | Glow Fade Duration Control | P2 | S | DONE | UI-010 |
 | TIME-014 | Separate Fade In/Out Controls | P2 | S | DONE | TIME-013 |
+| TIME-015 | Map Time Bar | P1 | M | DONE | TIME-001, MAP-001 |
+| TIME-016 | Real-time Play/Stop Mode | P1 | S | DONE | TIME-015 |
+| TIME-017 | Sub-minute Time Steps | P2 | S | DONE | TIME-015 |
 
 ### Control Panel (UI)
 
@@ -237,15 +240,15 @@
 | MAP | 10 | 10 | 0 | 0 | 0 |
 | SAT | 15 | 13 | 0 | 1 | 1 |
 | SEN | 9 | 8 | 0 | 0 | 1 |
-| TIME | 14 | 14 | 0 | 0 | 0 |
+| TIME | 17 | 17 | 0 | 0 | 0 |
 | UI | 12 | 10 | 0 | 2 | 0 |
 | LOG | 10 | 8 | 0 | 0 | 2 |
 | TEST | 15 | 13 | 0 | 1 | 0 |
 | BACK | 9 | 3 | 0 | 4 | 2 |
 | ARCH | 5 | 5 | 0 | 0 | 0 |
-| **TOTAL** | **99** | **84** | **0** | **8** | **6** |
+| **TOTAL** | **102** | **87** | **0** | **8** | **6** |
 
-**Completion Rate**: 85% (84/99 features complete)
+**Completion Rate**: 85% (87/102 features complete)
 
 ---
 
@@ -253,6 +256,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.7 | 2025-11-26 | Added TIME-015/016/017: Map Time Bar with play/stop and sub-minute steps |
 | 1.6 | 2025-11-26 | Added SAT-015: Multi-layer glow effect, TIME-014: Separate fade in/out controls |
 | 1.5 | 2025-11-26 | Added TEST-015: Column sorting hypothesis test (H-UI-8) |
 | 1.4 | 2025-11-26 | Added TEST-013/014: Test Panel column sorting, enhanced download report |

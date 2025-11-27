@@ -284,6 +284,126 @@
             font-family: var(--font-mono);
         }
 
+        /* ============================================
+           MAP TIME BAR (Bottom of Map)
+           ============================================ */
+
+        .map-time-bar {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(10, 10, 10, 0.9);
+            border: 1px solid #333333;
+            border-radius: 6px;
+            padding: 6px 10px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .map-time-btn {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: var(--text-secondary);
+            font-size: 12px;
+            padding: 4px 8px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            min-width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .map-time-btn:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border-color: var(--accent-blue-grey);
+        }
+
+        .map-time-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Play/Stop button special styling */
+        .map-time-play-btn {
+            background: var(--accent-blue-grey);
+            border-color: var(--accent-blue-grey);
+            color: var(--bg-primary);
+            font-size: 10px;
+        }
+
+        .map-time-play-btn:hover {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+
+        .map-time-play-btn.simulation-mode {
+            background: #8b4513;
+            border-color: #a0522d;
+            color: #fff;
+        }
+
+        .map-time-play-btn.simulation-mode:hover {
+            background: #a0522d;
+        }
+
+        .map-time-step-select {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: var(--text-secondary);
+            font-size: 11px;
+            padding: 4px 6px;
+            cursor: pointer;
+            height: 28px;
+        }
+
+        .map-time-step-select:focus {
+            outline: none;
+            border-color: var(--accent-blue-grey);
+        }
+
+        .map-time-slider {
+            width: 150px;
+            height: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: var(--bg-tertiary);
+            border-radius: 2px;
+            cursor: pointer;
+        }
+
+        .map-time-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--accent-blue-grey);
+            cursor: pointer;
+            border: 2px solid var(--bg-primary);
+        }
+
+        .map-time-slider::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--accent-blue-grey);
+            cursor: pointer;
+            border: 2px solid var(--bg-primary);
+        }
+
+        .map-time-now-btn {
+            padding: 4px 10px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
         /* Maximized state */
         #main-container.maximized {
             grid-template-columns: 100% !important;
@@ -1883,33 +2003,7 @@
                     <button class="time-action-btn time-apply-btn" id="time-apply-btn">Apply</button>
                 </div>
 
-                <!-- Time Slider Section -->
-                <div class="time-slider-section">
-                    <label class="time-label" style="margin-top: 12px;">Simulation Time</label>
-
-                    <!-- Step size selector -->
-                    <div class="time-slider-controls">
-                        <select class="time-step-select" id="time-step-select" title="Step size">
-                            <option value="1">1m</option>
-                            <option value="5" selected>5m</option>
-                            <option value="15">15m</option>
-                            <option value="30">30m</option>
-                            <option value="60">1h</option>
-                        </select>
-
-                        <!-- Step back button -->
-                        <button class="time-slider-btn" id="time-step-back" title="Step backward">&lt;</button>
-
-                        <!-- Time slider -->
-                        <input type="range" class="time-slider" id="time-slider" min="0" max="1000" value="1000" />
-
-                        <!-- Step forward button -->
-                        <button class="time-slider-btn" id="time-step-forward" title="Step forward">&gt;</button>
-
-                        <!-- Now button -->
-                        <button class="time-slider-now-btn" id="time-slider-now" title="Reset to now">Now</button>
-                    </div>
-                </div>
+                <!-- Simulation Time controls moved to Map Time Bar -->
 
             </div>
 
@@ -2063,6 +2157,32 @@
                 <button id="map-maximize-btn" title="Maximize map">
                     <span id="maximize-icon">⛶</span>
                 </button>
+                <!-- Map Time Bar (bottom of map) -->
+                <div id="map-time-bar" class="map-time-bar">
+                    <!-- Play/Stop button -->
+                    <button class="map-time-btn map-time-play-btn" id="map-time-play-btn" title="Play/Stop real-time">
+                        <span id="map-time-play-icon">▶</span>
+                    </button>
+                    <!-- Step size selector -->
+                    <select class="map-time-step-select" id="map-time-step-select" title="Step size">
+                        <option value="0.0167">1s</option>
+                        <option value="0.1667">10s</option>
+                        <option value="0.5">30s</option>
+                        <option value="1">1m</option>
+                        <option value="5" selected>5m</option>
+                        <option value="15">15m</option>
+                        <option value="30">30m</option>
+                        <option value="60">1h</option>
+                    </select>
+                    <!-- Step back button -->
+                    <button class="map-time-btn" id="map-time-step-back" title="Step backward">&lt;</button>
+                    <!-- Time slider -->
+                    <input type="range" class="map-time-slider" id="map-time-slider" min="0" max="1000" value="1000" />
+                    <!-- Step forward button -->
+                    <button class="map-time-btn" id="map-time-step-forward" title="Step forward">&gt;</button>
+                    <!-- Now button -->
+                    <button class="map-time-btn map-time-now-btn" id="map-time-now-btn" title="Reset to now">Now</button>
+                </div>
             </div>
         </div>
 
