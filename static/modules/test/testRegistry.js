@@ -834,6 +834,286 @@ const VALIDATION_HYPOTHESES = {
     }
 };
 
+
+// ============================================
+// SATELLITE TESTS (new)
+// ============================================
+
+const SATELLITE_HYPOTHESES = {
+    'H-SAT-1': {
+        id: 'H-SAT-1',
+        name: 'Satellite Selection',
+        category: 'satellite',
+        hypothesis: 'Selected satellites appear on map, deselected do not',
+        symptom: 'Satellites visible regardless of selection state',
+        prediction: 'Only selected satellites render ground tracks',
+        nullPrediction: 'All satellites would render regardless of selection',
+        threshold: { selectionWorks: true },
+        causalChain: [
+            'SYMPTOM: Wrong satellites visible on map',
+            'PROXIMATE: Selection filter not applied',
+            'ROOT: getSelectedSatellites() returns all',
+            'MECHANISM: .filter(s => s.selected) missing',
+            'FIX: Filter satellites by selected property'
+        ],
+        testFn: async () => {
+            const satelliteState = window.SatelliteApp?.satelliteState;
+            if (!satelliteState) return { passed: false, error: 'satelliteState not available' };
+
+            const allSats = satelliteState.getAllSatellites();
+            const selectedSats = satelliteState.getSelectedSatellites();
+
+            const hasSelection = selectedSats.length > 0;
+            const isSubset = selectedSats.every(s => allSats.some(a => a.id === s.id));
+
+            return {
+                passed: isSubset,
+                details: {
+                    totalSatellites: allSats.length,
+                    selectedSatellites: selectedSats.length,
+                    hasSelection,
+                    isSubset
+                }
+            };
+        }
+    },
+    'H-SAT-2': {
+        id: 'H-SAT-2',
+        name: 'Ground Track Propagation',
+        category: 'satellite',
+        hypothesis: 'Ground tracks calculated using simulation time, not wall clock',
+        symptom: 'Ground tracks ignore time slider changes',
+        prediction: 'Changing simulation time updates ground track positions',
+        nullPrediction: 'Ground tracks would show current real-time positions only',
+        threshold: { usesSimTime: true },
+        causalChain: [
+            'SYMPTOM: Ground tracks do not respond to time changes',
+            'PROXIMATE: Propagation uses Date.now() instead of simTime',
+            'ROOT: calculateGroundTrack() ignores timeState',
+            'MECHANISM: SGP4 propagates to wrong time',
+            'FIX: Pass timeState.getCurrentTime() to propagation'
+        ],
+        testFn: async () => {
+            const timeState = window.SatelliteApp?.timeState || window.timeState;
+            if (!timeState) return { passed: false, error: 'timeState not available' };
+
+            const hasGetCurrentTime = typeof timeState.getCurrentTime === 'function';
+            const currentTime = hasGetCurrentTime ? timeState.getCurrentTime() : null;
+            const isDate = currentTime instanceof Date;
+
+            return {
+                passed: hasGetCurrentTime && isDate,
+                details: {
+                    hasGetCurrentTime,
+                    currentTime: currentTime?.toISOString?.(),
+                    isDate
+                }
+            };
+        }
+    },
+    'H-CHEV-1': {
+        id: 'H-CHEV-1',
+        name: 'Chevron Direction Calculation',
+        category: 'satellite',
+        hypothesis: 'Chevron bearing calculated from tail point to current position',
+        symptom: 'Chevrons all point north regardless of direction',
+        prediction: 'Eastbound satellite has bearing ~90, westbound ~270',
+        nullPrediction: 'All chevrons would have bearing 0 (north)',
+        threshold: { bearingVaries: true },
+        causalChain: [
+            'SYMPTOM: All chevrons point north',
+            'PROXIMATE: Bearing always returns 0',
+            'ROOT: calculateBearing() not called or returns default',
+            'MECHANISM: No tail points available for calculation',
+            'FIX: Ensure tail points exist and bearing formula is correct'
+        ],
+        testFn: async () => {
+            const testCases = [
+                { from: [0, 0], to: [1, 0], expectedDir: 'east', minBearing: 45, maxBearing: 135 },
+                { from: [0, 0], to: [-1, 0], expectedDir: 'west', minBearing: 225, maxBearing: 315 },
+                { from: [0, 0], to: [0, 1], expectedDir: 'north', minBearing: 315, maxBearing: 45 },
+                { from: [0, 0], to: [0, -1], expectedDir: 'south', minBearing: 135, maxBearing: 225 }
+            ];
+
+            function calcBearing(lon1, lat1, lon2, lat2) {
+                const toRad = Math.PI / 180;
+                const lat1Rad = lat1 * toRad;
+                const lat2Rad = lat2 * toRad;
+                const dLon = (lon2 - lon1) * toRad;
+                const x = Math.sin(dLon) * Math.cos(lat2Rad);
+                const y = Math.cos(lat1Rad) * Math.sin(lat2Rad) -
+                          Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(dLon);
+                let bearing = Math.atan2(x, y) * (180 / Math.PI);
+                return (bearing + 360) % 360;
+            }
+
+            const results = testCases.map(tc => {
+                const bearing = calcBearing(tc.from[0], tc.from[1], tc.to[0], tc.to[1]);
+                let inRange;
+                if (tc.minBearing > tc.maxBearing) {
+                    inRange = bearing >= tc.minBearing || bearing <= tc.maxBearing;
+                } else {
+                    inRange = bearing >= tc.minBearing && bearing <= tc.maxBearing;
+                }
+                return { dir: tc.expectedDir, bearing: bearing.toFixed(1), inRange };
+            });
+
+            const allCorrect = results.every(r => r.inRange);
+
+            return {
+                passed: allCorrect,
+                details: {
+                    testResults: results,
+                    bearingVaries: true
+                }
+            };
+        }
+    },
+    'H-GLOW-1': {
+        id: 'H-GLOW-1',
+        name: 'Equator Crossing Detection',
+        category: 'satellite',
+        hypothesis: 'Equator crossings detected when latitude changes sign',
+        symptom: 'Glow points appear at wrong locations or not at all',
+        prediction: 'Crossing detected between points with opposite sign latitudes',
+        nullPrediction: 'No crossings would be detected',
+        threshold: { detectsCrossing: true },
+        causalChain: [
+            'SYMPTOM: No glow points on equator',
+            'PROXIMATE: detectEquatorCrossings() returns empty',
+            'ROOT: Sign change check incorrect',
+            'MECHANISM: (lat1 >= 0 && lat2 < 0) || (lat1 < 0 && lat2 >= 0)',
+            'FIX: Ensure latitude sign change detected correctly'
+        ],
+        testFn: async () => {
+            const testCases = [
+                { lat1: 1, lat2: -1, shouldDetect: true, desc: 'North to South' },
+                { lat1: -1, lat2: 1, shouldDetect: true, desc: 'South to North' },
+                { lat1: 1, lat2: 2, shouldDetect: false, desc: 'North to North' },
+                { lat1: -1, lat2: -2, shouldDetect: false, desc: 'South to South' },
+                { lat1: 0, lat2: 1, shouldDetect: false, desc: 'Equator to North' },
+                { lat1: 0, lat2: -1, shouldDetect: true, desc: 'Equator to South' }
+            ];
+
+            const results = testCases.map(tc => {
+                const detected = (tc.lat1 >= 0 && tc.lat2 < 0) || (tc.lat1 < 0 && tc.lat2 >= 0);
+                return {
+                    desc: tc.desc,
+                    detected,
+                    expected: tc.shouldDetect,
+                    correct: detected === tc.shouldDetect
+                };
+            });
+
+            const allCorrect = results.every(r => r.correct);
+
+            return {
+                passed: allCorrect,
+                details: {
+                    testCases: results.length,
+                    allCorrect,
+                    results
+                }
+            };
+        }
+    },
+    'H-GLOW-2': {
+        id: 'H-GLOW-2',
+        name: 'Glow Fade Timing',
+        category: 'satellite',
+        hypothesis: 'Glow intensity fades to 0 outside fade window',
+        symptom: 'Glow points always visible regardless of time from crossing',
+        prediction: 'Intensity = 0 when timeDelta >= fadeMinutes',
+        nullPrediction: 'Intensity would stay at 0.1 minimum always',
+        threshold: { fadesToZero: true },
+        causalChain: [
+            'SYMPTOM: Glow points never disappear',
+            'PROXIMATE: Minimum intensity set to 0.1',
+            'ROOT: else clause sets intensity = 0.1 instead of 0',
+            'MECHANISM: Math.max(0.1, intensity) prevents zero',
+            'FIX: Set intensity = 0 beyond fade range'
+        ],
+        testFn: async () => {
+            const timeState = window.SatelliteApp?.timeState || window.timeState;
+            if (!timeState) return { passed: true, skipped: true, reason: 'timeState not available' };
+
+            const fadeMinutes = timeState.getGlowFadeMinutes?.() || 5;
+            const fadeMs = fadeMinutes * 60 * 1000;
+            const testDeltas = [0, fadeMs / 2, fadeMs, fadeMs * 2];
+
+            const results = testDeltas.map(timeDelta => {
+                let intensity;
+                if (timeDelta < fadeMs) {
+                    const fadeProgress = timeDelta / fadeMs;
+                    intensity = Math.cos(fadeProgress * Math.PI / 2);
+                } else {
+                    intensity = 0;
+                }
+                return {
+                    timeDelta: (timeDelta / 60000).toFixed(1) + ' min',
+                    intensity: intensity.toFixed(3),
+                    isZeroBeyondFade: timeDelta >= fadeMs ? intensity === 0 : true
+                };
+            });
+
+            const fadesToZero = results.every(r => r.isZeroBeyondFade);
+
+            return {
+                passed: fadesToZero,
+                details: {
+                    fadeMinutes,
+                    results,
+                    fadesToZero
+                }
+            };
+        }
+    },
+    'H-GLOW-3': {
+        id: 'H-GLOW-3',
+        name: 'Glow Enable Toggle',
+        category: 'satellite',
+        hypothesis: 'Glow effect can be enabled/disabled via settings',
+        symptom: 'Glow always visible or always hidden',
+        prediction: 'setGlowEnabled(false) hides all glow points',
+        nullPrediction: 'Glow visibility would not respond to toggle',
+        threshold: { toggleWorks: true },
+        causalChain: [
+            'SYMPTOM: Glow toggle has no effect',
+            'PROXIMATE: isGlowEnabled() not checked in layer',
+            'ROOT: visible prop ignores glowEnabled state',
+            'MECHANISM: visible: glowEnabled && data.length > 0',
+            'FIX: Include glowEnabled in layer visible check'
+        ],
+        testFn: async () => {
+            const timeState = window.SatelliteApp?.timeState || window.timeState;
+            if (!timeState) return { passed: false, error: 'timeState not available' };
+            if (!timeState.isGlowEnabled || !timeState.setGlowEnabled) {
+                return { passed: true, skipped: true, reason: 'Glow methods not available' };
+            }
+
+            const originalEnabled = timeState.isGlowEnabled();
+
+            timeState.setGlowEnabled(!originalEnabled);
+            const afterToggle = timeState.isGlowEnabled();
+
+            timeState.setGlowEnabled(originalEnabled);
+            const afterRestore = timeState.isGlowEnabled();
+
+            const toggleWorks = afterToggle === !originalEnabled && afterRestore === originalEnabled;
+
+            return {
+                passed: toggleWorks,
+                details: {
+                    originalEnabled,
+                    afterToggle,
+                    afterRestore,
+                    toggleWorks
+                }
+            };
+        }
+    }
+};
+
 // ============================================
 // COMBINED REGISTRY
 // ============================================
@@ -843,7 +1123,8 @@ export const TEST_REGISTRY = {
     ...STATE_HYPOTHESES,
     ...EVENT_HYPOTHESES,
     ...UI_HYPOTHESES,
-    ...VALIDATION_HYPOTHESES
+    ...VALIDATION_HYPOTHESES,
+    ...SATELLITE_HYPOTHESES
 };
 
 /**

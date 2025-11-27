@@ -298,8 +298,8 @@ function detectEquatorCrossings(tailPoints, headPoints, currentPosition, current
                 const fadeProgress = timeDelta / fadeMs;
                 intensity = Math.cos(fadeProgress * Math.PI / 2);
             } else {
-                // Beyond fade range - still show but very dim
-                intensity = 0.1;
+                // Beyond fade range - hide completely
+                intensity = 0;
             }
 
             // Direction: northbound or southbound
@@ -307,7 +307,7 @@ function detectEquatorCrossings(tailPoints, headPoints, currentPosition, current
 
             crossings.push({
                 position: [crossingLon, 0],
-                intensity: Math.max(0.1, Math.min(1, intensity)),
+                intensity: Math.max(0, Math.min(1, intensity)),
                 direction,
                 isHistory: crossingTime < currentTimeMs,
                 isFuture: crossingTime > currentTimeMs,
@@ -618,7 +618,7 @@ function createLayers() {
             getPosition: d => d.position,
             getIcon: () => 'chevron',
             getSize: 20,
-            getAngle: d => d.bearing, // Positive = clockwise rotation (bearing 0° = north, 90° = east)
+            getAngle: d => -d.bearing, // Negative = clockwise rotation (bearing 0° = north, 90° = east)
             getColor: [157, 212, 255, 255],
             iconAtlas: createChevronAtlas(),
             iconMapping: {

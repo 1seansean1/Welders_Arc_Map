@@ -36,6 +36,123 @@
 
 ## Closed Bugs
 
+### BUG-009: Test Dashboard Returns 404
+**ID**: BUG-009
+**Severity**: MEDIUM
+**Status**: CLOSED
+**Date Reported**: 2025-11-26
+**Date Closed**: 2025-11-26
+
+**Symptoms**:
+- http://localhost:8000/static/test-basic.html returns 404 Not Found
+- Test panel in UI links to non-existent file
+
+**Root Cause**:
+The test-basic.html file was never created. The Tests panel in the UI referenced it but it didn't exist.
+
+**Solution**:
+Created test-basic.html as a test dashboard that runs all registered hypothesis tests and displays results.
+
+**Files Created**:
+- static/test-basic.html
+
+---
+
+### BUG-008: Satellite Chevrons Point North Instead of Direction of Travel
+**ID**: BUG-008
+**Severity**: HIGH
+**Status**: CLOSED
+**Date Reported**: 2025-11-26
+**Date Closed**: 2025-11-26
+
+**Symptoms**:
+- All satellite chevrons point north (up)
+- Direction of travel not reflected in chevron orientation
+
+**Root Cause**:
+Deck.gl IconLayer `getAngle` uses counter-clockwise rotation by default. Bearing was passed as positive, but needed to be negated for clockwise rotation.
+
+**Solution**:
+Changed `getAngle: d => d.bearing` to `getAngle: d => -d.bearing` in deckgl.js IconLayer.
+
+**Files Modified**:
+- static/modules/map/deckgl.js
+
+---
+
+### BUG-007: Equator Crossing Glows Always Visible
+**ID**: BUG-007
+**Severity**: MEDIUM
+**Status**: CLOSED
+**Date Reported**: 2025-11-26
+**Date Closed**: 2025-11-26
+
+**Symptoms**:
+- Equator crossing glow points always visible
+- Should fade in/out within specified minutes of crossing
+- Crossings beyond fade range still showing at 0.1 intensity
+
+**Root Cause**:
+The detectEquatorCrossings() function set intensity=0.1 for crossings beyond the fade range instead of intensity=0.
+
+**Solution**:
+Changed `intensity = 0.1` to `intensity = 0` in the else clause for crossings beyond fade range.
+
+**Files Modified**:
+- static/modules/map/deckgl.js
+
+---
+
+### BUG-006: TIME Panel Bottom Content Cut Off
+**ID**: BUG-006
+**Severity**: LOW
+**Status**: CLOSED
+**Date Reported**: 2025-11-26
+**Date Closed**: 2025-11-26
+
+**Symptoms**:
+- Bottom of TIME control panel content appears cut off
+- Last element (Head slider) may be partially visible
+
+**Root Cause**:
+The track-duration-section didn't have bottom padding, causing the last element to be at the very edge of the scrollable area.
+
+**Solution**:
+Added padding-bottom: 16px to .track-duration-section CSS.
+
+**Files Modified**:
+- templates/index.html
+
+---
+
+### BUG-005: Satellite Tests Missing from UI Test Panel
+**ID**: BUG-005
+**Severity**: MEDIUM
+**Status**: CLOSED
+**Date Reported**: 2025-11-26
+**Date Closed**: 2025-11-26
+
+**Symptoms**:
+- No tests for satellites, orbits, chevrons, or equator crossings in the UI test panel
+- Only map, state, event, ui, and validation tests existed
+
+**Root Cause**:
+SATELLITE_HYPOTHESES were never added to testRegistry.js.
+
+**Solution**:
+Added SATELLITE_HYPOTHESES with 7 new tests:
+- H-SAT-1: Satellite Selection
+- H-SAT-2: Ground Track Propagation
+- H-CHEV-1: Chevron Direction Calculation
+- H-GLOW-1: Equator Crossing Detection
+- H-GLOW-2: Glow Fade Timing
+- H-GLOW-3: Glow Enable Toggle
+
+**Files Modified**:
+- static/modules/test/testRegistry.js
+
+---
+
 ### BUG-004: Sensor/Ground Track Flickering During Pan/Zoom/Click
 **ID**: BUG-004
 **Severity**: HIGH

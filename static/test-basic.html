@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Dashboard - Satellite Visualization</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #f5f5f5;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 { color: #9dd4ff; }
+        h2 { color: #00ff66; margin-top: 30px; }
+        .test-section {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .test-result {
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        .pass {
+            background: #004400;
+            border-left: 4px solid #00ff66;
+        }
+        .fail {
+            background: #440000;
+            border-left: 4px solid #ff4444;
+        }
+        .skip {
+            background: #444400;
+            border-left: 4px solid #ffff44;
+        }
+        .pending {
+            background: #222244;
+            border-left: 4px solid #6666ff;
+        }
+        .summary {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+            font-size: 18px;
+        }
+        .pass-count { color: #00ff66; }
+        .fail-count { color: #ff4444; }
+        .skip-count { color: #ffff44; }
+        .info {
+            background: #1a1a2a;
+            border-left: 4px solid #9dd4ff;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        .test-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .test-link {
+            background: #2a2a2a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 12px 20px;
+            color: #9dd4ff;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .test-link:hover {
+            background: #333;
+            border-color: #9dd4ff;
+        }
+        button {
+            background: #9dd4ff;
+            color: #0a0a0a;
+            border: none;
+            border-radius: 4px;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #b0e0ff;
+        }
+        button:disabled {
+            background: #555;
+            color: #888;
+            cursor: not-allowed;
+        }
+        .category-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .category-count {
+            font-size: 12px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Dashboard</h1>
+    <p>Satellite Visualization System - Hypothesis-Driven Test Suite</p>
+
+    <div class="info">
+        <strong>Test Methodology:</strong> Each test follows the hypothesis-driven debugging approach.
+        Tests are organized by category and can be run individually or all at once.
+    </div>
+
+    <h2>Quick Links</h2>
+    <div class="test-links">
+        <a href="test-deckgl.html" class="test-link">Deck.gl Tests</a>
+        <a href="test-state.html" class="test-link">State Tests</a>
+        <a href="test-eventbus.html" class="test-link">EventBus Tests</a>
+        <a href="test-utils.html" class="test-link">Utility Tests</a>
+    </div>
+
+    <h2>Integrated Test Runner</h2>
+    <button id="run-all-btn" onclick="runAllTests()">Run All Tests</button>
+    <button id="run-category-btn" onclick="runByCategory()">Run By Category</button>
+
+    <div id="test-results"></div>
+    <div id="summary" class="summary" style="display: none;"></div>
+
+    <script type="module">
+        import { TEST_REGISTRY, getAllHypotheses, getCategories, getHypothesesByCategory } from './modules/test/testRegistry.js';
+
+        // Make functions available globally
+        window.TEST_REGISTRY = TEST_REGISTRY;
+        window.getAllHypotheses = getAllHypotheses;
+        window.getCategories = getCategories;
+        window.getHypothesesByCategory = getHypothesesByCategory;
+
+        const resultsDiv = document.getElementById('test-results');
+        const summaryDiv = document.getElementById('summary');
+        let passCount = 0;
+        let failCount = 0;
+        let skipCount = 0;
+
+        function createCategorySection(category) {
+            const hypotheses = getHypothesesByCategory(category);
+            const section = document.createElement('div');
+            section.className = 'test-section';
+            section.id = `category-${category}`;
+            section.innerHTML = `
+                <div class="category-header">
+                    <h2 style="margin: 0;">${category.toUpperCase()} Tests</h2>
+                    <span class="category-count">${hypotheses.length} tests</span>
+                </div>
+                <div id="${category}-results"></div>
+            `;
+            return section;
+        }
+
+        function addTestResult(category, testId, testName, status, message = '') {
+            const containerId = `${category}-results`;
+            let container = document.getElementById(containerId);
+
+            if (!container) {
+                resultsDiv.appendChild(createCategorySection(category));
+                container = document.getElementById(containerId);
+            }
+
+            const statusClass = status === 'pass' ? 'pass' : (status === 'skip' ? 'skip' : (status === 'pending' ? 'pending' : 'fail'));
+            const statusIcon = status === 'pass' ? '✅' : (status === 'skip' ? '⏭️' : (status === 'pending' ? '🔄' : '❌'));
+
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${statusClass}`;
+            resultDiv.id = `test-${testId}`;
+            resultDiv.innerHTML = `<strong>${statusIcon} ${testId}</strong>: ${testName}${message ? '<br><small style="color: #888;">' + message + '</small>' : ''}`;
+            container.appendChild(resultDiv);
+
+            if (status === 'pass') passCount++;
+            else if (status === 'skip') skipCount++;
+            else if (status === 'fail') failCount++;
+        }
+
+        function updateTestResult(testId, status, message = '') {
+            const resultDiv = document.getElementById(`test-${testId}`);
+            if (!resultDiv) return;
+
+            const statusClass = status === 'pass' ? 'pass' : (status === 'skip' ? 'skip' : 'fail');
+            const statusIcon = status === 'pass' ? '✅' : (status === 'skip' ? '⏭️' : '❌');
+
+            resultDiv.className = `test-result ${statusClass}`;
+
+            const hypothesis = TEST_REGISTRY[testId];
+            if (hypothesis) {
+                resultDiv.innerHTML = `<strong>${statusIcon} ${testId}</strong>: ${hypothesis.name}${message ? '<br><small style="color: #888;">' + message + '</small>' : ''}`;
+            }
+        }
+
+        async function runTest(hypothesis) {
+            if (!hypothesis.testFn) {
+                return { passed: true, skipped: true, reason: 'No automated test function' };
+            }
+
+            try {
+                const result = await hypothesis.testFn();
+                return result;
+            } catch (error) {
+                return { passed: false, error: error.message };
+            }
+        }
+
+        window.runAllTests = async function() {
+            const btn = document.getElementById('run-all-btn');
+            btn.disabled = true;
+            btn.textContent = 'Running...';
+
+            resultsDiv.innerHTML = '';
+            summaryDiv.style.display = 'none';
+            passCount = 0;
+            failCount = 0;
+            skipCount = 0;
+
+            const categories = getCategories();
+
+            for (const category of categories) {
+                const hypotheses = getHypothesesByCategory(category);
+
+                for (const hypothesis of hypotheses) {
+                    // Add pending result first
+                    addTestResult(category, hypothesis.id, hypothesis.name, 'pending', hypothesis.hypothesis);
+
+                    // Run the test
+                    const result = await runTest(hypothesis);
+
+                    // Update with actual result
+                    if (result.skipped) {
+                        updateTestResult(hypothesis.id, 'skip', result.reason);
+                        passCount--; // Undo the pending count
+                        skipCount++;
+                    } else if (result.passed) {
+                        updateTestResult(hypothesis.id, 'pass', result.details ? JSON.stringify(result.details) : '');
+                    } else {
+                        passCount--; // Undo the pending count
+                        failCount++;
+                        updateTestResult(hypothesis.id, 'fail', result.error || (result.details ? JSON.stringify(result.details) : ''));
+                    }
+                }
+            }
+
+            showSummary();
+            btn.disabled = false;
+            btn.textContent = 'Run All Tests';
+        };
+
+        window.runByCategory = function() {
+            const categories = getCategories();
+            const category = prompt(`Enter category to run:\n${categories.join(', ')}`);
+
+            if (category && categories.includes(category)) {
+                runCategoryTests(category);
+            } else if (category) {
+                alert(`Invalid category. Available: ${categories.join(', ')}`);
+            }
+        };
+
+        async function runCategoryTests(category) {
+            resultsDiv.innerHTML = '';
+            summaryDiv.style.display = 'none';
+            passCount = 0;
+            failCount = 0;
+            skipCount = 0;
+
+            const hypotheses = getHypothesesByCategory(category);
+
+            for (const hypothesis of hypotheses) {
+                addTestResult(category, hypothesis.id, hypothesis.name, 'pending', hypothesis.hypothesis);
+
+                const result = await runTest(hypothesis);
+
+                if (result.skipped) {
+                    updateTestResult(hypothesis.id, 'skip', result.reason);
+                    skipCount++;
+                } else if (result.passed) {
+                    updateTestResult(hypothesis.id, 'pass', result.details ? JSON.stringify(result.details) : '');
+                    passCount++;
+                } else {
+                    failCount++;
+                    updateTestResult(hypothesis.id, 'fail', result.error || (result.details ? JSON.stringify(result.details) : ''));
+                }
+            }
+
+            showSummary();
+        }
+
+        function showSummary() {
+            const total = passCount + failCount;
+            const passPercent = total > 0 ? ((passCount / total) * 100).toFixed(1) : 0;
+
+            summaryDiv.style.display = 'block';
+            summaryDiv.innerHTML = `
+                <h2>Test Summary</h2>
+                <p>
+                    Total Tests Run: ${total}<br>
+                    <span class="pass-count">Passed: ${passCount}</span><br>
+                    <span class="fail-count">Failed: ${failCount}</span><br>
+                    <span class="skip-count">Skipped: ${skipCount}</span><br>
+                    Success Rate: ${passPercent}%
+                </p>
+                ${failCount === 0 ?
+                    '<p style="color: #00ff66; font-size: 24px;">All tests passed!</p>' :
+                    '<p style="color: #ff4444; font-size: 24px;">Some tests failed. Check results above.</p>'
+                }
+            `;
+        }
+
+        // Show available tests on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const categories = getCategories();
+            const allTests = getAllHypotheses();
+
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'info';
+            infoDiv.innerHTML = `
+                <strong>Available Tests:</strong> ${allTests.length} total across ${categories.length} categories<br>
+                <strong>Categories:</strong> ${categories.join(', ')}
+            `;
+            resultsDiv.appendChild(infoDiv);
+        });
+    </script>
+</body>
+</html>
