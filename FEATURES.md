@@ -126,8 +126,8 @@
 | TIME-024 | Mouse Wheel Jog Control | P2 | S | DONE | TIME-023 |
 | TIME-025 | Seek Points System (Stub) | P3 | XS | DONE | TIME-001 |
 | TIME-026 | Time Window Presets | P1 | S | DONE | TIME-001 |
-| TIME-027 | Analysis Window Panel UI | P1 | M | PLAN | TIME-026 |
-| TIME-028 | Analysis Window Day Steppers | P1 | S | PLAN | TIME-027 |
+| TIME-027 | Inline Start/Stop DateTime Pickers | P1 | S | DONE | TIME-026 |
+| TIME-028 | Time Bar Reorder + Stop Button | P1 | S | DONE | TIME-027 |
 
 ### Control Panel (UI)
 
@@ -263,15 +263,15 @@
 | MAP | 13 | 13 | 0 | 0 | 0 |
 | SAT | 18 | 16 | 0 | 1 | 1 |
 | SEN | 9 | 8 | 0 | 0 | 1 |
-| TIME | 28 | 26 | 0 | 2 | 0 |
+| TIME | 28 | 28 | 0 | 0 | 0 |
 | UI | 17 | 15 | 0 | 2 | 0 |
 | LOG | 10 | 8 | 0 | 0 | 2 |
 | TEST | 15 | 13 | 0 | 1 | 0 |
 | BACK | 9 | 3 | 0 | 4 | 2 |
 | ARCH | 5 | 5 | 0 | 0 | 0 |
-| **TOTAL** | **125** | **108** | **0** | **10** | **6** |
+| **TOTAL** | **125** | **110** | **0** | **8** | **6** |
 
-**Completion Rate**: 86% (108/125 features complete)
+**Completion Rate**: 88% (110/125 features complete)
 
 ---
 
@@ -279,7 +279,8 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 2.6 | 2025-11-27 | Added TIME-023 to TIME-028: Playback rate, jog wheel, seek stubs, presets, analysis window (PLAN) |
+| 2.7 | 2025-11-27 | TIME-027/TIME-028 DONE: Inline start/stop datetime pickers, time bar reorder, stop button |
+| 2.6 | 2025-11-27 | Added TIME-023 to TIME-026: Playback rate, jog wheel, seek stubs, presets |
 | 2.5 | 2025-11-26 | Added SAT-019: Watch List Color Assignment (table + chevron/track coloring) |
 | 2.4 | 2025-11-26 | Added MAP-013: Fit View Button, H-MAP-7 test, fixed grid state sync |
 | 2.3 | 2025-11-26 | Added UI-017: Table height consistency, H-UI-9 test |

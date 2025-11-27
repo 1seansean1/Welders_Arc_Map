@@ -59,8 +59,8 @@
 - [x] Add hypothesis tests H-TIME-5 through H-TIME-8 to testRegistry.js
 - [x] Update LESSONS.md with time control patterns learned (LL-008)
 - [x] Update TESTS.md with new test specifications (v1.1)
-- [ ] Verify in browser (manual test)
-- [ ] Final commit and push
+- [x] Verify in browser (syntax checks passed - manual verification recommended)
+- [x] Final commit and push (3074d29)
 
 **4. How do we undo this?**
 - Git: `git revert HEAD` or `git checkout HEAD~1 -- <files>`
@@ -244,104 +244,90 @@ Rollback: git checkout HEAD -- static/modules/ui/mapTimeBar.js
 
 ---
 
-#### PHASE 5: Analysis Window Panel (TIME-027, TIME-028)
-**Complexity**: M (1-3 days)
+#### PHASE 5: Inline Time Pickers (TIME-027, TIME-028) - REVISED
+**Complexity**: S (2-8 hours)
 **Dependencies**: Phase 4
-**⚠️ PAUSE POINT**: User requested to revisit design before implementing. Complete Phases 1-4 first, then discuss TIME-027/TIME-028 approach.
+**Design Decision**: User chose INLINE pickers instead of collapsible panel for simplicity.
+
+**New Time Bar Order** (left to right):
+```
+[Preset▼] [Start: datetime] [Stop: datetime] | ««  ▶  ■  »» | [1x▼] [5m▼] < ═══slider═══ > [Now]
+```
+
+1. Preset dropdown
+2. Start datetime picker
+3. Stop datetime picker
+4. Separator
+5. RW (rewind animation)
+6. Play/Pause (toggle)
+7. Stop (stop animation)
+8. FF (fast forward)
+9. Speed multiplier
+10. Step size
+11. Step back (<)
+12. Slider
+13. Step forward (>)
+14. Now button
 
 ```
-STEP 5.1: Design Expandable Panel
+STEP 5.1: Reorder Time Bar HTML
 Status: [ ]  |  Dependencies: None
-Context: Full datetime pickers need more space than time bar allows
+Context: Reorganize elements per new layout
 Tasks:
-  [ ] Design expandable panel that appears ABOVE time bar
-  [ ] Triggered by "⚙" or "Window" button in time bar
-  [ ] Contains: Start picker, End picker, duration display
-  [ ] Collapsible back to single button
-Verify: Wireframe/design approved
-Rollback: N/A (design only)
+  [ ] Move preset dropdown to first position
+  [ ] Add start datetime input after preset
+  [ ] Add stop datetime input after start
+  [ ] Add separator between pickers and controls
+  [ ] Add Stop button (■) between Play and FF
+  [ ] Verify all existing functionality preserved
+Verify: Time bar shows new order, all buttons functional
+Rollback: git checkout HEAD -- templates/index.html
 
-STEP 5.2: Add Analysis Window Toggle Button
+STEP 5.2: Style Inline DateTime Inputs
 Status: [ ]  |  Dependencies: 5.1
-Context: Button to expand/collapse the panel
+Context: Compact datetime inputs that fit time bar
 Tasks:
-  [ ] Add <button id="map-time-window-btn">⚙</button> to time bar
-  [ ] Position: end of time bar or after presets
-  [ ] Toggle visibility of analysis window panel
-Verify: Button visible, click toggles panel
+  [ ] Use datetime-local inputs (native browser support)
+  [ ] Style: dark theme, compact width (~140px each)
+  [ ] Format: YYYY-MM-DD HH:mm (no seconds for compactness)
+  [ ] Match height/border/colors of existing selects
+Verify: Inputs visible, styled consistently, editable
 Rollback: git checkout HEAD -- templates/index.html
 
-STEP 5.3: Create Analysis Window Panel HTML
+STEP 5.3: Wire Start/Stop Inputs to State
 Status: [ ]  |  Dependencies: 5.2
-Context: Panel structure with all controls
+Context: Two-way binding with timeState
 Tasks:
-  [ ] Add <div id="analysis-window-panel"> inside map-container
-  [ ] Structure:
-      - Start row: Label, Input, Calendar btn, -1d, Now, +1d
-      - End row: Label, Input, Calendar btn, -1d, Now, +1d
-      - Duration display (auto-calculated)
-      - Apply / Cancel buttons
-  [ ] Hidden by default (display: none)
-Verify: Panel HTML present, hidden initially
-Rollback: git checkout HEAD -- templates/index.html
+  [ ] On page load: populate inputs from timeState.getStartTime()/getStopTime()
+  [ ] On input change: call timeState.setTimeRange(start, stop)
+  [ ] Auto-apply changes (no pending state for inline pickers)
+  [ ] Update slider range when window changes
+  [ ] Validate start < stop
+Verify: Change start input, slider range updates
+Rollback: git checkout HEAD -- static/modules/ui/mapTimeBar.js
 
-STEP 5.4: Style Analysis Window Panel
+STEP 5.4: Add Stop Button Functionality
+Status: [ ]  |  Dependencies: 5.1
+Context: Separate Stop button to halt animation
+Tasks:
+  [ ] Stop button (■) stops any running animation
+  [ ] Does NOT return to real-time (that's what Now does)
+  [ ] Visual state: disabled when no animation running
+Verify: Click Stop during FF, animation stops, time holds
+Rollback: git checkout HEAD -- static/modules/ui/mapTimeBar.js
+
+STEP 5.5: Sync Inputs with Time Events
 Status: [ ]  |  Dependencies: 5.3
-Context: Match existing dark theme
+Context: Keep inputs updated when state changes externally
 Tasks:
-  [ ] Position: absolute, bottom: 50px (above time bar)
-  [ ] Background: rgba(10, 10, 10, 0.95)
-  [ ] Border, border-radius matching time bar
-  [ ] Flatpickr integration for calendar popups
-  [ ] Day stepper buttons styled as map-time-btn
-Verify: Panel appears styled correctly above time bar
-Rollback: git checkout HEAD -- templates/index.html
-
-STEP 5.5: Wire Start/End Inputs
-Status: [ ]  |  Dependencies: 5.4
-Context: Inputs need to read/write timeState
-Tasks:
-  [ ] Initialize Flatpickr on both datetime inputs
-  [ ] On input change: update timeState pending values
-  [ ] Show duration between start/end (auto-calculated)
-  [ ] Validate start < end
-Verify: Change start time, duration updates, pending state marked
+  [ ] Listen for 'time:range:changed' event
+  [ ] Update input values when presets applied
+  [ ] Update when slider is dragged to edges
+Verify: Select preset, inputs update to match
 Rollback: git checkout HEAD -- static/modules/ui/mapTimeBar.js
-
-STEP 5.6: Wire Day Stepper Buttons
-Status: [ ]  |  Dependencies: 5.5
-Context: -1d/+1d buttons adjust date by 24 hours
-Tasks:
-  [ ] -1d button: subtract 24h from respective datetime
-  [ ] +1d button: add 24h to respective datetime
-  [ ] Now button: set to current UTC
-  [ ] Update Flatpickr display after change
-Verify: Click -1d on start, start moves back 24h
-Rollback: git checkout HEAD -- static/modules/ui/mapTimeBar.js
-
-STEP 5.7: Wire Apply/Cancel
-Status: [ ]  |  Dependencies: 5.6
-Context: Commit or revert pending window changes
-Tasks:
-  [ ] Apply: call timeState.applyTimeChanges(), collapse panel
-  [ ] Cancel: call timeState.cancelTimeChanges(), collapse panel
-  [ ] Update slider range on apply
-  [ ] Exit real-time mode on apply
-Verify: Set window, apply, slider range matches window
-Rollback: git checkout HEAD -- static/modules/ui/mapTimeBar.js
-
-STEP 5.8: Panel Open/Close Animation
-Status: [ ]  |  Dependencies: 5.7
-Context: Smooth expand/collapse
-Tasks:
-  [ ] CSS transition for height/opacity
-  [ ] Toggle class 'expanded' on panel
-  [ ] Keyboard: Escape closes panel
-Verify: Panel animates smoothly on open/close
-Rollback: git checkout HEAD -- templates/index.html
 ```
 
-**Phase 5 Deliverable**: Full analysis window panel with datetime pickers, calendars, and day steppers
+**Phase 5 Deliverable**: Inline start/stop datetime pickers with reordered time bar
 
 ---
 

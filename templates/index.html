@@ -473,6 +473,50 @@
             border-color: var(--accent-blue-grey);
         }
 
+        /* Inline datetime inputs */
+        .map-time-datetime {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: var(--text-secondary);
+            font-size: 11px;
+            padding: 2px 6px;
+            height: 28px;
+            width: 145px;
+            cursor: pointer;
+        }
+
+        .map-time-datetime:focus {
+            outline: none;
+            border-color: var(--accent-blue-grey);
+            color: var(--text-primary);
+        }
+
+        .map-time-datetime::-webkit-calendar-picker-indicator {
+            filter: invert(0.7);
+            cursor: pointer;
+        }
+
+        /* Datetime label */
+        .map-time-label {
+            color: var(--text-muted);
+            font-size: 10px;
+            margin-right: 2px;
+        }
+
+        /* Separator between sections */
+        .map-time-separator {
+            width: 1px;
+            height: 20px;
+            background: var(--border-color);
+            margin: 0 4px;
+        }
+
+        /* Stop button */
+        .map-time-stop-btn {
+            font-size: 10px;
+        }
+
         .map-time-slider {
             flex: 1;
             min-width: 100px;
@@ -2326,13 +2370,31 @@
                 </button>
                 <!-- Map Time Bar (bottom of map) -->
                 <div id="map-time-bar" class="map-time-bar">
-                    <!-- Animation control group: RW, Play/Stop, FF -->
+                    <!-- 1. Time window presets -->
+                    <select class="map-time-step-select" id="map-time-preset-select" title="Quick time window presets">
+                        <option value="" disabled selected>Window</option>
+                        <option value="last-1h">Last 1h</option>
+                        <option value="last-6h">Last 6h</option>
+                        <option value="last-24h">Last 24h</option>
+                        <option value="next-6h">Next 6h</option>
+                        <option value="next-24h">Next 24h</option>
+                    </select>
+                    <!-- 2. Start datetime picker -->
+                    <span class="map-time-label">Start:</span>
+                    <input type="datetime-local" class="map-time-datetime" id="map-time-start" title="Analysis window start time" />
+                    <!-- 3. Stop datetime picker -->
+                    <span class="map-time-label">Stop:</span>
+                    <input type="datetime-local" class="map-time-datetime" id="map-time-stop" title="Analysis window stop time" />
+                    <!-- Separator -->
+                    <div class="map-time-separator"></div>
+                    <!-- 4-7. Animation controls: RW, Play/Pause, Stop, FF -->
                     <button class="map-time-btn map-time-anim-btn" id="map-time-rewind" title="Rewind animation"><span class="anim-icon">««</span></button>
-                    <button class="map-time-btn map-time-play-btn" id="map-time-play-btn" title="Play/Stop real-time">
+                    <button class="map-time-btn map-time-play-btn" id="map-time-play-btn" title="Play/Pause real-time">
                         <span id="map-time-play-icon">▶</span>
                     </button>
+                    <button class="map-time-btn map-time-stop-btn" id="map-time-stop-btn" title="Stop animation">■</button>
                     <button class="map-time-btn map-time-anim-btn" id="map-time-ffwd" title="Fast forward animation"><span class="anim-icon">»»</span></button>
-                    <!-- Speed multiplier selector -->
+                    <!-- 8. Speed multiplier selector -->
                     <select class="map-time-step-select" id="map-time-speed-select" title="Playback speed multiplier">
                         <option value="0.5">0.5x</option>
                         <option value="1" selected>1x</option>
@@ -2343,9 +2405,7 @@
                         <option value="60">60x</option>
                         <option value="600">600x</option>
                     </select>
-                    <!-- Separator -->
-                    <div class="map-time-separator"></div>
-                    <!-- Step control group: Dropdown, Step buttons, Slider, Now -->
+                    <!-- 9. Step size selector -->
                     <select class="map-time-step-select" id="map-time-step-select" title="Step size">
                         <option value="0.0167">1s</option>
                         <option value="0.1667">10s</option>
@@ -2356,19 +2416,11 @@
                         <option value="30">30m</option>
                         <option value="60">1h</option>
                     </select>
+                    <!-- 10-13. Step/Slider/Now -->
                     <button class="map-time-btn" id="map-time-step-back" title="Step backward">&lt;</button>
                     <input type="range" class="map-time-slider" id="map-time-slider" min="0" max="1000" value="1000" />
                     <button class="map-time-btn" id="map-time-step-forward" title="Step forward">&gt;</button>
                     <button class="map-time-btn map-time-now-btn" id="map-time-now-btn" title="Reset to now">Now</button>
-                    <!-- Time window presets -->
-                    <select class="map-time-step-select" id="map-time-preset-select" title="Quick time window presets">
-                        <option value="" disabled selected>Window</option>
-                        <option value="last-1h">Last 1h</option>
-                        <option value="last-6h">Last 6h</option>
-                        <option value="last-24h">Last 24h</option>
-                        <option value="next-6h">Next 6h</option>
-                        <option value="next-24h">Next 24h</option>
-                    </select>
                 </div>
             </div>
         </div>

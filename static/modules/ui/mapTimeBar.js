@@ -33,8 +33,11 @@ const rewindBtn = document.getElementById('map-time-rewind');
 const stepBackBtn = document.getElementById('map-time-step-back');
 const stepForwardBtn = document.getElementById('map-time-step-forward');
 const ffwdBtn = document.getElementById('map-time-ffwd');
+const stopBtn = document.getElementById('map-time-stop-btn');
 const timeSlider = document.getElementById('map-time-slider');
 const nowBtn = document.getElementById('map-time-now-btn');
+const startInput = document.getElementById('map-time-start');
+const stopInput = document.getElementById('map-time-stop');
 
 // ============================================
 // STATE
@@ -254,6 +257,7 @@ function startAnimation(direction) {
 
     // Update button appearance
     updateAnimationButtonState();
+    updateStopButtonState();
 
     // Perform initial step
     stepTime(direction);
@@ -285,6 +289,7 @@ function stopAnimation() {
     }
     animationDirection = 0;
     updateAnimationButtonState();
+    updateStopButtonState();
 }
 
 /**
@@ -474,6 +479,152 @@ function applyPreset(preset) {
     if (presetSelect) {
         presetSelect.selectedIndex = 0;
     }
+
+    // Update datetime inputs to reflect new range
+    updateDateTimeInputs();
+}
+
+// ============================================
+// DATETIME INPUTS
+// ============================================
+
+/**
+ * Convert Date to datetime-local input format (YYYY-MM-DDTHH:mm)
+ * @param {Date} date - Date to format
+ * @returns {string} Formatted string for datetime-local input
+ */
+function dateToInputValue(date) {
+    if (!date || !(date instanceof Date)) return '';
+    // datetime-local expects local time, but we work in UTC
+    // Format as ISO and take first 16 chars (YYYY-MM-DDTHH:mm)
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const hours = String(date.getUTCHours()).padStart(2, '0');
+    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+/**
+ * Convert datetime-local input value to Date (UTC)
+ * @param {string} value - Input value (YYYY-MM-DDTHH:mm)
+ * @returns {Date|null} Date object or null if invalid
+ */
+function inputValueToDate(value) {
+    if (!value) return null;
+    // Parse as UTC (append :00Z for seconds and timezone)
+    const date = new Date(value + ':00Z');
+    return isNaN(date.getTime()) ? null : date;
+}
+
+/**
+ * Update datetime inputs from current state
+ */
+function updateDateTimeInputs() {
+    const state = timeState.getTimeState();
+
+    if (startInput && state.startTime) {
+        startInput.value = dateToInputValue(state.startTime);
+    }
+
+    if (stopInput && state.stopTime) {
+        stopInput.value = dateToInputValue(state.stopTime);
+    }
+}
+
+/**
+ * Handle start datetime input change
+ */
+function handleStartInputChange() {
+    const newStart = inputValueToDate(startInput.value);
+    if (!newStart) return;
+
+    const state = timeState.getTimeState();
+    const stop = state.stopTime;
+
+    // Validate: start must be before stop
+    if (stop && newStart >= stop) {
+        logger.error('Start time must be before stop time', logger.CATEGORY.TIME);
+        // Revert to current state
+        updateDateTimeInputs();
+        return;
+    }
+
+    // Apply the new time range
+    timeState.setTimeRange(newStart, stop);
+    timeState.applyTimeChanges();
+
+    // Stop real-time mode when manually setting window
+    if (isRealTime) {
+        stopRealTime();
+    }
+
+    // Update slider
+    updateSliderFromState();
+
+    logger.info(`Start time changed: ${newStart.toISOString()}`, logger.CATEGORY.TIME);
+}
+
+/**
+ * Handle stop datetime input change
+ */
+function handleStopInputChange() {
+    const newStop = inputValueToDate(stopInput.value);
+    if (!newStop) return;
+
+    const state = timeState.getTimeState();
+    const start = state.startTime;
+
+    // Validate: stop must be after start
+    if (start && newStop <= start) {
+        logger.error('Stop time must be after start time', logger.CATEGORY.TIME);
+        // Revert to current state
+        updateDateTimeInputs();
+        return;
+    }
+
+    // Apply the new time range
+    timeState.setTimeRange(start, newStop);
+    timeState.applyTimeChanges();
+
+    // Stop real-time mode when manually setting window
+    if (isRealTime) {
+        stopRealTime();
+    }
+
+    // Update slider
+    updateSliderFromState();
+
+    logger.info(`Stop time changed: ${newStop.toISOString()}`, logger.CATEGORY.TIME);
+}
+
+// ============================================
+// STOP BUTTON
+// ============================================
+
+/**
+ * Stop any running animation (does not return to real-time)
+ */
+function handleStopButton() {
+    if (animationDirection !== 0) {
+        stopAnimation();
+        logger.info('Animation stopped', logger.CATEGORY.TIME);
+    }
+}
+
+/**
+ * Update stop button visual state
+ */
+function updateStopButtonState() {
+    if (stopBtn) {
+        if (animationDirection !== 0) {
+            stopBtn.classList.add('active');
+            stopBtn.disabled = false;
+        } else {
+            stopBtn.classList.remove('active');
+            // Don't disable - user might want to click it anyway
+        }
+    }
 }
 
 // ============================================
@@ -627,9 +778,38 @@ function initializeEventHandlers() {
         });
     }
 
+    // Stop animation button
+    if (stopBtn) {
+        stopBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            handleStopButton();
+        });
+    }
+
+    // Start datetime input
+    if (startInput) {
+        startInput.addEventListener('change', (e) => {
+            e.stopPropagation();
+            handleStartInputChange();
+        });
+    }
+
+    // Stop datetime input
+    if (stopInput) {
+        stopInput.addEventListener('change', (e) => {
+            e.stopPropagation();
+            handleStopInputChange();
+        });
+    }
+
     // Listen for time changes to keep slider in sync
     eventBus.on('time:changed', () => {
         updateSliderFromState();
+    });
+
+    // Listen for time range changes to update datetime inputs
+    eventBus.on('time:range:changed', () => {
+        updateDateTimeInputs();
     });
 }
 
@@ -644,6 +824,8 @@ export function initializeMapTimeBar() {
     initializeEventHandlers();
     initializeWheelJog();
     updatePlayButtonState();
+    updateDateTimeInputs();
+    updateStopButtonState();
 
     // Start in real-time mode
     startRealTime();
