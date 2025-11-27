@@ -23,6 +23,7 @@ This document captures debugging knowledge, integration patterns, and hard-won i
 | LL-004 | Test State Pollution | Testing | 2025-11-25 |
 | LL-005 | Deck.gl Layer State Corruption | Rendering | 2025-11-26 |
 | LL-006 | deck.gl-leaflet Integration vs Manual Sync | Architecture | 2025-11-26 |
+| LL-007 | Test Visual Properties Not Just Existence | Testing | 2025-11-26 |
 
 ---
 
@@ -443,3 +444,39 @@ User insights that saved hours:
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2025-11-26 | Initial consolidated lessons document |
+
+---
+
+## LL-007: Test Visual Properties Not Just Existence
+
+**Date**: 2025-11-26
+**Category**: Testing
+**Status**: RESOLVED
+
+### Problem
+
+Equator reference line layer was created and configured, but was invisible on the map. Tests passed because they only verified the layer existed, not that it was actually visible.
+
+### Key Observation
+
+> "Tests passed but feature not working - tests only checked layer existence, not visibility properties"
+
+### Root Cause
+
+- Alpha value of 60/255 (~24% opacity) made line nearly invisible
+- Width of 1px too thin to see against map
+- Test only checked existence and visible prop, not actual color values
+
+### Solution
+
+1. Increased alpha from 60 to 150 (~59% opacity)
+2. Increased width from 1px to 2px
+3. Enhanced test to verify alpha >= 100
+
+### Prevention Pattern
+
+When testing visual elements:
+1. Don't just test existence - verify visibility properties
+2. Check opacity/alpha values - a layer with alpha=1 exists but isn't visible
+3. Validate dimensions - width/height must be perceivable
+4. Add threshold checks for minimum visible values

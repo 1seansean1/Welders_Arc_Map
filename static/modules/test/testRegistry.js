@@ -1201,15 +1201,15 @@ const SATELLITE_HYPOTHESES = {
         category: 'map',
         hypothesis: 'Equator line should render as a subtle reference at latitude 0',
         symptom: 'No equator line visible on map',
-        prediction: 'Layer with id equator-line exists and is visible',
-        nullPrediction: 'No equator layer would exist',
-        threshold: { hasEquatorLine: true },
+        prediction: 'Layer with id equator-line exists, is visible, and has alpha >= 100',
+        nullPrediction: 'No equator layer would exist or alpha too low',
+        threshold: { hasEquatorLine: true, alphaOk: true },
         causalChain: [
             'SYMPTOM: No equator reference on map',
-            'PROXIMATE: Missing PathLayer for equator',
-            'ROOT: Feature not implemented',
-            'MECHANISM: Deck.gl PathLayer at lat=0 from -180 to 180',
-            'FIX: Add equator-line PathLayer'
+            'PROXIMATE: Missing PathLayer for equator or alpha too low',
+            'ROOT: Feature not implemented or visibility too subtle',
+            'MECHANISM: Deck.gl PathLayer at lat=0 from -180 to 180 with alpha >= 100',
+            'FIX: Add equator-line PathLayer with sufficient alpha'
         ],
         testFn: async () => {
             const deckglModule = window.deckgl || window.deckLayer;
@@ -1218,11 +1218,17 @@ const SATELLITE_HYPOTHESES = {
             }
             const layers = deckglModule.props?.layers || [];
             const equatorLayer = layers.find(l => l.id === 'equator-line');
+            // Check alpha is sufficient for visibility (>= 100)
+            const color = equatorLayer?.props?.getColor;
+            const alpha = Array.isArray(color) ? color[3] : 0;
+            const isVisible = equatorLayer?.props?.visible !== false && alpha >= 100;
             return {
-                passed: equatorLayer !== undefined && equatorLayer.props?.visible !== false,
+                passed: equatorLayer !== undefined && isVisible,
                 details: {
                     hasEquatorLayer: !!equatorLayer,
-                    isVisible: equatorLayer?.props?.visible
+                    isVisible: equatorLayer?.props?.visible,
+                    alpha: alpha,
+                    alphaOk: alpha >= 100
                 }
             };
         }

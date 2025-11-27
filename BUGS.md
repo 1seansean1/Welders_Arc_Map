@@ -36,6 +36,31 @@
 
 ## Recently Fixed
 
+### BUG-011: Equator Reference Line Not Visible
+**ID**: BUG-011
+**Severity**: MEDIUM
+**Status**: CLOSED
+**Date Reported**: 2025-11-26
+**Date Closed**: 2025-11-26
+
+**Symptoms**:
+- Equator reference line layer exists but is invisible on map
+- Tests passed because they only checked layer existence, not visibility
+
+**Root Cause**:
+Alpha value of 60/255 (~24% opacity) combined with 1px width made the line essentially invisible on the map.
+
+**Solution**:
+1. Increased alpha from 60 to 150 (~59% opacity)
+2. Increased width from 1px to 2px
+3. Updated H-MAP-7 test to verify alpha >= 100
+
+**Files Modified**:
+- static/modules/map/deckgl.js (alpha, width)
+- static/modules/test/testRegistry.js (test enhancement)
+
+---
+
 ### BUG-010: Map Time Bar Click-Through to Map
 **ID**: BUG-010
 **Severity**: HIGH
