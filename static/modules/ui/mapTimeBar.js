@@ -22,6 +22,7 @@ import logger from '../utils/logger.js';
 // DOM ELEMENTS
 // ============================================
 
+const container = document.getElementById('map-time-bar');
 const playBtn = document.getElementById('map-time-play-btn');
 const playIcon = document.getElementById('map-time-play-icon');
 const stepSelect = document.getElementById('map-time-step-select');
@@ -264,6 +265,16 @@ function resetToNow() {
  * Initialize all event handlers
  */
 function initializeEventHandlers() {
+    // Block all mouse events from propagating to map underneath
+    if (container) {
+        const blockEvents = ['click', 'dblclick', 'mousedown', 'mouseup', 'mousemove', 'wheel'];
+        blockEvents.forEach(eventType => {
+            container.addEventListener(eventType, (e) => {
+                e.stopPropagation();
+            });
+        });
+    }
+
     // Play/Stop button
     if (playBtn) {
         playBtn.addEventListener('click', (e) => {
@@ -275,6 +286,7 @@ function initializeEventHandlers() {
     // Step size select
     if (stepSelect) {
         stepSelect.addEventListener('change', (e) => {
+            e.stopPropagation();
             const stepMinutes = parseFloat(e.target.value);
             timeState.setTimeStepMinutes(stepMinutes);
         });
@@ -342,7 +354,8 @@ function initializeEventHandlers() {
 
     // Time slider
     if (timeSlider) {
-        timeSlider.addEventListener('input', () => {
+        timeSlider.addEventListener('input', (e) => {
+            e.stopPropagation();
             updateTimeFromSlider();
         });
     }

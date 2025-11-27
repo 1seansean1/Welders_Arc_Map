@@ -34,6 +34,34 @@
 
 ---
 
+## Recently Fixed
+
+### BUG-010: Map Time Bar Click-Through to Map
+**ID**: BUG-010
+**Severity**: HIGH
+**Status**: CLOSED
+**Date Reported**: 2025-11-26
+**Date Closed**: 2025-11-26
+
+**Symptoms**:
+- Clicking on time controls at bottom of map causes map to pan/zoom underneath
+- Slider dragging also moves the map
+- Glitchy interaction with map while using time controls
+
+**Root Cause**:
+Mouse events were propagating through the time bar overlay to the map underneath. Missing `pointer-events: auto` CSS and no container-level event blocking.
+
+**Solution**:
+1. Added `pointer-events: auto` to `.map-time-bar` CSS
+2. Added container-level event blocking for click, dblclick, mousedown, mouseup, mousemove, wheel
+3. Added `stopPropagation()` to slider input and select change handlers
+
+**Files Modified**:
+- templates/index.html (CSS)
+- static/modules/ui/mapTimeBar.js (event handlers)
+
+---
+
 ## Closed Bugs
 
 ### BUG-009: Test Dashboard Returns 404
