@@ -19,6 +19,8 @@
  */
 
 import logger from '../utils/logger.js';
+import listState from '../state/listState.js';
+import satelliteState from '../state/satelliteState.js';
 
 // ============================================
 // HELPER FUNCTIONS
@@ -411,6 +413,148 @@ export function showSatelliteConfirmModal(satellites, onConfirm) {
     cancelBtn.addEventListener('click', handleCancel);
     overlay.addEventListener('click', handleOverlayClick);
 }
+
+
+// ============================================
+// SATELLITE ADD MODAL (with Color and List)
+// ============================================
+
+export function showSatelliteAddModal(onSave) {
+    const overlay = document.getElementById('satellite-add-modal-overlay');
+    const form = document.getElementById('satellite-add-modal-form');
+    const nameInput = document.getElementById('satellite-add-input-name');
+    const tleInput = document.getElementById('satellite-add-input-tle');
+    const colorPicker = document.getElementById('satellite-add-color-picker');
+    const listSelect = document.getElementById('satellite-add-input-list');
+
+    nameInput.value = '';
+    tleInput.value = '';
+    let selectedColor = 'grey';
+    colorPicker.querySelectorAll('.modal-color-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.color === 'grey') btn.classList.add('active');
+    });
+
+    listSelect.innerHTML = '<option value="">(None)</option>';
+    listState.getAllLists().forEach(list => {
+        const opt = document.createElement('option');
+        opt.value = list.id;
+        opt.textContent = list.name;
+        listSelect.appendChild(opt);
+    });
+
+    overlay.classList.add('visible');
+    setTimeout(() => nameInput.focus(), 100);
+
+    const cancelBtn = document.getElementById('satellite-add-modal-cancel');
+
+    const handleColorClick = (e) => {
+        if (e.target.classList.contains('modal-color-btn')) {
+            colorPicker.querySelectorAll('.modal-color-btn').forEach(btn => btn.classList.remove('active'));
+            e.target.classList.add('active');
+            selectedColor = e.target.dataset.color;
+        }
+    };
+    colorPicker.addEventListener('click', handleColorClick);
+
+    const closeModal = () => {
+        overlay.classList.remove('visible');
+        form.removeEventListener('submit', handleSubmit);
+        cancelBtn.removeEventListener('click', handleCancel);
+        colorPicker.removeEventListener('click', handleColorClick);
+    };
+
+    const handleCancel = () => { closeModal(); logger.diagnostic('Satellite add cancelled', logger.CATEGORY.SATELLITE); };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        const name = nameInput.value.trim();
+        const tleText = tleInput.value.trim();
+        const listId = listSelect.value ? parseInt(listSelect.value) : null;
+        if (!name) { alert('Name is required'); nameInput.focus(); return; }
+        const tleResult = parseTLE(tleText);
+        if (!tleResult.valid) { alert('TLE Error: ' + tleResult.error); tleInput.focus(); return; }
+        closeModal();
+        onSave({ name, noradId: tleResult.noradId, tleLine1: tleResult.tleLine1, tleLine2: tleResult.tleLine2, watchColor: selectedColor, listId });
+    };
+
+    overlay.addEventListener('click', (e) => { e.stopPropagation(); });
+    form.addEventListener('submit', handleSubmit);
+    cancelBtn.addEventListener('click', handleCancel);
+}
+
+// ============================================
+// LIST EDITOR MODAL (with Satellite Picker)
+// ============================================
+
+export function showListEditorModal(list = null, onSave) {
+    const overlay = document.getElementById('list-editor-modal-overlay');
+    const title = document.getElementById('list-editor-modal-title');
+    const form = document.getElementById('list-editor-modal-form');
+    const nameInput = document.getElementById('list-editor-input-name');
+    const picker = document.getElementById('list-editor-satellite-picker');
+
+    title.textContent = list ? 'Edit List' : 'Create List';
+    nameInput.value = list ? list.name : '';
+
+    const satellites = satelliteState.getAllSatellites();
+    const currentIds = list ? list.satelliteIds : [];
+
+    picker.innerHTML = '';
+    if (satellites.length === 0) {
+        picker.innerHTML = '<div style="padding: 12px; color: var(--text-muted); text-align: center;">No satellites</div>';
+    } else {
+        satellites.forEach(sat => {
+            const item = document.createElement('div');
+            item.className = 'modal-satellite-item';
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.checked = currentIds.includes(sat.id);
+            cb.dataset.satelliteId = sat.id;
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'sat-name';
+            nameSpan.textContent = sat.name;
+            const noradSpan = document.createElement('span');
+            noradSpan.className = 'sat-norad';
+            noradSpan.textContent = sat.noradId;
+            item.appendChild(cb);
+            item.appendChild(nameSpan);
+            item.appendChild(noradSpan);
+            item.addEventListener('click', (e) => { if (e.target !== cb) cb.checked = !cb.checked; });
+            picker.appendChild(item);
+        });
+    }
+
+    overlay.classList.add('visible');
+    setTimeout(() => nameInput.focus(), 100);
+
+    const cancelBtn = document.getElementById('list-editor-modal-cancel');
+
+    const closeModal = () => {
+        overlay.classList.remove('visible');
+        form.removeEventListener('submit', handleSubmit);
+        cancelBtn.removeEventListener('click', handleCancel);
+    };
+
+    const handleCancel = () => { closeModal(); logger.diagnostic('List edit cancelled', logger.CATEGORY.DATA); };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        const name = nameInput.value.trim();
+        if (!name) { alert('List name is required'); nameInput.focus(); return; }
+        const selectedIds = [];
+        picker.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
+            selectedIds.push(parseInt(cb.dataset.satelliteId));
+        });
+        closeModal();
+        onSave({ name, satelliteIds: selectedIds });
+    };
+
+    overlay.addEventListener('click', (e) => { e.stopPropagation(); });
+    form.addEventListener('submit', handleSubmit);
+    cancelBtn.addEventListener('click', handleCancel);
+}
+
 
 // ============================================
 // PUBLIC API

@@ -1,7 +1,7 @@
 # WA_map Feature Registry
 
 > **Document Type**: FEATURES
-> **Version**: 3.4
+> **Version**: 3.5
 > **Last Updated**: 2025-11-27
 > **Maintainer**: AI Governor System
 
@@ -71,7 +71,8 @@
 | SAT-004 | Satellite Table UI | P1 | M | DONE | SAT-001 |
 | SAT-005 | Ground Track Visualization | P1 | L | DONE | SAT-001, MAP-003 |
 | SAT-006 | SGP4 Orbital Propagation | P0 | M | DONE | SAT-005 |
-| SAT-007 | Watchlist (Star) Feature | P2 | S | DONE | SAT-001 |
+| SAT-007 | ~~Watchlist (Star) Column~~ | P2 | S | REMOVED | ~~SAT-001~~ |
+| SAT-024 | +Sat Modal with Color/List | P1 | M | DONE | SAT-001, LIST-001 |
 | SAT-008 | Anti-Meridian Handling | P2 | S | DONE | SAT-005 |
 | SAT-009 | Satellite Selection Sync | P1 | S | DONE | SAT-001, MAP-003 |
 | SAT-010 | Real-time TLE Updates | P2 | L | PLAN | SAT-001, Backend |
@@ -95,10 +96,12 @@
 |----|---------|----------|------------|--------|--------------|
 | LIST-001 | List State Module | P1 | M | DONE | None |
 | LIST-002 | List CRUD Operations | P1 | S | DONE | LIST-001 |
-| LIST-003 | List Table UI | P1 | M | DONE | LIST-001 |
-| LIST-004 | Add to List Dropdown | P1 | S | DONE | LIST-001, SAT-004 |
+| LIST-003 | ~~List Table UI~~ | P1 | M | REMOVED | ~~LIST-001~~ |
+| LIST-004 | ~~Add to List Dropdown~~ | P1 | S | REMOVED | ~~LIST-001, SAT-004~~ |
 | LIST-005 | List Visibility Toggle | P1 | S | DONE | LIST-001, MAP-003 |
 | LIST-006 | List localStorage Persistence | P1 | S | DONE | LIST-001 |
+| LIST-007 | +List Modal with Satellite Picker | P1 | M | DONE | LIST-001, SAT-001 |
+| LIST-008 | Consolidated List Management | P1 | M | DONE | LIST-007, UI |
 
 ### Sensor Management (SEN)
 
@@ -308,6 +311,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 3.5 | 2025-11-27 | LIST-003/004 REMOVED, SAT-007 REMOVED, LIST-007/008 & SAT-024 DONE: Consolidated satellite/list UI with +Sat and +List modal buttons |
 | 3.4 | 2025-11-27 | TIME-032/033/034, UI-020/021 DONE: Play button preserves time offset, DDMMMYYYY UTC clock format, double-click close pickers, remove time window dropdown and Ctrl+wheel hint |
 | 3.3 | 2025-11-27 | SAT-023 DONE: Apex Tick Pulse Controls - independent controls for apex latitude tick marks with horizontal pulse animation |
 | 3.2 | 2025-11-27 | SAT-022 DONE: EventDetector module for decoupled event detection |

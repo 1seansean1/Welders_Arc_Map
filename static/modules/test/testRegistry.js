@@ -2729,6 +2729,124 @@ const LIST_HYPOTHESES = {
             };
         }
     },
+    'H-LIST-5': {
+        id: 'H-LIST-5',
+        name: 'Satellite Table Simplified',
+        category: 'list',
+        hypothesis: 'Satellite table has only NORAD and Name columns (no Sel, Star, List)',
+        symptom: 'Table still has old columns',
+        prediction: 'Table headers should only be NORAD and Name',
+        nullPrediction: 'Table would have 5 columns',
+        threshold: { simplifiedTable: true },
+        causalChain: [
+            'SYMPTOM: Table has too many columns',
+            'PROXIMATE: HTML not updated',
+            'ROOT: index.html still has old th elements',
+            'MECHANISM: Table headers define column count',
+            'FIX: Remove Sel, Star, List columns from HTML'
+        ],
+        testFn: async () => {
+            const headers = document.querySelectorAll('#satellite-table thead th');
+            const headerCount = headers.length;
+            const headerTexts = Array.from(headers).map(h => h.textContent.trim().replace(/ [▲▼]/, ''));
+            const hasNORAD = headerTexts.some(t => t.includes('NORAD'));
+            const hasName = headerTexts.some(t => t.includes('Name'));
+            const noSel = !headerTexts.some(t => t === 'Sel');
+            const noStar = !headerTexts.some(t => t === '★');
+            const noList = !headerTexts.some(t => t === 'List');
+            const simplifiedTable = headerCount === 2 && hasNORAD && hasName && noSel && noStar && noList;
+
+            return {
+                passed: simplifiedTable,
+                details: {
+                    headerCount,
+                    headerTexts,
+                    hasNORAD,
+                    hasName,
+                    noSel,
+                    noStar,
+                    noList,
+                    simplifiedTable
+                }
+            };
+        }
+    },
+    'H-LIST-6': {
+        id: 'H-LIST-6',
+        name: '+Sat and +List Buttons Present',
+        category: 'list',
+        hypothesis: 'Satellite panel has +Sat and +List buttons',
+        symptom: 'Old Add/Edit/Delete buttons still present',
+        prediction: 'Buttons with ids satellite-add-btn and list-add-btn exist',
+        nullPrediction: 'Old buttons would still exist',
+        threshold: { newButtonsPresent: true },
+        causalChain: [
+            'SYMPTOM: Wrong buttons in satellite panel',
+            'PROXIMATE: HTML not updated',
+            'ROOT: Button IDs and text not changed',
+            'MECHANISM: Button elements define actions',
+            'FIX: Replace buttons in HTML'
+        ],
+        testFn: async () => {
+            const satAddBtn = document.getElementById('satellite-add-btn');
+            const listAddBtn = document.getElementById('list-add-btn');
+            const oldEditBtn = document.getElementById('satellite-edit-btn');
+            const oldDeleteBtn = document.getElementById('satellite-delete-btn');
+
+            const hasSatAdd = satAddBtn !== null;
+            const hasListAdd = listAddBtn !== null;
+            const noOldEdit = oldEditBtn === null;
+            const noOldDelete = oldDeleteBtn === null;
+            const satBtnText = satAddBtn ? satAddBtn.textContent.trim() : '';
+            const listBtnText = listAddBtn ? listAddBtn.textContent.trim() : '';
+
+            const newButtonsPresent = hasSatAdd && hasListAdd && noOldEdit && noOldDelete;
+
+            return {
+                passed: newButtonsPresent,
+                details: {
+                    hasSatAdd,
+                    hasListAdd,
+                    noOldEdit,
+                    noOldDelete,
+                    satBtnText,
+                    listBtnText,
+                    newButtonsPresent
+                }
+            };
+        }
+    },
+    'H-LIST-7': {
+        id: 'H-LIST-7',
+        name: 'Lists Tab Removed',
+        category: 'list',
+        hypothesis: 'Lists navigation tab has been removed from control panel',
+        symptom: 'Lists tab still visible in navigation',
+        prediction: 'No nav button with data-section=lists',
+        nullPrediction: 'Lists tab would still exist',
+        threshold: { listsTabRemoved: true },
+        causalChain: [
+            'SYMPTOM: Lists tab still in navigation',
+            'PROXIMATE: HTML not updated',
+            'ROOT: Nav button not removed',
+            'MECHANISM: Nav buttons create panel sections',
+            'FIX: Remove lists nav button from HTML'
+        ],
+        testFn: async () => {
+            const listsTab = document.querySelector('[data-section="lists"]');
+            const listsContent = document.getElementById('content-lists');
+            const listsTabRemoved = listsTab === null && listsContent === null;
+
+            return {
+                passed: listsTabRemoved,
+                details: {
+                    listsTabExists: listsTab !== null,
+                    listsContentExists: listsContent !== null,
+                    listsTabRemoved
+                }
+            };
+        }
+    },
     'H-LIST-4': {
         id: 'H-LIST-4',
         name: 'Visible Satellite IDs Aggregation',

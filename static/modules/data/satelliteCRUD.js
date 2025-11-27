@@ -19,7 +19,8 @@
 
 import logger from '../utils/logger.js';
 import satelliteState from '../state/satelliteState.js';
-import { showSatelliteEditorModal, showSatelliteConfirmModal } from '../ui/modals.js';
+import listState from '../state/listState.js';
+import { showSatelliteEditorModal, showSatelliteConfirmModal, showSatelliteAddModal, showListEditorModal } from '../ui/modals.js';
 import { renderSatelliteTable } from '../ui/satelliteTable.js';
 import { updateDeckOverlay } from '../map/deckgl.js';
 
@@ -175,35 +176,56 @@ export function toggleSatelliteWatchlist(satelliteId) {
  * Sets up click handlers for add, edit, delete buttons
  */
 export function initializeSatelliteButtons() {
-    const addBtn = document.getElementById('satellite-add-btn');
-    const editBtn = document.getElementById('satellite-edit-btn');
-    const deleteBtn = document.getElementById('satellite-delete-btn');
+    const addSatBtn = document.getElementById('satellite-add-btn');
+    const addListBtn = document.getElementById('list-add-btn');
 
-    if (addBtn) {
-        addBtn.addEventListener('click', (e) => {
+    // +Sat button - opens satellite add modal with color and list
+    if (addSatBtn) {
+        addSatBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            addSatellite();
+            showSatelliteAddModal((data) => {
+                // Add satellite
+                const result = satelliteState.addSatellite({
+                    name: data.name,
+                    noradId: data.noradId,
+                    tleLine1: data.tleLine1,
+                    tleLine2: data.tleLine2,
+                    watchColor: data.watchColor || 'grey',
+                    watchlisted: true,
+                    selected: true
+                });
+
+                if (result.success) {
+                    // If list was selected, add to that list
+                    if (data.listId) {
+                        listState.addSatelliteToList(data.listId, result.satellite.id);
+                    }
+                    renderSatelliteTable();
+                    updateDeckOverlay();
+                    logger.success('Satellite "' + result.satellite.name + '" added', logger.CATEGORY.SATELLITE);
+                } else {
+                    logger.error('Failed to add satellite', logger.CATEGORY.SATELLITE, result.errors);
+                }
+            });
         });
     }
 
-    if (editBtn) {
-        editBtn.addEventListener('click', (e) => {
+    // +List button - opens list editor modal
+    if (addListBtn) {
+        addListBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            const selectedSatellites = satelliteState.getSelectedSatellites();
-            if (selectedSatellites.length === 1) {
-                editSatellite(selectedSatellites[0].id);
-            } else if (selectedSatellites.length === 0) {
-                logger.warning('Please select a satellite to edit', logger.CATEGORY.SATELLITE);
-            } else {
-                logger.warning('Please select only one satellite to edit', logger.CATEGORY.SATELLITE);
-            }
-        });
-    }
+            showListEditorModal(null, (data) => {
+                // Create new list
+                const list = listState.createList(data.name);
 
-    if (deleteBtn) {
-        deleteBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            deleteSatellites();
+                // Add selected satellites to the list
+                data.satelliteIds.forEach(satId => {
+                    listState.addSatelliteToList(list.id, satId);
+                });
+
+                updateDeckOverlay();
+                logger.success('List "' + data.name + '" created with ' + data.satelliteIds.length + ' satellites', logger.CATEGORY.DATA);
+            });
         });
     }
 

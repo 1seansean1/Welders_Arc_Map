@@ -2,7 +2,7 @@
 
 > **Document Type**: PLAN
 > **Version**: 1.0
-> **Last Updated**: 2025-11-26
+> **Last Updated**: 2025-11-27
 > **Maintainer**: AI Governor System
 
 ---
@@ -575,6 +575,7 @@ EXPANDED ANALYSIS WINDOW PANEL (above time bar):
 
 | Task | Priority | Completed | Notes |
 |------|----------|-----------|-------|
+| Satellite/List UI Consolidation | P1 | 2025-11-27 | LIST-007/008, SAT-024: +Sat and +List modals, removed duplicate Sel/Star/List columns, removed Lists panel |
 | Time Control UX Polish | P1 | 2025-11-27 | TIME-032/033/034, UI-020/021: Play button preserves time offset, DDMMMYYYY UTC clock format, double-click close pickers, removed time window dropdown and Ctrl+wheel hint |
 | Apex Tick Pulse Controls | P2 | 2025-11-27 | SAT-023: Independent controls for apex latitude tick marks with horizontal pulse animation, color picker, opacity slider |
 | Compact Time Bar with Flatpickr | P1 | 2025-11-27 | TIME-029: Flatpickr datetime pickers, compact responsive design, grouped layout |
