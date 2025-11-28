@@ -299,4 +299,114 @@ export class CatalogVirtualScroller extends VirtualScroller {
     }
 }
 
+/**
+ * Specialized virtual scroller for list satellite picker
+ * Includes checkbox, NORAD ID, name, and catalog source columns
+ * Supports checking/unchecking satellites for list membership
+ */
+export class ListPickerVirtualScroller extends VirtualScroller {
+    constructor(container, options) {
+        super(container, {
+            rowHeight: options.rowHeight || 28,
+            bufferRows: options.bufferRows || 5
+        });
+
+        this.checkedNoradIds = new Set(options.checkedNoradIds || []);
+        this.onCheckChange = options.onCheckChange || null;
+    }
+
+    // Override filter to also search catalog name
+    filter(query) {
+        if (!query || query.trim() === '') {
+            this.filteredData = this.data;
+        } else {
+            const term = query.toLowerCase();
+            this.filteredData = this.data.filter(item => {
+                if (item.name && item.name.toLowerCase().includes(term)) return true;
+                if (item.noradId && String(item.noradId).includes(term)) return true;
+                if (item.catalogName && item.catalogName.toLowerCase().includes(term)) return true;
+                return false;
+            });
+        }
+        this.selectedIndex = null;
+        this.clearAllRows();
+        this.updateRunwayHeight();
+        this.container.scrollTop = 0;
+        this.render();
+    }
+
+    createRow(sat, index) {
+        const row = document.createElement('div');
+        row.className = 'virtual-row';
+        row.style.cssText = `position:absolute;left:0;right:0;height:${this.ROW_HEIGHT}px;display:flex;align-items:center;cursor:pointer;border-bottom:1px solid var(--border-color);contain:layout paint;`;
+        row.dataset.index = index;
+        row.dataset.noradId = sat.noradId;
+
+        // Checkbox cell
+        const checkCell = document.createElement('div');
+        checkCell.style.cssText = 'width:30px;text-align:center;flex-shrink:0;';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = this.checkedNoradIds.has(sat.noradId);
+        checkbox.style.cursor = 'pointer';
+        checkbox.addEventListener('change', (e) => {
+            e.stopPropagation();
+            if (checkbox.checked) {
+                this.checkedNoradIds.add(sat.noradId);
+            } else {
+                this.checkedNoradIds.delete(sat.noradId);
+            }
+            if (this.onCheckChange) {
+                this.onCheckChange(sat.noradId, checkbox.checked, sat);
+            }
+        });
+        checkCell.appendChild(checkbox);
+        row.appendChild(checkCell);
+
+        // NORAD cell
+        const noradCell = document.createElement('div');
+        noradCell.style.cssText = 'width:55px;text-align:center;flex-shrink:0;font-size:11px;';
+        noradCell.textContent = sat.noradId;
+        row.appendChild(noradCell);
+
+        // Name cell
+        const nameCell = document.createElement('div');
+        nameCell.style.cssText = 'flex:1;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px;';
+        nameCell.textContent = sat.name;
+        nameCell.title = sat.name;
+        row.appendChild(nameCell);
+
+        // Catalog cell
+        const catalogCell = document.createElement('div');
+        catalogCell.style.cssText = 'width:80px;padding:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px;color:var(--text-muted);text-align:right;';
+        catalogCell.textContent = sat.catalogName || '';
+        catalogCell.title = sat.catalogName || '';
+        row.appendChild(catalogCell);
+
+        // Click row to toggle checkbox
+        row.addEventListener('click', (e) => {
+            if (e.target !== checkbox) {
+                checkbox.checked = !checkbox.checked;
+                checkbox.dispatchEvent(new Event('change'));
+            }
+        });
+
+        return row;
+    }
+
+    getCheckedNoradIds() {
+        return new Set(this.checkedNoradIds);
+    }
+
+    setCheckedNoradIds(noradIds) {
+        this.checkedNoradIds = new Set(noradIds);
+        this.clearAllRows();
+        this.render();
+    }
+
+    getCheckedCount() {
+        return this.checkedNoradIds.size;
+    }
+}
+
 export default VirtualScroller;

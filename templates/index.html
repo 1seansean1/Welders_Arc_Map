@@ -2237,13 +2237,13 @@
             border-color: var(--accent-blue-grey);
         }
 
-        /* Modal Satellite Picker */
+        /* Modal Satellite Picker (virtual scrolling) */
         .modal-satellite-picker {
-            max-height: 300px;
             overflow-y: auto;
             border: 1px solid var(--border-color);
             border-radius: 3px;
             background: var(--bg-secondary);
+            /* flex: 1 and min-height: 0 set inline for virtual scrolling */
         }
 
         .modal-satellite-item {
@@ -3150,17 +3150,27 @@
 
     <!-- List Editor Modal (with Satellite Picker) -->
     <div class="modal-overlay" id="list-editor-modal-overlay">
-        <div class="modal-editor" style="width: 360px; max-height: 80vh;">
+        <div class="modal-editor" style="width: 500px; height: 500px; max-height: 80vh; display: flex; flex-direction: column;">
             <div class="modal-editor-title" id="list-editor-modal-title">Create List</div>
-            <form class="modal-editor-form" id="list-editor-modal-form" onsubmit="return false;">
+            <form class="modal-editor-form" id="list-editor-modal-form" onsubmit="return false;" style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
                 <div class="modal-editor-field">
                     <label class="modal-editor-label" for="list-editor-input-name">List Name</label>
                     <input type="text" class="modal-editor-input" id="list-editor-input-name" placeholder="My Favorites" maxlength="30" required>
                 </div>
-                <div class="modal-editor-field">
-                    <label class="modal-editor-label">Select Satellites</label>
-                    <div class="modal-satellite-picker" id="list-editor-satellite-picker">
-                        <!-- Populated by JavaScript - scrollable list of satellites with checkboxes -->
+                <div class="modal-editor-field" style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <label class="modal-editor-label" style="margin: 0;">Select Satellites</label>
+                        <span id="list-editor-sat-count" style="font-size: 10px; color: var(--text-muted);">0 selected</span>
+                    </div>
+                    <input type="text" class="modal-editor-input" id="list-editor-search" placeholder="Search by name, NORAD ID, or catalog..." style="margin-bottom: 6px; font-size: 11px;">
+                    <div style="display: flex; font-size: 10px; padding: 4px 0; border-bottom: 1px solid var(--border-color); color: var(--text-muted);">
+                        <div style="width: 30px; text-align: center;">☑</div>
+                        <div style="width: 55px; text-align: center;">NORAD</div>
+                        <div style="flex: 1; padding: 0 6px;">Name</div>
+                        <div style="width: 80px; text-align: right; padding-right: 4px;">Catalog</div>
+                    </div>
+                    <div class="modal-satellite-picker" id="list-editor-satellite-picker" style="flex: 1; min-height: 0;">
+                        <!-- Populated by JavaScript with virtual scrolling -->
                     </div>
                 </div>
                 <div class="modal-editor-buttons">

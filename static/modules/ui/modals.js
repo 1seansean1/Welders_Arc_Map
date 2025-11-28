@@ -22,7 +22,7 @@ import logger from '../utils/logger.js';
 import listState from '../state/listState.js';
 import satelliteState from '../state/satelliteState.js';
 import catalogState from '../state/catalogState.js';
-import { CatalogVirtualScroller } from './virtualScroller.js';
+import { CatalogVirtualScroller, ListPickerVirtualScroller } from './virtualScroller.js';
 
 // ============================================
 // HELPER FUNCTIONS
@@ -513,41 +513,107 @@ export function showSatelliteAddModal(onSave) {
 // ============================================
 
 export function showListEditorModal(list = null, onSave) {
+    const startTime = performance.now();
+
     const overlay = document.getElementById('list-editor-modal-overlay');
     const title = document.getElementById('list-editor-modal-title');
     const form = document.getElementById('list-editor-modal-form');
     const nameInput = document.getElementById('list-editor-input-name');
     const picker = document.getElementById('list-editor-satellite-picker');
+    const searchInput = document.getElementById('list-editor-search');
+    const satCountSpan = document.getElementById('list-editor-sat-count');
 
     title.textContent = list ? 'Edit List' : 'Create List';
     nameInput.value = list ? list.name : '';
 
-    const satellites = satelliteState.getAllSatellites();
-    const currentIds = list ? list.satelliteIds : [];
+    // ========================================
+    // BUILD SATELLITE LIST FROM ALL CATALOGS
+    // ========================================
+    const allCatalogSatellites = [];
+    const seenNoradIds = new Set();
 
-    picker.innerHTML = '';
-    if (satellites.length === 0) {
-        picker.innerHTML = '<div style="padding: 12px; color: var(--text-muted); text-align: center;">No satellites</div>';
-    } else {
-        satellites.forEach(sat => {
-            const item = document.createElement('div');
-            item.className = 'modal-satellite-item';
-            const cb = document.createElement('input');
-            cb.type = 'checkbox';
-            cb.checked = currentIds.includes(sat.id);
-            cb.dataset.satelliteId = sat.id;
-            const nameSpan = document.createElement('span');
-            nameSpan.className = 'sat-name';
-            nameSpan.textContent = sat.name;
-            const noradSpan = document.createElement('span');
-            noradSpan.className = 'sat-norad';
-            noradSpan.textContent = sat.noradId;
-            item.appendChild(cb);
-            item.appendChild(nameSpan);
-            item.appendChild(noradSpan);
-            item.addEventListener('click', (e) => { if (e.target !== cb) cb.checked = !cb.checked; });
-            picker.appendChild(item);
+    // Get all catalogs and aggregate satellites
+    const catalogs = catalogState.getAllCatalogs();
+    for (const catalog of catalogs) {
+        for (const sat of catalog.satellites) {
+            // Deduplicate by NORAD ID (keep first occurrence)
+            if (!seenNoradIds.has(sat.noradId)) {
+                seenNoradIds.add(sat.noradId);
+                allCatalogSatellites.push({
+                    ...sat,
+                    catalogId: catalog.id,
+                    catalogName: catalog.name
+                });
+            }
+        }
+    }
+
+    // ========================================
+    // BUILD NORAD ID TO SATELLITE STATE ID MAP
+    // ========================================
+    const noradToSatId = new Map();
+    const satIdToNorad = new Map();
+    for (const sat of satelliteState.getAllSatellites()) {
+        noradToSatId.set(sat.noradId, sat.id);
+        satIdToNorad.set(sat.id, sat.noradId);
+    }
+
+    // Get currently checked NORAD IDs from existing list
+    const currentNoradIds = new Set();
+    if (list) {
+        for (const satId of list.satelliteIds) {
+            const noradId = satIdToNorad.get(satId);
+            if (noradId !== undefined) {
+                currentNoradIds.add(noradId);
+            }
+        }
+    }
+
+    // ========================================
+    // VIRTUAL SCROLLER SETUP
+    // ========================================
+    let virtualScroller = null;
+    let debounceTimer = null;
+
+    const updateCount = () => {
+        if (virtualScroller && satCountSpan) {
+            const count = virtualScroller.getCheckedCount();
+            const stats = virtualScroller.getStats();
+            if (stats.filteredRows === stats.totalRows) {
+                satCountSpan.textContent = count + ' selected of ' + stats.totalRows;
+            } else {
+                satCountSpan.textContent = count + ' selected (' + stats.filteredRows + '/' + stats.totalRows + ' shown)';
+            }
+        }
+    };
+
+    if (picker) {
+        virtualScroller = new ListPickerVirtualScroller(picker, {
+            checkedNoradIds: Array.from(currentNoradIds),
+            onCheckChange: (noradId, checked, sat) => {
+                updateCount();
+            }
         });
+
+        virtualScroller.setData(allCatalogSatellites);
+        updateCount();
+    }
+
+    // ========================================
+    // SEARCH WITH DEBOUNCING
+    // ========================================
+    const handleSearch = () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            const query = searchInput ? searchInput.value : '';
+            if (virtualScroller) virtualScroller.filter(query);
+            updateCount();
+        }, 150);
+    };
+
+    if (searchInput) {
+        searchInput.value = '';
+        searchInput.addEventListener('input', handleSearch);
     }
 
     overlay.classList.add('visible');
@@ -557,8 +623,11 @@ export function showListEditorModal(list = null, onSave) {
 
     const closeModal = () => {
         overlay.classList.remove('visible');
+        if (virtualScroller) virtualScroller.destroy();
+        clearTimeout(debounceTimer);
         form.removeEventListener('submit', handleSubmit);
         cancelBtn.removeEventListener('click', handleCancel);
+        if (searchInput) searchInput.removeEventListener('input', handleSearch);
     };
 
     const handleCancel = () => { closeModal(); logger.diagnostic('List edit cancelled', logger.CATEGORY.DATA); };
@@ -567,17 +636,47 @@ export function showListEditorModal(list = null, onSave) {
         e.preventDefault();
         const name = nameInput.value.trim();
         if (!name) { alert('List name is required'); nameInput.focus(); return; }
+
+        // Convert checked NORAD IDs to satellite state IDs
+        // For satellites not yet in state, we need to add them first
+        const checkedNoradIds = virtualScroller ? virtualScroller.getCheckedNoradIds() : new Set();
         const selectedIds = [];
-        picker.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => {
-            selectedIds.push(parseInt(cb.dataset.satelliteId));
-        });
+
+        for (const noradId of checkedNoradIds) {
+            let satId = noradToSatId.get(noradId);
+            if (satId === undefined) {
+                // Satellite not in state yet - find it in catalog data and add to state
+                const catalogSat = allCatalogSatellites.find(s => s.noradId === noradId);
+                if (catalogSat) {
+                    const newSat = satelliteState.addSatellite({
+                        name: catalogSat.name,
+                        noradId: catalogSat.noradId,
+                        tleLine1: catalogSat.tleLine1,
+                        tleLine2: catalogSat.tleLine2,
+                        watchColor: catalogSat.watchColor || 'grey'
+                    });
+                    satId = newSat.id;
+                    noradToSatId.set(noradId, satId);
+                }
+            }
+            if (satId !== undefined) {
+                selectedIds.push(satId);
+            }
+        }
+
         closeModal();
         onSave({ name, satelliteIds: selectedIds });
+
+        const openTime = performance.now() - startTime;
+        logger.diagnostic('List modal saved in ' + openTime.toFixed(1) + 'ms (' + selectedIds.length + ' satellites)', logger.CATEGORY.DATA);
     };
 
     overlay.addEventListener('click', (e) => { e.stopPropagation(); });
     form.addEventListener('submit', handleSubmit);
     cancelBtn.addEventListener('click', handleCancel);
+
+    const openTime = performance.now() - startTime;
+    logger.diagnostic('List modal opened in ' + openTime.toFixed(1) + 'ms (' + allCatalogSatellites.length + ' satellites)', logger.CATEGORY.DATA);
 }
 
 
