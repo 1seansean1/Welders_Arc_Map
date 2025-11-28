@@ -379,9 +379,10 @@ class SatelliteState {
             return { success: false, satellite: null, errors: validation.errors };
         }
 
-        // Apply validated updates
+        // Apply validated updates (preserve all existing properties, then apply updates)
         this._state.satellites[satelliteIndex] = {
             ...satellite,
+            ...updates,
             name: validation.values.name,
             tleLine1: validation.values.tle1,
             tleLine2: validation.values.tle2,

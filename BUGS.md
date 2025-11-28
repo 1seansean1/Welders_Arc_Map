@@ -74,13 +74,17 @@ Alpha value of 60/255 (~24% opacity) combined with 1px width made the line essen
 - Ground track colors on map don't reflect selected color
 
 **Root Cause**:
-`editSatellite()` in satelliteCRUD.js was not passing `watchColor` to `updateSatellite()`. The modal correctly returned the selected color, but the CRUD layer dropped it.
+Two issues:
+1. `editSatellite()` in satelliteCRUD.js was not passing `watchColor` to `updateSatellite()`
+2. `updateSatellite()` in satelliteState.js was rebuilding the satellite object with only specific properties (name, TLE, noradId), dropping `watchColor` and other custom properties
 
 **Solution**:
-Added `watchColor: data.watchColor` to the updateSatellite call in satelliteCRUD.js line 87.
+1. Added `watchColor: data.watchColor` to the updateSatellite call in satelliteCRUD.js
+2. Fixed satelliteState.js updateSatellite() to spread `...updates` before applying validated fields, preserving watchColor and other properties
 
 **Files Modified**:
 - static/modules/data/satelliteCRUD.js (added watchColor to update call)
+- static/modules/state/satelliteState.js (spread updates in updateSatellite)
 
 ---
 
