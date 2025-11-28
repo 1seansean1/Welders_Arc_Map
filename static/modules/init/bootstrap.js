@@ -218,43 +218,80 @@ export function setupGlobalExports() {
 // ============================================
 
 /**
- * Initialize profile login/logout controls in Settings panel
+ * Initialize profile login/logout controls in Settings panel and avatar button
  */
 function initializeProfileControls() {
+    // Settings panel elements
     const loginBtn = document.getElementById('profile-login-btn');
     const logoutBtn = document.getElementById('profile-logout-btn');
     const displayName = document.getElementById('profile-display-name');
 
+    // Avatar button elements (bottom of control panel)
+    const avatarBtn = document.getElementById('profile-avatar-btn');
+    const avatarLetter = document.getElementById('profile-avatar-letter');
+    const avatarName = document.getElementById('profile-avatar-name');
+    const avatarRole = document.getElementById('profile-avatar-role');
+
+    // Get first letter of name for avatar
+    function getAvatarLetter(name) {
+        if (!name) return '?';
+        return name.charAt(0).toUpperCase();
+    }
+
     // Update UI based on profile state
     function updateProfileUI() {
-        if (profileState.isLoggedIn()) {
-            displayName.textContent = profileState.getDisplayName() || profileState.getUsername();
-            loginBtn.style.display = 'none';
-            logoutBtn.style.display = 'inline-block';
-        } else {
-            displayName.textContent = 'Not logged in';
-            loginBtn.style.display = 'inline-block';
-            logoutBtn.style.display = 'none';
+        const isLoggedIn = profileState.isLoggedIn();
+        const name = profileState.getDisplayName() || profileState.getUsername();
+        const role = profileState.getRole();
+
+        // Update Settings panel
+        if (displayName) {
+            displayName.textContent = isLoggedIn ? name : 'Not logged in';
+        }
+        if (loginBtn) {
+            loginBtn.style.display = isLoggedIn ? 'none' : 'inline-block';
+        }
+        if (logoutBtn) {
+            logoutBtn.style.display = isLoggedIn ? 'inline-block' : 'none';
+        }
+
+        // Update Avatar button
+        if (avatarLetter) {
+            avatarLetter.textContent = isLoggedIn ? getAvatarLetter(name) : '?';
+        }
+        if (avatarName) {
+            avatarName.textContent = isLoggedIn ? name : 'Not logged in';
+        }
+        if (avatarRole) {
+            avatarRole.textContent = isLoggedIn ? role : 'guest';
         }
     }
 
-    // Login button click
-    if (loginBtn) {
-        loginBtn.addEventListener('click', () => {
-            showLoginModal(
-                async ({ username, password }) => {
-                    const success = await profileState.login(username, password);
-                    if (success) {
-                        updateProfileUI();
-                        logger.success(`Logged in as ${username}`, logger.CATEGORY.PANEL);
-                    }
-                    return success;
-                },
-                () => {
-                    logger.diagnostic('Login skipped', logger.CATEGORY.PANEL);
+    // Show login modal handler
+    function handleShowLogin() {
+        showLoginModal(
+            async ({ username, password }) => {
+                const success = await profileState.login(username, password);
+                if (success) {
+                    updateProfileUI();
+                    logger.success(`Logged in as ${username}`, logger.CATEGORY.PANEL);
                 }
-            );
-        });
+                return success;
+            },
+            () => {
+                logger.diagnostic('Login skipped', logger.CATEGORY.PANEL);
+            }
+        );
+    }
+
+    // Avatar button click - show login modal
+    if (avatarBtn) {
+        avatarBtn.addEventListener('click', handleShowLogin);
+    }
+
+    // Login button click (Settings panel)
+    if (loginBtn) {
+        loginBtn.addEventListener('click', handleShowLogin);
     }
 
     // Logout button click

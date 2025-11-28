@@ -824,6 +824,70 @@
             pointer-events: auto;
         }
 
+        /* Profile Avatar Section (bottom of control panel) */
+        .profile-section {
+            flex-shrink: 0;
+            border-top: 1px solid var(--border-color);
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #control-panel.expanded .profile-section {
+            justify-content: flex-start;
+            padding: 8px 14px;
+            gap: 10px;
+        }
+
+        .profile-avatar-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid var(--border-color);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: border-color 0.2s, background 0.2s;
+            text-transform: uppercase;
+        }
+
+        .profile-avatar-btn:hover {
+            border-color: var(--accent-blue-grey);
+            background: var(--bg-secondary);
+        }
+
+        .profile-info {
+            display: none;
+            flex-direction: column;
+            gap: 2px;
+            overflow: hidden;
+        }
+
+        #control-panel.expanded .profile-info {
+            display: flex;
+        }
+
+        .profile-name {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .profile-role {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: capitalize;
+        }
+
         /* Time Controls */
         .time-controls {
             display: flex;
@@ -2505,6 +2569,17 @@
                 </div>
             </div>
         </div>
+
+        <!-- Profile Avatar Section (bottom of control panel) -->
+        <div class="profile-section">
+            <button class="profile-avatar-btn" id="profile-avatar-btn" title="Manage Profile">
+                <span id="profile-avatar-letter">?</span>
+            </button>
+            <div class="profile-info">
+                <span class="profile-name" id="profile-avatar-name">Not logged in</span>
+                <span class="profile-role" id="profile-avatar-role">guest</span>
+            </div>
+        </div>
     </div>
 
     <!-- 4-Pane Resizable Grid -->
@@ -2810,7 +2885,7 @@
     </div>
 
     <!-- ES6 Module Loading -->
-    <script type="module" src="/static/app.js?v=55"></script>
+    <script type="module" src="/static/app.js?v=56"></script>
 
     <!-- Fallback for browsers without ES6 module support -->
     <script nomodule>
