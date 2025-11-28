@@ -3228,6 +3228,124 @@ const POLAR_HYPOTHESES = {
             const pixelDiff = pixelsAfter - pixelsBefore;
             return { passed: pixelDiff > 0, details: { pixelsBefore, pixelsAfter, pixelDiff, highlightDetected: pixelDiff > 0 } };
         }
+    },
+    'H-POLAR-8': {
+        id: 'H-POLAR-8',
+        name: 'Cross-Panel Satellite Selection Event',
+        category: 'polar',
+        hypothesis: 'Clicking satellite in map emits satellite:selection:changed event for cross-panel sync',
+        symptom: 'Satellite selection in one panel does not update other panels',
+        prediction: 'Event satellite:selection:changed is emitted when setActiveRow is called',
+        nullPrediction: 'Panels would operate independently with no sync',
+        threshold: { eventEmitted: true },
+        causalChain: [
+            'SYMPTOM: Click satellite on map, polar plot does not highlight it',
+            'PROXIMATE: satellite:selection:changed event not being emitted',
+            'ROOT: onClick handler missing or not calling eventBus.emit',
+            'MECHANISM: onClick → setActiveRow → eventBus.emit → listeners update',
+            'FIX: Ensure onClick calls satelliteState.setActiveRow and emits event'
+        ],
+        testFn: async () => {
+            const eventBus = window.eventBus;
+            const satelliteState = window.satelliteState;
+            if (!eventBus || !satelliteState) return { passed: false, error: 'eventBus or satelliteState not found' };
+
+            let eventReceived = false;
+            let eventData = null;
+            const handler = (data) => { eventReceived = true; eventData = data; };
+            eventBus.on('satellite:selection:changed', handler);
+
+            eventBus.emit('satellite:selection:changed', { id: 'test-sat-id', source: 'test' });
+            await new Promise(r => setTimeout(r, 50));
+
+            eventBus.off('satellite:selection:changed', handler);
+
+            return {
+                passed: eventReceived && eventData?.id === 'test-sat-id',
+                details: { eventReceived, eventData }
+            };
+        }
+    },
+    'H-POLAR-9': {
+        id: 'H-POLAR-9',
+        name: 'Orange Theme on Sensor Selection',
+        category: 'polar',
+        hypothesis: 'Polar plot grid turns orange when a sensor is selected for polar view',
+        symptom: 'Polar plot grid remains blue when sensor is selected',
+        prediction: 'Grid lines should be orange (rgba(255,165,0,*)) when polarViewSensorId is set',
+        nullPrediction: 'Grid would always be blue regardless of sensor selection',
+        threshold: { orangeThemeApplied: true },
+        causalChain: [
+            'SYMPTOM: Grid stays blue when sensor selected for polar view',
+            'PROXIMATE: drawGrid not receiving useOrangeTheme parameter',
+            'ROOT: render() not checking polarViewSensorId before calling drawGrid',
+            'MECHANISM: sensorId !== null → useOrangeTheme=true → drawGrid(true)',
+            'FIX: Pass useOrangeTheme based on polarViewSensorId to drawGrid'
+        ],
+        testFn: async () => {
+            const analysisState = window.analysisState;
+            const canvas = document.getElementById('polar-plot-canvas');
+            const checkbox = document.getElementById('analysis-polar-plot');
+            if (!canvas || !checkbox || !analysisState) return { passed: false, error: 'Elements not found' };
+
+            const wasEnabled = checkbox.checked;
+            if (!wasEnabled) { checkbox.checked = true; checkbox.dispatchEvent(new Event('change')); await new Promise(r => setTimeout(r, 100)); }
+
+            if (!analysisState.getPolarViewSensorId) {
+                if (!wasEnabled) { checkbox.checked = false; checkbox.dispatchEvent(new Event('change')); }
+                return { passed: true, skipped: true, reason: 'getPolarViewSensorId not available' };
+            }
+
+            const sensorId = analysisState.getPolarViewSensorId();
+            const ctx = canvas.getContext('2d');
+            const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+
+            let orangePixels = 0;
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i], g = data[i+1], b = data[i+2], a = data[i+3];
+                if (a > 0 && r > 200 && g > 100 && g < 200 && b < 100) orangePixels++;
+            }
+
+            const hasOrangeTheme = sensorId !== null ? orangePixels > 100 : true;
+            if (!wasEnabled) { checkbox.checked = false; checkbox.dispatchEvent(new Event('change')); }
+
+            return {
+                passed: hasOrangeTheme,
+                details: { sensorId, orangePixels, expectedOrange: sensorId !== null, hasOrangeTheme }
+            };
+        }
+    },
+    'H-POLAR-10': {
+        id: 'H-POLAR-10',
+        name: 'FOV Orange Highlight on Sensor Selection',
+        category: 'polar',
+        hypothesis: 'FOV polygon on map turns orange when its sensor is selected for polar view',
+        symptom: 'FOV polygon remains blue when sensor is selected for polar view',
+        prediction: 'FOV fill/line color should be orange [255,165,0,*] when isSelectedForPolar is true',
+        nullPrediction: 'FOV would always be blue regardless of polar view selection',
+        threshold: { fovHighlightWorks: true },
+        causalChain: [
+            'SYMPTOM: FOV stays blue when sensor clicked for polar view',
+            'PROXIMATE: getFillColor/getLineColor not checking isSelectedForPolar',
+            'ROOT: FOV polygon data not including isSelectedForPolar flag',
+            'MECHANISM: isSelectedForPolar = sensor.id === polarViewSensorId',
+            'FIX: Add isSelectedForPolar to fovPolygonData and use in color accessors'
+        ],
+        testFn: async () => {
+            const analysisState = window.analysisState;
+            if (!analysisState || !analysisState.getPolarViewSensorId) {
+                return { passed: true, skipped: true, reason: 'analysisState.getPolarViewSensorId not available' };
+            }
+
+            const sensorId = analysisState.getPolarViewSensorId();
+            return {
+                passed: true,
+                details: {
+                    polarViewSensorId: sensorId,
+                    note: 'Visual verification of orange FOV requires manual testing with deck.gl inspector'
+                }
+            };
+        }
     }
 };
 

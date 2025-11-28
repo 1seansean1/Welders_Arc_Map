@@ -48,13 +48,17 @@ const COLORS = {
     cardinalLabels: 'rgba(200, 200, 200, 0.9)',
     azimuthLabels: 'rgba(150, 150, 150, 0.6)',
     horizon: 'rgba(88, 166, 255, 0.5)',
+    // Orange theme (sensor selected for polar view)
+    gridLinesOrange: 'rgba(255, 165, 0, 0.3)',
+    gridLabelsOrange: 'rgba(255, 165, 0, 0.7)',
+    horizonOrange: 'rgba(255, 165, 0, 0.5)',
     satellite: {
         grey: [180, 180, 180],
         red: [255, 100, 100],
         blue: [100, 150, 255],
-        orange: [255, 180, 60]  // Active row highlight
+        orange: [255, 165, 0]  // Active row highlight (standard orange)
     },
-    selectionRing: 'rgba(0, 255, 255, 0.8)',  // Cyan ring for selected
+    selectionRing: 'rgba(255, 165, 0, 0.8)',  // Orange ring for selected
     trackDefault: 'rgba(150, 150, 150, 0.4)',
     currentPosition: 'rgba(255, 200, 100, 1.0)'
 };
@@ -298,11 +302,13 @@ export function render() {
     ctx.fillStyle = COLORS.background;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw grid with enhanced labels
-    drawGrid();
-
-    // Get selected sensor for polar view
+    // Check if a sensor is selected for polar view (determines orange theme)
     const sensorId = analysisState.getPolarViewSensorId();
+    const useOrangeTheme = sensorId !== null;
+
+    // Draw grid with enhanced labels (orange if sensor selected)
+    drawGrid(useOrangeTheme);
+
     if (sensorId === null) {
         drawNoSensorMessage();
         return;
@@ -362,8 +368,13 @@ export function render() {
 /**
  * Draw the polar grid with enhanced labels
  */
-function drawGrid() {
-    ctx.strokeStyle = COLORS.gridLines;
+function drawGrid(useOrangeTheme = false) {
+    // Select colors based on theme
+    const gridLineColor = useOrangeTheme ? COLORS.gridLinesOrange : COLORS.gridLines;
+    const gridLabelColor = useOrangeTheme ? COLORS.gridLabelsOrange : COLORS.gridLabels;
+    const horizonColor = useOrangeTheme ? COLORS.horizonOrange : COLORS.horizon;
+
+    ctx.strokeStyle = gridLineColor;
     ctx.lineWidth = 1;
 
     // Elevation circles (0°, 30°, 60°, 90° from edge to center)
@@ -376,7 +387,7 @@ function drawGrid() {
 
         // Label elevation on the right side (skip 90° at center)
         if (el < 90 && el > 0) {
-            ctx.fillStyle = COLORS.gridLabels;
+            ctx.fillStyle = gridLabelColor;
             ctx.font = '10px monospace';
             ctx.textAlign = 'left';
             ctx.fillText(`${el}°`, centerX + r + 3, centerY + 4);
@@ -421,7 +432,7 @@ function drawGrid() {
     ctx.fillText('W', centerX - labelOffset, centerY);
 
     // Horizon circle (thicker)
-    ctx.strokeStyle = COLORS.horizon;
+    ctx.strokeStyle = horizonColor;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
@@ -445,7 +456,7 @@ function drawNoSensorMessage() {
  * @param {Object} sensor - Sensor object
  */
 function drawSensorLabel(sensor) {
-    ctx.fillStyle = 'rgba(200, 200, 200, 0.9)';
+    ctx.fillStyle = 'rgba(255, 165, 0, 0.9)';
     ctx.font = 'bold 12px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';

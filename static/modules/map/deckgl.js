@@ -181,6 +181,12 @@ function setupTimeStateSync() {
     });
 
     // Update when user list visibility changes
+    // Update when satellite selection changes (for cross-panel sync)
+    eventBus.on('satellite:selection:changed', () => {
+        logger.diagnostic('Satellite selection changed, updating visualization', logger.CATEGORY.SYNC);
+        updateDeckOverlay();
+    });
+
     eventBus.on('list:changed', ({ action, listId }) => {
         logger.info('User list changed, updating visualization', logger.CATEGORY.SYNC, {
             action,
@@ -496,6 +502,9 @@ function createLayers() {
     // Get the sensor selected for polar view (if any)
     const polarViewSensorId = analysisState.getPolarViewSensorId();
 
+    // Get active satellite for cross-panel highlighting
+    const activeRowId = satelliteState.getEditingState().activeRowId;
+
     // Prepare sensor icon data (donut circles)
     // Highlight sensor selected for polar view with orange color
     const sensorIconData = sensorsToRender.map(sensor => {
@@ -512,9 +521,11 @@ function createLayers() {
     // Prepare FOV polygon data
     const fovPolygonData = sensorsToRender.map(sensor => {
         const polygon = calculateFOVCircle(sensor.lat, sensor.lon, sensor.fovAltitude);
+        const isSelectedForPolar = sensor.id === polarViewSensorId;
         return {
             polygon: polygon,
-            sensor: sensor
+            sensor: sensor,
+            isSelectedForPolar: isSelectedForPolar
         };
     });
 
@@ -697,8 +708,8 @@ function createLayers() {
             wireframe: false,
             lineWidthMinPixels: 1,
             getPolygon: d => d.polygon,
-            getFillColor: [157, 212, 255, 30],
-            getLineColor: [157, 212, 255, 120],
+            getFillColor: d => d.isSelectedForPolar ? [255, 165, 0, 50] : [157, 212, 255, 30],
+            getLineColor: d => d.isSelectedForPolar ? [255, 165, 0, 150] : [157, 212, 255, 120],
             getLineWidth: 1,
             transitions: {
                 getPolygon: 0,
@@ -822,6 +833,10 @@ function createLayers() {
             getSize: 20,
             getAngle: d => -d.bearing, // Negative = clockwise rotation (bearing 0° = north, 90° = east)
             getColor: d => {
+                // Use orange for active (selected) satellite
+                if (d.satellite.id === activeRowId) {
+                    return [255, 165, 0, 255];  // Orange for active
+                }
                 // Use watch color for chevron tint
                 const colorMap = {
                     grey: [180, 180, 180, 255],
@@ -845,7 +860,7 @@ function createLayers() {
                 visible: satellitesToRender.length,
                 getPosition: `${satellitesToRender.map(s => s.id).join(',')}-${currentTime.getTime()}`,
                 getAngle: `${satellitesToRender.map(s => s.id).join(',')}-${currentTime.getTime()}`,
-                getColor: `${satellitesToRender.map(s => `${s.id}:${s.watchColor}`).join(',')}`
+                getColor: `${satellitesToRender.map(s => `${s.id}:${s.watchColor}`).join(',')}-active-${activeRowId}`
             },
             onHover: ({object}) => {
                 if (object) {
@@ -854,6 +869,22 @@ function createLayers() {
                         noradId: object.satellite.noradId,
                         bearing: object.bearing?.toFixed(1)
                     });
+                }
+            },
+            onClick: ({object}) => {
+                if (object) {
+                    // Set as active row in satellite state for cross-panel sync
+                    satelliteState.setActiveRow(object.satellite.id);
+                    logger.log(`Map: selected ${object.name}`, logger.CATEGORY.SATELLITE);
+
+                    // Emit event for cross-panel sync (table and polar plot will highlight)
+                    eventBus.emit('satellite:selection:changed', {
+                        id: object.satellite.id,
+                        source: 'map'
+                    });
+
+                    // Update map to show orange highlight
+                    updateDeckOverlay();
                 }
             }
         }),

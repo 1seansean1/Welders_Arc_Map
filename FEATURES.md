@@ -1,7 +1,7 @@
 # WA_map Feature Registry
 
 > **Document Type**: FEATURES
-> **Version**: 4.0
+> **Version**: 4.1
 > **Last Updated**: 2025-11-28
 > **Maintainer**: AI Governor System
 
@@ -281,6 +281,8 @@
 | ANALYSIS-009 | Click-to-Select Integration | P1 | S | DONE | ANALYSIS-002, SAT-009 |
 | ANALYSIS-010 | Selection Highlight Ring | P2 | XS | DONE | ANALYSIS-009 |
 | ANALYSIS-011 | Enhanced Grid Labels | P2 | XS | DONE | ANALYSIS-002 |
+| ANALYSIS-012 | Cross-Panel Entity Selection Sync | P1 | M | DONE | SAT-009, ARCH-002 |
+| ANALYSIS-013 | Orange Theme on Sensor Selection | P1 | S | DONE | ANALYSIS-002, SEN-005 |
 
 ---
 
@@ -343,12 +345,12 @@
 | BACK | 9 | 3 | 0 | 4 | 2 |
 | ARCH | 5 | 5 | 0 | 0 | 0 |
 | LIST | 6 | 6 | 0 | 0 | 0 |
-| ANALYSIS | 11 | 11 | 0 | 0 | 0 |
-| **TOTAL** | **163** | **149** | **0** | **7** | **6** |
+| ANALYSIS | 13 | 13 | 0 | 0 | 0 |
+| **TOTAL** | **165** | **151** | **0** | **7** | **6** |
 
 *Note: MAP-013 REMOVED (superseded by MAP-012+MAP-016), MAP-016 added - net zero change*
 
-**Completion Rate**: 91% (149/163 features complete)
+**Completion Rate**: 92% (151/165 features complete)
 
 ---
 
@@ -356,6 +358,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 4.1 | 2025-11-28 | ANALYSIS-012/013 DONE: Cross-Panel Entity Selection Sync - clicking satellite/sensor in any panel highlights it in all panels (map chevron, polar plot); Orange Theme on Sensor Selection - polar plot gridlines/border turn orange when sensor selected for polar view, FOV polygon turns orange on map; H-POLAR-8/9/10 tests added |
 | 4.0 | 2025-11-28 | LIST-009/010/011 DONE: Watch list UX improvements - Selected Only default unchecked, bulk select loading indicator, custom delete confirmation modal; H-UI-14/15 tests added |
 | 3.9 | 2025-11-28 | CAT-005 DONE: Catalog Edit Modal - double-click catalog row opens two-panel modal (satellite list + detail editor), edit satellite name/TLE/color, manage watch list memberships, rename catalog; H-CAT-5/6/7/8 tests added |
 | 3.8 | 2025-11-28 | CAT-001 to CAT-004 DONE: Catalog Management - renamed Satellites panel to Catalogs, catalog state module, catalog table UI with checkbox/name/count columns, Celestrak auto-fetch on startup, +Cat modal with TLE batch import, H-CAT-1/2/3/4 tests added |
