@@ -1,15 +1,17 @@
 /**
  * Polar Plot Module - Sky view visualization for satellite tracking
  *
- * DEPENDENCIES: analysisState.js, sensorState.js, satelliteState.js, timeState.js, geometry.js, propagation.js, eventBus.js, logger.js
+ * DEPENDENCIES: analysisState.js, sensorState.js, satelliteState.js, listState.js, timeState.js, geometry.js, propagation.js, eventBus.js, logger.js
  * PATTERN: Canvas-based rendering with event-driven updates
  *
  * Features:
  * - Circular polar plot (azimuth/elevation sky view)
- * - Real-time satellite position display
+ * - Sky tracks showing satellite pass arcs (using head/tail minutes)
+ * - Real-time satellite position display with glow
+ * - Direction chevrons showing satellite travel direction
+ * - Click-to-select integration with satellite table
+ * - Color coding: grey/red/blue (watchColor), orange (active row)
  * - Sensor-centric view from selected ground station
- * - Synchronized with map satellite selection
- * - Ground track rendering in polar coordinates
  *
  * Polar Coordinate System:
  * - Center = zenith (90° elevation)
@@ -44,13 +46,16 @@ const COLORS = {
     gridLines: 'rgba(88, 166, 255, 0.3)',
     gridLabels: 'rgba(88, 166, 255, 0.7)',
     cardinalLabels: 'rgba(200, 200, 200, 0.9)',
+    azimuthLabels: 'rgba(150, 150, 150, 0.6)',
     horizon: 'rgba(88, 166, 255, 0.5)',
     satellite: {
         grey: [180, 180, 180],
         red: [255, 100, 100],
-        blue: [100, 150, 255]
+        blue: [100, 150, 255],
+        orange: [255, 180, 60]  // Active row highlight
     },
-    satelliteTrack: 'rgba(157, 212, 255, 0.4)',
+    selectionRing: 'rgba(0, 255, 255, 0.8)',  // Cyan ring for selected
+    trackDefault: 'rgba(150, 150, 150, 0.4)',
     currentPosition: 'rgba(255, 200, 100, 1.0)'
 };
 
@@ -59,6 +64,9 @@ let animationFrameId = null;
 
 // Debug throttle (log every 2 seconds, not every frame)
 let lastDebugLog = 0;
+
+// Track calculation settings
+const TRACK_STEP_SECONDS = 30;  // Calculate position every 30 seconds along track
 
 /**
  * Initialize the polar plot
@@ -91,6 +99,9 @@ export function initializePolarPlot(canvasId = 'polar-plot-canvas') {
 
     // Subscribe to events
     setupEventListeners();
+
+    // Set up click handler for satellite selection
+    setupClickHandler();
 
     logger.log('Polar plot initialized', logger.CATEGORY.UI);
     return true;
@@ -154,6 +165,10 @@ function setupEventListeners() {
         render();
     });
 
+    eventBus.on('satellite:watchcolor:changed', () => {
+        render();
+    });
+
     // List visibility changes (satellites shown via watch lists)
     eventBus.on('list:changed', () => {
         render();
@@ -171,6 +186,76 @@ function setupEventListeners() {
     eventBus.on('time:applied', () => {
         render();
     });
+
+    // Track duration changes
+    eventBus.on('time:track:changed', () => {
+        render();
+    });
+}
+
+/**
+ * Set up click handler for satellite selection
+ */
+function setupClickHandler() {
+    if (!canvas) return;
+
+    canvas.addEventListener('click', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        const x = (e.clientX - rect.left) * dpr;
+        const y = (e.clientY - rect.top) * dpr;
+
+        // Check if click is on any satellite
+        const clickedSatellite = findSatelliteAtPosition(x / dpr, y / dpr);
+        if (clickedSatellite) {
+            // Set as active row in satellite state
+            satelliteState.setActiveRow(clickedSatellite.id);
+            logger.log(`Polar plot: selected ${clickedSatellite.name}`, logger.CATEGORY.UI);
+
+            // Emit event for table to highlight
+            eventBus.emit('satellite:selection:changed', {
+                id: clickedSatellite.id,
+                source: 'polarPlot'
+            });
+
+            render();
+        }
+    });
+
+    // Change cursor on hover
+    canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        const hoveredSatellite = findSatelliteAtPosition(x, y);
+        canvas.style.cursor = hoveredSatellite ? 'pointer' : 'default';
+    });
+}
+
+// Store satellite positions for click detection
+let satellitePositions = [];
+
+/**
+ * Find satellite at canvas position
+ * @param {number} x - Canvas X coordinate
+ * @param {number} y - Canvas Y coordinate
+ * @returns {Object|null} Satellite object or null
+ */
+function findSatelliteAtPosition(x, y) {
+    const clickRadius = 15;  // Click tolerance in pixels
+
+    for (const satPos of satellitePositions) {
+        const dx = x - satPos.x;
+        const dy = y - satPos.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance <= clickRadius) {
+            return satPos.satellite;
+        }
+    }
+
+    return null;
 }
 
 /**
@@ -206,17 +291,19 @@ export function render() {
     if (!ctx || !canvas) return;
     if (!analysisState.isPolarPlotEnabled()) return;
 
+    // Clear satellite positions for click detection
+    satellitePositions = [];
+
     // Clear canvas
     ctx.fillStyle = COLORS.background;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw grid
+    // Draw grid with enhanced labels
     drawGrid();
 
     // Get selected sensor for polar view
     const sensorId = analysisState.getPolarViewSensorId();
     if (sensorId === null) {
-        // No sensor selected - show empty grid with message
         drawNoSensorMessage();
         return;
     }
@@ -242,25 +329,38 @@ export function render() {
         return;
     }
 
-    // Get current time
+    // Get current time and track settings
     const currentTime = timeState.getCurrentTime();
+    const tailMinutes = timeState.getTailMinutes();
+    const headMinutes = timeState.getHeadMinutes();
 
-    // Debug: Log what we're processing (throttled to every 2 seconds)
+    // Get active row ID for highlighting
+    const activeRowId = satelliteState.getEditingState().activeRowId;
+
+    // Debug: Log what we're processing (throttled)
     const now = Date.now();
     const shouldLog = now - lastDebugLog > 2000;
     if (shouldLog) {
         lastDebugLog = now;
-        logger.diagnostic(`Processing ${satellites.length} satellites for sensor ${sensor.name}`, logger.CATEGORY.UI, { time: currentTime.toISOString() });
+        logger.diagnostic(`Processing ${satellites.length} satellites, tail=${tailMinutes}m, head=${headMinutes}m`, logger.CATEGORY.UI);
     }
 
-    // Draw each satellite
+    // Draw each satellite (tracks first, then current positions on top)
+    // First pass: draw all tracks
     satellites.forEach(sat => {
-        drawSatellite(sat, sensor, currentTime, shouldLog);
+        const isActive = sat.id === activeRowId;
+        drawSatelliteTrack(sat, sensor, currentTime, tailMinutes, headMinutes, isActive);
+    });
+
+    // Second pass: draw current positions and labels
+    satellites.forEach(sat => {
+        const isActive = sat.id === activeRowId;
+        drawSatellitePosition(sat, sensor, currentTime, isActive, shouldLog);
     });
 }
 
 /**
- * Draw the polar grid (elevation circles and azimuth lines)
+ * Draw the polar grid with enhanced labels
  */
 function drawGrid() {
     ctx.strokeStyle = COLORS.gridLines;
@@ -274,16 +374,16 @@ function drawGrid() {
         ctx.arc(centerX, centerY, r, 0, Math.PI * 2);
         ctx.stroke();
 
-        // Label (skip 90° at center)
-        if (el < 90) {
+        // Label elevation on the right side (skip 90° at center)
+        if (el < 90 && el > 0) {
             ctx.fillStyle = COLORS.gridLabels;
             ctx.font = '10px monospace';
-            ctx.textAlign = 'center';
-            ctx.fillText(`${el}°`, centerX + r + 12, centerY + 4);
+            ctx.textAlign = 'left';
+            ctx.fillText(`${el}°`, centerX + r + 3, centerY + 4);
         }
     });
 
-    // Azimuth lines (every 30°)
+    // Azimuth lines (every 30°) with degree labels
     for (let az = 0; az < 360; az += 30) {
         const angle = azimuthToAngle(az);
         const x = centerX + radius * Math.cos(angle);
@@ -293,9 +393,22 @@ function drawGrid() {
         ctx.moveTo(centerX, centerY);
         ctx.lineTo(x, y);
         ctx.stroke();
+
+        // Draw azimuth degree labels (skip cardinal directions)
+        if (az % 90 !== 0) {
+            const labelRadius = radius + 12;
+            const labelX = centerX + labelRadius * Math.cos(angle);
+            const labelY = centerY + labelRadius * Math.sin(angle);
+
+            ctx.fillStyle = COLORS.azimuthLabels;
+            ctx.font = '9px monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`${az}°`, labelX, labelY);
+        }
     }
 
-    // Cardinal direction labels
+    // Cardinal direction labels (larger, brighter)
     ctx.fillStyle = COLORS.cardinalLabels;
     ctx.font = 'bold 14px monospace';
     ctx.textAlign = 'center';
@@ -340,13 +453,122 @@ function drawSensorLabel(sensor) {
 }
 
 /**
- * Draw a satellite on the polar plot
- * @param {Object} satellite - Satellite object with TLE data
+ * Draw satellite sky track (pass arc)
+ * @param {Object} satellite - Satellite object
  * @param {Object} sensor - Observer sensor
  * @param {Date} currentTime - Current simulation time
- * @param {boolean} shouldLog - Whether to log debug info (throttled)
+ * @param {number} tailMinutes - Minutes of track behind current position
+ * @param {number} headMinutes - Minutes of track ahead of current position
+ * @param {boolean} isActive - Whether this satellite is the active row
  */
-function drawSatellite(satellite, sensor, currentTime, shouldLog = false) {
+function drawSatelliteTrack(satellite, sensor, currentTime, tailMinutes, headMinutes, isActive) {
+    const color = getSatelliteColor(satellite, isActive);
+    const trackPoints = [];
+
+    // Calculate track points from tail to head
+    const tailMs = tailMinutes * 60 * 1000;
+    const headMs = headMinutes * 60 * 1000;
+    const stepMs = TRACK_STEP_SECONDS * 1000;
+
+    const startTime = new Date(currentTime.getTime() - tailMs);
+    const endTime = new Date(currentTime.getTime() + headMs);
+
+    for (let t = startTime.getTime(); t <= endTime.getTime(); t += stepMs) {
+        const time = new Date(t);
+        const satPos = propagateSatellite(satellite.tleLine1, satellite.tleLine2, time);
+        if (!satPos) continue;
+
+        const lookAngles = calculateAzimuthElevation(
+            sensor.lat, sensor.lon, sensor.alt / 1000 || 0,
+            satPos.lat, satPos.lon, satPos.alt
+        );
+
+        // Only include points above horizon
+        if (lookAngles.elevation >= 0) {
+            const canvasPos = polarToCanvas(lookAngles.azimuth, lookAngles.elevation);
+            trackPoints.push({
+                x: canvasPos.x,
+                y: canvasPos.y,
+                az: lookAngles.azimuth,
+                el: lookAngles.elevation,
+                time: t
+            });
+        }
+    }
+
+    // Draw track line
+    if (trackPoints.length >= 2) {
+        ctx.strokeStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${isActive ? 0.8 : 0.4})`;
+        ctx.lineWidth = isActive ? 2.5 : 1.5;
+        ctx.beginPath();
+
+        ctx.moveTo(trackPoints[0].x, trackPoints[0].y);
+        for (let i = 1; i < trackPoints.length; i++) {
+            ctx.lineTo(trackPoints[i].x, trackPoints[i].y);
+        }
+        ctx.stroke();
+
+        // Draw direction chevrons along track
+        drawTrackChevrons(trackPoints, color, isActive);
+    }
+}
+
+/**
+ * Draw direction chevrons along the track
+ * @param {Array} trackPoints - Array of track points with x, y coordinates
+ * @param {Array} color - RGB color array
+ * @param {boolean} isActive - Whether this satellite is active
+ */
+function drawTrackChevrons(trackPoints, color, isActive) {
+    if (trackPoints.length < 3) return;
+
+    // Draw chevrons at regular intervals along the track
+    const chevronInterval = Math.max(3, Math.floor(trackPoints.length / 6));  // ~6 chevrons max
+
+    for (let i = chevronInterval; i < trackPoints.length - 1; i += chevronInterval) {
+        const prev = trackPoints[i - 1];
+        const curr = trackPoints[i];
+        const next = trackPoints[i + 1];
+
+        // Calculate direction (bearing along track)
+        const dx = next.x - prev.x;
+        const dy = next.y - prev.y;
+        const angle = Math.atan2(dy, dx);
+
+        // Draw chevron
+        const size = isActive ? 6 : 4;
+        const chevronAngle = Math.PI / 6;  // 30 degrees
+
+        ctx.strokeStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${isActive ? 0.9 : 0.6})`;
+        ctx.lineWidth = isActive ? 2 : 1.5;
+        ctx.beginPath();
+
+        // Left arm of chevron
+        ctx.moveTo(
+            curr.x - size * Math.cos(angle - chevronAngle),
+            curr.y - size * Math.sin(angle - chevronAngle)
+        );
+        ctx.lineTo(curr.x, curr.y);
+
+        // Right arm of chevron
+        ctx.lineTo(
+            curr.x - size * Math.cos(angle + chevronAngle),
+            curr.y - size * Math.sin(angle + chevronAngle)
+        );
+
+        ctx.stroke();
+    }
+}
+
+/**
+ * Draw satellite current position marker
+ * @param {Object} satellite - Satellite object
+ * @param {Object} sensor - Observer sensor
+ * @param {Date} currentTime - Current simulation time
+ * @param {boolean} isActive - Whether this satellite is the active row
+ * @param {boolean} shouldLog - Whether to log debug info
+ */
+function drawSatellitePosition(satellite, sensor, currentTime, isActive, shouldLog = false) {
     // Propagate satellite to current time
     const satPos = propagateSatellite(satellite.tleLine1, satellite.tleLine2, currentTime);
     if (!satPos) {
@@ -356,11 +578,11 @@ function drawSatellite(satellite, sensor, currentTime, shouldLog = false) {
 
     // Calculate look angles from sensor
     const lookAngles = calculateAzimuthElevation(
-        sensor.lat, sensor.lon, sensor.alt / 1000 || 0,  // Convert alt from m to km
+        sensor.lat, sensor.lon, sensor.alt / 1000 || 0,
         satPos.lat, satPos.lon, satPos.alt
     );
 
-    // Debug: Log all satellites and their visibility (throttled)
+    // Debug log
     if (shouldLog) {
         logger.diagnostic(`${satellite.name}: el=${lookAngles.elevation.toFixed(1)}° az=${lookAngles.azimuth.toFixed(1)}° visible=${lookAngles.visible}`, logger.CATEGORY.UI, {
             lat: satPos.lat.toFixed(1),
@@ -372,41 +594,66 @@ function drawSatellite(satellite, sensor, currentTime, shouldLog = false) {
     // Only draw if visible (above horizon)
     if (!lookAngles.visible) return;
 
-    // Get color based on watchlist
-    const color = getSatelliteColor(satellite);
+    // Get color based on watchlist and active state
+    const color = getSatelliteColor(satellite, isActive);
 
     // Convert to canvas coordinates
     const { x, y } = polarToCanvas(lookAngles.azimuth, lookAngles.elevation);
 
-    // Draw satellite marker
-    ctx.beginPath();
-    ctx.arc(x, y, 5, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, 1.0)`;
-    ctx.fill();
+    // Store position for click detection
+    satellitePositions.push({
+        x,
+        y,
+        satellite,
+        elevation: lookAngles.elevation,
+        azimuth: lookAngles.azimuth
+    });
+
+    // Draw selection ring if active
+    if (isActive) {
+        ctx.strokeStyle = COLORS.selectionRing;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(x, y, 12, 0, Math.PI * 2);
+        ctx.stroke();
+    }
 
     // Draw glow
-    const gradient = ctx.createRadialGradient(x, y, 2, x, y, 10);
-    gradient.addColorStop(0, `rgba(${color[0]}, ${color[1]}, ${color[2]}, 0.5)`);
+    const glowRadius = isActive ? 15 : 10;
+    const gradient = ctx.createRadialGradient(x, y, 2, x, y, glowRadius);
+    gradient.addColorStop(0, `rgba(${color[0]}, ${color[1]}, ${color[2]}, 0.6)`);
     gradient.addColorStop(1, `rgba(${color[0]}, ${color[1]}, ${color[2]}, 0)`);
     ctx.fillStyle = gradient;
     ctx.beginPath();
-    ctx.arc(x, y, 10, 0, Math.PI * 2);
+    ctx.arc(x, y, glowRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Draw satellite marker
+    const markerSize = isActive ? 6 : 5;
+    ctx.beginPath();
+    ctx.arc(x, y, markerSize, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, 1.0)`;
     ctx.fill();
 
     // Draw satellite name
     ctx.fillStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, 0.9)`;
-    ctx.font = '9px monospace';
+    ctx.font = isActive ? 'bold 10px monospace' : '9px monospace';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText(satellite.name, x + 8, y);
+    ctx.fillText(satellite.name, x + 10, y);
 }
 
 /**
- * Get satellite color based on watchlist status
+ * Get satellite color based on watchlist status and active state
  * @param {Object} satellite - Satellite object
+ * @param {boolean} isActive - Whether this satellite is the active row
  * @returns {Array} RGB color array
  */
-function getSatelliteColor(satellite) {
+function getSatelliteColor(satellite, isActive = false) {
+    // Active row gets orange highlight
+    if (isActive) return COLORS.satellite.orange;
+
+    // Watch colors
     if (satellite.watchColor === 'red') return COLORS.satellite.red;
     if (satellite.watchColor === 'blue') return COLORS.satellite.blue;
     return COLORS.satellite.grey;
