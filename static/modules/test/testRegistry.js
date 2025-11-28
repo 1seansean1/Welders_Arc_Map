@@ -3547,7 +3547,33 @@ const CATALOG_HYPOTHESES = {
             return {
                 passed: updated && satNameChanged,
                 details: { originalName: 'Original Sat', newName, updated, actualName: catalog?.satellites[0]?.name }
-            };
+            ,
+    'H-CAT-9': {
+        id: 'H-CAT-9',
+        name: 'Catalog Edit Modal Virtual Scroll Performance',
+        category: 'catalog',
+        hypothesis: 'Virtual scrolling enables <500ms modal open time and <50 DOM nodes',
+        symptom: 'Catalog edit modal takes >2 seconds to open for large catalogs',
+        prediction: 'Modal opens in <500ms with <50 rendered DOM nodes',
+        threshold: { maxOpenTimeMs: 500, maxDOMNodes: 50 },
+        causalChain: ['SYMPTOM: 5+ sec lag', 'ROOT: No virtual scrolling', 'FIX: CatalogVirtualScroller'],
+        testFn: async () => {
+            const catalogState = window.catalogState;
+            if (!catalogState) return { passed: false, error: 'catalogState not found' };
+            const catalogs = catalogState.getAllCatalogs();
+            if (catalogs.length === 0) return { passed: true, details: { skipped: true } };
+            const testCatalog = catalogs.reduce((a, b) => (a.satellites?.length || 0) > (b.satellites?.length || 0) ? a : b);
+            if (!testCatalog.satellites || testCatalog.satellites.length < 100) return { passed: true, details: { skipped: true } };
+            const modals = await import('../ui/modals.js');
+            const startTime = performance.now();
+            modals.showCatalogEditModal(testCatalog.id, () => {});
+            const openTime = performance.now() - startTime;
+            const container = document.getElementById('catalog-edit-table-container');
+            const rows = container ? container.querySelectorAll('.virtual-row').length : 0;
+            document.getElementById('catalog-edit-modal-overlay').classList.remove('visible');
+            return { passed: openTime < 500 && rows < 50, details: { catalogName: testCatalog.name, satCount: testCatalog.satellites.length, openTimeMs: Math.round(openTime), renderedRows: rows } };
+        }
+    }};
         }
     }
 

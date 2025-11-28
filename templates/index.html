@@ -2405,6 +2405,21 @@
             color: white;
         }
 
+        /* Virtual Scrolling Rows */
+        .virtual-row {
+            background: var(--bg-secondary);
+            transition: background 0.1s;
+        }
+
+        .virtual-row:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .virtual-row.selected {
+            background: var(--accent-blue-grey);
+            color: white;
+        }
+
         .modal-catalog-edit-help {
             padding: 6px 12px;
             font-size: 9px;
@@ -3197,29 +3212,26 @@ SATELLITE NAME 2
                 <button type="button" class="modal-catalog-edit-close" id="catalog-edit-close">&times;</button>
             </div>
             <div class="modal-catalog-edit-body">
-                <!-- Left Panel: Satellite Table -->
+                <!-- Left Panel: Satellite Table (Virtual Scrolling) -->
                 <div class="modal-catalog-edit-left">
                     <div class="modal-catalog-edit-table-header">
-                        <span>Satellites</span>
+                        <span id="catalog-edit-sat-count">0 satellites</span>
                         <button type="button" class="modal-catalog-edit-add-btn" id="catalog-edit-add-sat">+Sat</button>
                     </div>
-                    <div class="modal-catalog-edit-table-container">
-                        <table class="modal-catalog-edit-table" id="catalog-edit-sat-table">
-                            <thead>
-                                <tr>
-                                    <th style="width: 30px;">Color</th>
-                                    <th style="width: 60px;">NORAD</th>
-                                    <th>Name</th>
-                                    <th style="width: 40px;">Lists</th>
-                                </tr>
-                            </thead>
-                            <tbody id="catalog-edit-sat-tbody">
-                                <!-- Populated by JavaScript -->
-                            </tbody>
-                        </table>
+                    <div style="padding: 4px 8px;">
+                        <input type="text" class="modal-editor-input" id="catalog-edit-search" placeholder="Search by name or NORAD ID..." style="width: 100%; font-size: 11px; padding: 4px 8px;">
+                    </div>
+                    <div class="modal-catalog-edit-table-header" style="font-size: 10px; padding: 4px 0; border-bottom: 1px solid var(--border-color); display: flex;">
+                        <div style="width: 30px; text-align: center;">Color</div>
+                        <div style="width: 60px; text-align: center;">NORAD</div>
+                        <div style="flex: 1; padding: 0 8px;">Name</div>
+                        <div style="width: 40px; text-align: center;">Lists</div>
+                    </div>
+                    <div class="modal-catalog-edit-table-container" id="catalog-edit-table-container" style="height: calc(100% - 90px); overflow: hidden;">
+                        <!-- Virtual scrolling content populated by JavaScript -->
                     </div>
                     <div class="modal-catalog-edit-help">
-                        Click row to edit satellite details
+                        Click row to edit • Scroll for more
                     </div>
                 </div>
                 <!-- Right Panel: Satellite Detail Editor -->
@@ -3245,9 +3257,9 @@ SATELLITE NAME 2
                         <div class="modal-editor-field">
                             <label class="modal-editor-label">Display Color</label>
                             <div class="modal-color-picker" id="catalog-edit-color-picker">
-                                <button type="button" class="modal-color-btn modal-color-grey" data-color="grey"></button>
-                                <button type="button" class="modal-color-btn modal-color-red" data-color="red"></button>
-                                <button type="button" class="modal-color-btn modal-color-blue" data-color="blue"></button>
+                                <button type="button" class="modal-color-btn" data-color="grey" style="background: #666666; border: 2px solid #888888;" title="Grey"></button>
+                                <button type="button" class="modal-color-btn" data-color="red" style="background: #ff4444; border: 2px solid #ff6666;" title="Red"></button>
+                                <button type="button" class="modal-color-btn" data-color="blue" style="background: #4488ff; border: 2px solid #66aaff;" title="Blue"></button>
                             </div>
                         </div>
                         <div class="modal-editor-field">

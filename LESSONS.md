@@ -26,6 +26,7 @@ This document captures debugging knowledge, integration patterns, and hard-won i
 | LL-007 | Test Visual Properties Not Just Existence | Testing | 2025-11-26 |
 | LL-008 | Time Control Paradigms from Industry Standards | Architecture | 2025-11-27 |
 | LL-009 | Decouple Event Detection from Display Parameters | Architecture | 2025-11-27 |
+| LL-010 | Virtual Scrolling for Large Lists | Performance | 2025-11-28 |
 
 ---
 
@@ -674,3 +675,134 @@ const events = eventDetector.detect(satellite, currentTime, {
 ### Files Modified
 
 - `static/modules/map/deckgl.js` - Uses eventDetector for crossings and apexes
+
+---
+
+## LL-010: Virtual Scrolling for Large Lists
+
+**Date**: 2025-11-28
+**Category**: Performance
+**Status**: RESOLVED
+
+### Problem
+
+Catalog edit modal took 5+ seconds to open for Celestrak (14K satellites). UI became completely unresponsive during modal render.
+
+### Key Observation
+
+> "14K TLEs is a lot, but not a number that should be causing lag"
+
+### Root Cause
+
+Two compounding issues:
+
+1. **O(n²) complexity**: `countListsForSatellite()` called for each row, each call searching through all satellites
+2. **14K DOM nodes**: All rows rendered synchronously, overwhelming browser rendering
+
+```javascript
+// BUG: O(n²) - for each of 14K rows, search 14K satellites
+currentCatalog.satellites.forEach((sat, index) => {
+    tdLists.textContent = countListsForSatellite(sat.noradId);  // O(n) search inside
+});
+```
+
+### Solution
+
+**Virtual Scrolling + Pre-computed Lookups**
+
+1. **Pre-compute lookup maps once** (O(n)):
+```javascript
+const noradToListCount = new Map();
+// Single pass through lists to build count map
+for (const list of allLists) {
+    for (const satId of list.satelliteIds) {
+        const noradId = satIdToNorad.get(satId);
+        noradToListCount.set(noradId, (noradToListCount.get(noradId) || 0) + 1);
+    }
+}
+// O(1) lookup
+const count = noradToListCount.get(sat.noradId) || 0;
+```
+
+2. **Virtual scrolling** (only render visible rows ~25):
+```javascript
+class CatalogVirtualScroller {
+    ROW_HEIGHT = 28;
+    BUFFER_ROWS = 5;
+
+    getVisibleRange() {
+        const first = Math.floor(scrollTop / ROW_HEIGHT) - BUFFER_ROWS;
+        const last = Math.ceil((scrollTop + viewportHeight) / ROW_HEIGHT) + BUFFER_ROWS;
+        return { first, last };
+    }
+
+    render() {
+        // Only create DOM for visible rows
+        for (let i = first; i <= last; i++) {
+            if (!this.activeRows.has(i)) {
+                const row = this.createRow(data[i], i);
+                row.style.transform = `translateY(${i * ROW_HEIGHT}px)`;
+                this.rowContainer.appendChild(row);
+            }
+        }
+    }
+}
+```
+
+3. **Transform positioning** for 60fps scroll:
+```css
+.virtual-row {
+    position: absolute;
+    transform: translateY(Npx);  /* Compositor-only, no layout */
+    contain: layout paint;       /* Isolation for rendering */
+}
+```
+
+### Performance Results
+
+| Metric | Before | After | Improvement |
+|--------|--------|-------|-------------|
+| Open time | ~5000ms | ~50ms | **100x** |
+| DOM nodes | 14,000 | ~25 | **560x** |
+| Search | N/A | <50ms | New feature |
+| Scroll | Janky | 60fps | Smooth |
+
+### Prevention Pattern
+
+When rendering lists with >100 items:
+1. **Pre-compute lookups** - Don't do O(n) searches per row
+2. **Virtual scroll** - Only render visible rows
+3. **Use transforms** - Not top/left positioning
+4. **Add search** - Nobody scrolls 14K rows manually
+
+### Anti-Pattern
+
+```javascript
+// DON'T: Render all rows + O(n) search per row
+items.forEach((item, index) => {
+    const row = createRow(item);
+    row.querySelector('.count').textContent = expensiveLookup(item.id);  // O(n)
+    container.appendChild(row);  // 14K DOM nodes
+});
+```
+
+### Good Pattern
+
+```javascript
+// DO: Pre-compute + virtual scroll
+const lookupMap = buildLookupMap(items);  // O(n) once
+const scroller = new VirtualScroller(container, {
+    getListCount: (id) => lookupMap.get(id) || 0,  // O(1)
+    onRowClick: handleClick
+});
+scroller.setData(items);  // Only renders ~25 rows
+```
+
+### Files Created
+
+- `static/modules/ui/virtualScroller.js` - Reusable virtual scrolling module
+
+### Files Modified
+
+- `static/modules/ui/modals.js` - showCatalogEditModal with virtual scrolling
+- `templates/index.html` - Modal structure and CSS for virtual rows

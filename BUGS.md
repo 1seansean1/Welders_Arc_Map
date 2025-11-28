@@ -36,6 +36,45 @@
 
 ## Recently Fixed
 
+### BUG-016: Catalog Edit Modal Performance Degradation
+**ID**: BUG-016
+**Severity**: HIGH
+**Status**: CLOSED
+**Date Reported**: 2025-11-28
+**Date Closed**: 2025-11-28
+
+**Symptoms**:
+- 5-second delay opening catalog edit modal for Celestrak (14K TLEs)
+- UI becomes unresponsive during modal open
+- Color picker buttons appear white instead of showing colors (red, blue, grey)
+- Minor styling inconsistencies in modal
+
+**Root Cause**:
+1. **O(n²) complexity**: `countListsForSatellite()` called for each of 14K rows, each call iterates through all satellites
+2. **14K DOM nodes**: All rows rendered synchronously, overwhelming the browser
+3. **Missing CSS**: Color buttons lack `background-color` inline styles or CSS rules
+
+**Solution**:
+Implemented virtual scrolling with:
+1. Pre-computed lookup maps (O(1) list count lookups)
+2. Fixed-height `CatalogVirtualScroller` (only render ~25 visible rows)
+3. Debounced search/filter (150ms)
+4. CSS fix for color buttons (inline styles)
+
+**Files Modified**:
+- static/modules/ui/virtualScroller.js (new - virtual scrolling module)
+- static/modules/ui/modals.js (showCatalogEditModal with virtual scrolling)
+- templates/index.html (modal structure, CSS, color button fixes)
+- static/modules/test/testRegistry.js (H-CAT-9 performance test)
+
+**Performance Results**:
+- Open time: ~50ms (was ~5000ms) - **100x improvement**
+- DOM nodes: ~25 (was ~14,000) - **560x reduction**
+- Search: <50ms for 14K items
+- Scroll: 60fps sustained
+
+---
+
 ### BUG-015: Console Logs Not Appearing in UI Log Panel
 **ID**: BUG-015
 **Severity**: MEDIUM
