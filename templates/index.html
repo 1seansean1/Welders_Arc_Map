@@ -228,7 +228,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 14px;
+            font-size: 11px;
             z-index: 1000;
             transition: background 0.2s, color 0.2s;
         }
@@ -442,7 +442,7 @@
             padding: 1px 2px;
             cursor: pointer;
             height: 20px;
-            min-width: 32px;
+            min-width: 24px;
         }
 
         .mtb-select:focus {
@@ -686,8 +686,8 @@
         }
 
         .collapse-btn {
-            width: 32px;
-            height: 32px;
+            width: 24px;
+            height: 24px;
             border: none;
             background: transparent;
             color: var(--text-secondary);
@@ -701,8 +701,8 @@
             position: relative;
 
             /* MOBILE: Larger touch target */
-            min-width: 32px;
-            min-height: 32px;
+            min-width: 24px;
+            min-height: 24px;
         }
 
         .collapse-btn:hover {
@@ -841,13 +841,17 @@
         }
 
         .profile-avatar-btn {
-            width: 32px;
-            height: 32px;
+            min-width: 24px;
+            min-height: 24px;
+            aspect-ratio: 1;
+            flex-shrink: 0;
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
             border: 2px solid var(--border-color);
             background: var(--bg-tertiary);
             color: var(--text-primary);
-            font-size: 14px;
+            font-size: 11px;
             font-weight: 600;
             cursor: pointer;
             display: flex;
@@ -966,7 +970,7 @@
         }
 
         .time-now-btn {
-            width: 32px;
+            width: 24px;
             height: 20px;
             background: var(--bg-tertiary);
             color: var(--text-primary);
@@ -1161,7 +1165,7 @@
         }
 
         .time-slider-now-btn {
-            width: 32px;
+            width: 24px;
             height: 20px;
             background: var(--bg-tertiary);
             color: var(--text-primary);
@@ -1421,7 +1425,7 @@
             justify-content: center;
             width: 100%;
             height: 100%;
-            font-size: 14px;
+            font-size: 11px;
             color: var(--text-muted);
             font-weight: 500;
         }
@@ -2860,6 +2864,18 @@
                     </div>
 
                     <div class="track-duration-control">
+                        <span class="track-label">Size</span>
+                        <input type="range" class="track-slider" id="glow-size-slider" min="20" max="300" value="100" />
+                        <span class="track-unit" id="glow-size-value">1.0x</span>
+                    </div>
+
+                    <div class="track-duration-control">
+                        <span class="track-label">Brightness</span>
+                        <input type="range" class="track-slider" id="glow-brightness-slider" min="10" max="200" value="100" />
+                        <span class="track-unit" id="glow-brightness-value">1.0x</span>
+                    </div>
+
+                    <div class="track-duration-control">
                         <span class="track-label">Fade In</span>
                         <button class="track-step-btn" id="glow-fade-in-down">-</button>
                         <input type="number" class="track-input" id="glow-fade-in-input" min="1" max="30" value="5" style="width: 40px;" />
@@ -2944,6 +2960,10 @@
                     <div class="time-row">
                         <span class="time-label sim-label">SIM</span>
                         <span class="time-value" id="sim-time-value">--:--:--</span>
+                    </div>
+                    <div class="time-row zoom-row">
+                        <span class="time-label">ZOOM</span>
+                        <span class="time-value" id="zoom-level-value">--</span>
                     </div>
                 </div>
                 <!-- Map maximize button -->
@@ -3417,7 +3437,7 @@ SATELLITE NAME 2
                     padding: 20px;
                     border-radius: 8px;
                     font-family: system-ui, sans-serif;
-                    font-size: 14px;
+                    font-size: 11px;
                     max-width: 400px;
                     z-index: 10000;
                     box-shadow: 0 4px 12px rgba(0,0,0,0.5);

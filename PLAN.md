@@ -1,7 +1,7 @@
 # WA_map Active Work Plan
 
 > **Document Type**: PLAN
-> **Version**: 1.8
+> **Version**: 1.9
 > **Last Updated**: 2025-11-28
 > **Maintainer**: AI Governor System
 
@@ -576,6 +576,7 @@ EXPANDED ANALYSIS WINDOW PANEL (above time bar):
 
 | Task | Priority | Completed | Notes |
 |------|----------|-----------|-------|
+| Map & UI Enhancements | P2 | 2025-11-28 | MAP-017, UI-020/021: Zoom level display below clocks, glow size/brightness sliders in Settings, profile avatar circle fix, clock format updated to DD-MMM-YYYY UTC; H-STATE-9/10/11 tests added |
 | Watch List UX Improvements | P2 | 2025-11-28 | LIST-009/010/011: Selected Only default unchecked, bulk select loading indicator, custom delete confirmation modal |
 | Catalog Management Feature | P1 | 2025-11-28 | CAT-001 to CAT-004: Catalogs panel (renamed from Satellites), catalog state module, catalog table UI with checkbox/name/count, Celestrak auto-fetch, +Cat modal with TLE batch import |
 | Polar Plot Analysis Feature | P1 | 2025-11-27 | ANALYSIS-001 to ANALYSIS-005: Analysis panel checkbox, polar plot canvas (az/el sky view), sensor selection, H-POLAR tests |

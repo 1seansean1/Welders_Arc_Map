@@ -540,10 +540,113 @@ const STATE_HYPOTHESES = {
     }
 };
 
+    'H-STATE-9': {
+        id: 'H-STATE-9',
+        name: 'Glow Size State',
+        category: 'state',
+        hypothesis: 'Glow size state can be get and set independently from brightness',
+        symptom: 'Glow size slider does not affect glow appearance',
+        prediction: 'getGlowSize() returns correct value after setGlowSize()',
+        nullPrediction: 'Size would not be stored or retrieved correctly',
+        threshold: { sizeCorrect: true },
+        causalChain: [
+            'SYMPTOM: Glow size does not change',
+            'PROXIMATE: Size state not updated',
+            'ROOT: Getter/setter not implemented',
+            'MECHANISM: State property missing',
+            'FIX: Add glowSize to timeState with getter/setter'
+        ],
+        testFn: async () => {
+            const timeState = window.SatelliteApp?.timeState;
+            if (!timeState) return { passed: false, error: 'timeState not available' };
+
+            const initial = timeState.getGlowSize();
+            timeState.setGlowSize(2.0);
+            const afterSet = timeState.getGlowSize();
+            timeState.setGlowSize(initial);
+            const restored = timeState.getGlowSize();
+
+            const sizeCorrect = afterSet === 2.0 && restored === initial;
+
+            return {
+                passed: sizeCorrect,
+                details: { initial, afterSet, restored, sizeCorrect }
+            };
+        }
+    },
+    'H-STATE-10': {
+        id: 'H-STATE-10',
+        name: 'Glow Size Range Validation',
+        category: 'state',
+        hypothesis: 'Glow size is constrained to 0.2-3.0 range',
+        symptom: 'Invalid size values accepted',
+        prediction: 'Values outside 0.2-3.0 range rejected',
+        nullPrediction: 'Invalid values would be accepted',
+        threshold: { validationCorrect: true },
+        causalChain: [
+            'SYMPTOM: Size shows invalid values',
+            'PROXIMATE: No range validation',
+            'ROOT: Setter accepts any number',
+            'MECHANISM: No min/max enforcement',
+            'FIX: Add validation in setGlowSize()'
+        ],
+        testFn: async () => {
+            const timeState = window.SatelliteApp?.timeState;
+            if (!timeState) return { passed: false, error: 'timeState not available' };
+
+            const initial = timeState.getGlowSize();
+            timeState.setGlowSize(1.5);
+            const validAccepted = timeState.getGlowSize() === 1.5;
+            timeState.setGlowSize(0.05);
+            const invalidLowRejected = timeState.getGlowSize() === 1.5;
+            timeState.setGlowSize(5.0);
+            const invalidHighRejected = timeState.getGlowSize() === 1.5;
+            timeState.setGlowSize(initial);
+
+            const validationCorrect = validAccepted && invalidLowRejected && invalidHighRejected;
+            return {
+                passed: validationCorrect,
+                details: { validAccepted, invalidLowRejected, invalidHighRejected }
+            };
+        }
+    },
+    'H-STATE-11': {
+        id: 'H-STATE-11',
+        name: 'Clock Format DD-MMM-YYYY',
+        category: 'state',
+        hypothesis: 'Clock display uses DD-MMM-YYYY format with hyphens',
+        symptom: 'Clock shows wrong date format',
+        prediction: 'UTC clock shows format like 28-Nov-2025',
+        nullPrediction: 'Format would be DDMMMYYYY without hyphens',
+        threshold: { formatCorrect: true },
+        causalChain: [
+            'SYMPTOM: Date format incorrect',
+            'PROXIMATE: formatTimeCompact() using old format',
+            'ROOT: Template string missing hyphens',
+            'MECHANISM: String concatenation order',
+            'FIX: Add hyphens between day, month, year'
+        ],
+        testFn: async () => {
+            const element = document.getElementById('utc-time-value');
+            if (!element) return { passed: false, error: 'UTC time element not found' };
+
+            const text = element.textContent;
+            // Format should be: DD-MMM-YYYY HH:MM:SS UTC
+            const hasHyphens = /\d{2}-[A-Za-z]{3}-\d{4}/.test(text);
+            const hasMixedCase = /[A-Z][a-z]{2}/.test(text);
+
+            return {
+                passed: hasHyphens && hasMixedCase,
+                details: { text, hasHyphens, hasMixedCase }
+            };
+        }
+    },
+
 // ============================================
 // EVENT BUS TESTS (new)
 // ============================================
 
+'H-STATE-9': {        id: 'H-STATE-9',        name: 'Glow Size State',        category: 'state',        hypothesis: 'Glow size state can be get and set independently from brightness',        symptom: 'Glow size slider does not affect glow appearance',        prediction: 'getGlowSize() returns correct value after setGlowSize()',        nullPrediction: 'Size would not be stored or retrieved correctly',        threshold: { sizeCorrect: true },        causalChain: [            'SYMPTOM: Glow size does not change',            'PROXIMATE: Size state not updated',            'ROOT: Getter/setter not implemented',            'MECHANISM: State property missing',            'FIX: Add glowSize to timeState with getter/setter'        ],        testFn: async () => {            const timeState = window.SatelliteApp?.timeState;            if (!timeState) return { passed: false, error: 'timeState not available' };            const initial = timeState.getGlowSize();            timeState.setGlowSize(2.0);            const afterSet = timeState.getGlowSize();            timeState.setGlowSize(initial);            const restored = timeState.getGlowSize();            const sizeCorrect = afterSet === 2.0 && restored === initial;            return {                passed: sizeCorrect,                details: { initial, afterSet, restored, sizeCorrect }            };        }    },    'H-STATE-10': {        id: 'H-STATE-10',        name: 'Glow Size Range Validation',        category: 'state',        hypothesis: 'Glow size is constrained to 0.2-3.0 range',        symptom: 'Invalid size values accepted',        prediction: 'Values outside 0.2-3.0 range rejected',        nullPrediction: 'Invalid values would be accepted',        threshold: { validationCorrect: true },        causalChain: [            'SYMPTOM: Size shows invalid values',            'PROXIMATE: No range validation',            'ROOT: Setter accepts any number',            'MECHANISM: No min/max enforcement',            'FIX: Add validation in setGlowSize()'        ],        testFn: async () => {            const timeState = window.SatelliteApp?.timeState;            if (!timeState) return { passed: false, error: 'timeState not available' };            const initial = timeState.getGlowSize();            timeState.setGlowSize(1.5);            const validAccepted = timeState.getGlowSize() === 1.5;            timeState.setGlowSize(0.05);            const invalidLowRejected = timeState.getGlowSize() === 1.5;            timeState.setGlowSize(5.0);            const invalidHighRejected = timeState.getGlowSize() === 1.5;            timeState.setGlowSize(initial);            const validationCorrect = validAccepted && invalidLowRejected && invalidHighRejected;            return {                passed: validationCorrect,                details: { validAccepted, invalidLowRejected, invalidHighRejected }            };        }    },
 const EVENT_HYPOTHESES = {
     'H-EVENT-1': {
         id: 'H-EVENT-1',

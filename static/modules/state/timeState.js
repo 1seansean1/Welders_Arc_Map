@@ -55,6 +55,7 @@ class TimeState {
 
             // Equator crossing glow settings
             glowEnabled: true,       // Whether to show equator crossing glow
+            glowSize: 1.0,           // Glow size multiplier (0.2 - 3.0)
             glowIntensity: 1.0,      // Glow brightness multiplier (0.1 - 2.0)
             glowFadeInMinutes: 5,    // Minutes BEFORE equator crossing to start fade in (1-30)
             glowFadeOutMinutes: 5,   // Minutes AFTER equator crossing to end fade out (1-30)
@@ -195,9 +196,15 @@ class TimeState {
     }
 
     /**
-     * Get glow intensity multiplier
-     * @returns {number} Glow intensity (0.1 - 2.0)
      */
+    /**
+     * Get glow size multiplier
+     * @returns {number} Glow size (0.2 - 3.0)
+     */
+    getGlowSize() {
+        return this._state.glowSize;
+    }
+
     getGlowIntensity() {
         return this._state.glowIntensity;
     }
@@ -217,14 +224,29 @@ class TimeState {
 
         eventBus.emit('time:glow:changed', {
             glowEnabled: this._state.glowEnabled,
+            glowSize: this._state.glowSize,
             glowIntensity: this._state.glowIntensity
         });
     }
 
     /**
-     * Set glow intensity multiplier
-     * @param {number} intensity - Glow intensity (0.1 - 2.0)
      */
+    /**
+     * Set glow size multiplier
+     * @param {number} size - Glow size (0.2 - 3.0)
+     */
+    setGlowSize(size) {
+        if (typeof size !== 'number' || size < 0.2 || size > 3.0) {
+            logger.log('setGlowSize: must be 0.2-3.0', logger.CATEGORY.ERROR);
+            return;
+        }
+
+        this._state.glowSize = size;
+        logger.log(`Glow size set: ${size}`, logger.CATEGORY.TIME);
+
+        this._emitGlowChanged();
+    }
+
     setGlowIntensity(intensity) {
         if (typeof intensity !== 'number' || intensity < 0.1 || intensity > 2.0) {
             logger.log('setGlowIntensity: must be 0.1-2.0', logger.CATEGORY.ERROR);
@@ -289,6 +311,7 @@ class TimeState {
     _emitGlowChanged() {
         eventBus.emit('time:glow:changed', {
             glowEnabled: this._state.glowEnabled,
+            glowSize: this._state.glowSize,
             glowIntensity: this._state.glowIntensity,
             glowFadeInMinutes: this._state.glowFadeInMinutes,
             glowFadeOutMinutes: this._state.glowFadeOutMinutes

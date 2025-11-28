@@ -1,7 +1,7 @@
 # WA_map Feature Registry
 
 > **Document Type**: FEATURES
-> **Version**: 4.1
+> **Version**: 4.2
 > **Last Updated**: 2025-11-28
 > **Maintainer**: AI Governor System
 
@@ -60,6 +60,7 @@
 | MAP-014 | Remove + from Fit Button | P2 | XS | DONE | MAP-012 |
 | MAP-015 | Clock Overlay Styling | P2 | XS | DONE | TIME-018 |
 | MAP-016 | Fit Button Maximized Mode | P2 | XS | DONE | MAP-012 |
+| MAP-017 | Zoom Level Display | P2 | XS | DONE | MAP-001, TIME-018 |
 
 ### Satellite Management (SAT)
 
@@ -167,7 +168,7 @@
 | TIME-030 | Map Time Bar Calendar Popups | P1 | S | DONE | TIME-029, TIME-003 |
 | TIME-031 | Play/Pause Toggle (Remove Stop) | P2 | XS | DONE | TIME-016 |
 | TIME-032 | Play Button Maintains Offset | P1 | S | DONE | TIME-016 |
-| TIME-033 | Clock Format DDMMMYYYY UTC | P2 | XS | DONE | TIME-018 |
+| TIME-033 | Clock Format DD-MMM-YYYY UTC | P2 | XS | DONE | TIME-018 |
 | TIME-034 | Double-Click Close Pickers | P2 | XS | DONE | TIME-029 |
 
 ### Control Panel (UI)
@@ -193,6 +194,8 @@
 | UI-017 | Table Height Consistency | P2 | XS | DONE | UI-002 |
 | UI-018 | Brighter Time Bar Borders | P2 | XS | DONE | TIME-015 |
 | UI-019 | Ctrl+Wheel Jog Hint Text | P2 | XS | DONE | TIME-024 |
+| UI-020 | Glow Size/Brightness Sliders | P2 | S | DONE | UI-010, SAT-014 |
+| UI-021 | Profile Avatar Circle Fix | P2 | XS | DONE | UI-001 |
 
 ### Logging System (LOG)
 
@@ -334,23 +337,23 @@
 
 | Category | Total | DONE | WIP | PLAN | IDEA |
 |----------|-------|------|-----|------|------|
-| MAP | 15 | 15 | 0 | 0 | 0 |
+| MAP | 16 | 16 | 0 | 0 | 0 |
 | SAT | 23 | 21 | 0 | 1 | 1 |
 | CAT | 5 | 5 | 0 | 0 | 0 |
 | SEN | 9 | 8 | 0 | 0 | 1 |
 | TIME | 34 | 34 | 0 | 0 | 0 |
-| UI | 21 | 20 | 0 | 1 | 0 |
+| UI | 23 | 22 | 0 | 1 | 0 |
 | LOG | 10 | 8 | 0 | 0 | 2 |
 | TEST | 15 | 13 | 0 | 1 | 0 |
 | BACK | 9 | 3 | 0 | 4 | 2 |
 | ARCH | 5 | 5 | 0 | 0 | 0 |
 | LIST | 6 | 6 | 0 | 0 | 0 |
 | ANALYSIS | 13 | 13 | 0 | 0 | 0 |
-| **TOTAL** | **165** | **151** | **0** | **7** | **6** |
+| **TOTAL** | **168** | **154** | **0** | **7** | **6** |
 
 *Note: MAP-013 REMOVED (superseded by MAP-012+MAP-016), MAP-016 added - net zero change*
 
-**Completion Rate**: 92% (151/165 features complete)
+**Completion Rate**: 92% (154/168 features complete)
 
 ---
 
@@ -358,6 +361,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 4.2 | 2025-11-28 | MAP-017, UI-020/021 DONE: Zoom level display below clocks, glow size/brightness sliders in Settings, profile avatar circle fix (smaller, always circular), clock format updated to DD-MMM-YYYY UTC; H-STATE-9/10/11 tests added |
 | 4.1 | 2025-11-28 | ANALYSIS-012/013 DONE: Cross-Panel Entity Selection Sync - clicking satellite/sensor in any panel highlights it in all panels (map chevron, polar plot); Orange Theme on Sensor Selection - polar plot gridlines/border turn orange when sensor selected for polar view, FOV polygon turns orange on map; H-POLAR-8/9/10 tests added |
 | 4.0 | 2025-11-28 | LIST-009/010/011 DONE: Watch list UX improvements - Selected Only default unchecked, bulk select loading indicator, custom delete confirmation modal; H-UI-14/15 tests added |
 | 3.9 | 2025-11-28 | CAT-005 DONE: Catalog Edit Modal - double-click catalog row opens two-panel modal (satellite list + detail editor), edit satellite name/TLE/color, manage watch list memberships, rename catalog; H-CAT-5/6/7/8 tests added |

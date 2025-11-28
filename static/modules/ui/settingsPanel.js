@@ -86,6 +86,10 @@ function initializeGlowControls() {
     const fadeOutInput = document.getElementById('glow-fade-out-input');
     const fadeOutUp = document.getElementById('glow-fade-out-up');
     const fadeOutDown = document.getElementById('glow-fade-out-down');
+    const sizeSlider = document.getElementById('glow-size-slider');
+    const sizeValue = document.getElementById('glow-size-value');
+    const brightnessSlider = document.getElementById('glow-brightness-slider');
+    const brightnessValue = document.getElementById('glow-brightness-value');
 
     if (!glowEnabledCheckbox) {
         logger.warning('Glow controls not found', logger.CATEGORY.UI);
@@ -98,6 +102,19 @@ function initializeGlowControls() {
     if (fadeInInput) {
         fadeInInput.value = timeState.getGlowFadeInMinutes();
     }
+    // Initialize size slider
+    if (sizeSlider && sizeValue) {
+        const initialSize = timeState.getGlowSize();
+        sizeSlider.value = Math.round(initialSize * 100);
+        sizeValue.textContent = initialSize.toFixed(1) + 'x';
+    }
+    // Initialize brightness slider
+    if (brightnessSlider && brightnessValue) {
+        const initialBrightness = timeState.getGlowIntensity();
+        brightnessSlider.value = Math.round(initialBrightness * 100);
+        brightnessValue.textContent = initialBrightness.toFixed(1) + 'x';
+    }
+
     if (fadeOutInput) {
         fadeOutInput.value = timeState.getGlowFadeOutMinutes();
     }
@@ -128,6 +145,24 @@ function initializeGlowControls() {
             value = Math.max(1, value);
             fadeInInput.value = value;
             timeState.setGlowFadeInMinutes(value);
+        });
+    }
+
+    // Size slider handler
+    if (sizeSlider && sizeValue) {
+        sizeSlider.addEventListener('input', (e) => {
+            const value = parseInt(e.target.value) / 100;
+            sizeValue.textContent = value.toFixed(1) + 'x';
+            timeState.setGlowSize(value);
+        });
+    }
+
+    // Brightness slider handler
+    if (brightnessSlider && brightnessValue) {
+        brightnessSlider.addEventListener('input', (e) => {
+            const value = parseInt(e.target.value) / 100;
+            brightnessValue.textContent = value.toFixed(1) + 'x';
+            timeState.setGlowIntensity(value);
         });
     }
 

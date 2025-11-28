@@ -545,6 +545,7 @@ function createLayers() {
     const tailMinutes = timeState.getTailMinutes();
     const headMinutes = timeState.getHeadMinutes();
     const glowEnabled = timeState.isGlowEnabled();
+    const glowSize = timeState.getGlowSize();
     const glowIntensity = timeState.getGlowIntensity();
     const glowFadeInMinutes = timeState.getGlowFadeInMinutes();
     const glowFadeOutMinutes = timeState.getGlowFadeOutMinutes();
@@ -901,9 +902,9 @@ function createLayers() {
             opacity: 1,
             stroked: false,
             filled: true,
-            radiusScale: glowIntensity,
-            radiusMinPixels: 25 * glowIntensity,
-            radiusMaxPixels: 90 * glowIntensity,
+            radiusScale: glowSize,
+            radiusMinPixels: 25 * glowSize,
+            radiusMaxPixels: 90 * glowSize,
             getPosition: d => d.position,
             getRadius: d => 120000 * d.intensity,
             getFillColor: d => {
@@ -913,7 +914,7 @@ function createLayers() {
             },
             updateTriggers: {
                 visible: `${glowEnabled}-${equatorCrossingData.length}`,
-                getRadius: `${currentTime.getTime()}-${glowIntensity}`,
+                getRadius: `${currentTime.getTime()}-${glowSize}-${glowIntensity}`,
                 getFillColor: `${currentTime.getTime()}-${glowIntensity}`
             }
         }),
@@ -929,9 +930,9 @@ function createLayers() {
             opacity: 1,
             stroked: false,
             filled: true,
-            radiusScale: glowIntensity,
-            radiusMinPixels: 18 * glowIntensity,
-            radiusMaxPixels: 65 * glowIntensity,
+            radiusScale: glowSize,
+            radiusMinPixels: 18 * glowSize,
+            radiusMaxPixels: 65 * glowSize,
             getPosition: d => d.position,
             getRadius: d => 85000 * d.intensity,
             getFillColor: d => {
@@ -945,7 +946,7 @@ function createLayers() {
             },
             updateTriggers: {
                 visible: `${glowEnabled}-${equatorCrossingData.length}`,
-                getRadius: `${currentTime.getTime()}-${glowIntensity}`,
+                getRadius: `${currentTime.getTime()}-${glowSize}-${glowIntensity}`,
                 getFillColor: `${currentTime.getTime()}-${glowIntensity}`
             }
         }),
@@ -961,9 +962,9 @@ function createLayers() {
             opacity: 1,
             stroked: false,
             filled: true,
-            radiusScale: glowIntensity,
-            radiusMinPixels: 10 * glowIntensity,
-            radiusMaxPixels: 40 * glowIntensity,
+            radiusScale: glowSize,
+            radiusMinPixels: 10 * glowSize,
+            radiusMaxPixels: 40 * glowSize,
             getPosition: d => d.position,
             getRadius: d => 50000 * d.intensity,
             getFillColor: d => {
@@ -975,7 +976,7 @@ function createLayers() {
             },
             updateTriggers: {
                 visible: `${glowEnabled}-${equatorCrossingData.length}`,
-                getRadius: `${currentTime.getTime()}-${glowIntensity}`,
+                getRadius: `${currentTime.getTime()}-${glowSize}-${glowIntensity}`,
                 getFillColor: `${currentTime.getTime()}-${glowIntensity}`
             }
         }),
@@ -991,9 +992,9 @@ function createLayers() {
             opacity: 1,
             stroked: false,
             filled: true,
-            radiusScale: glowIntensity,
-            radiusMinPixels: 5 * glowIntensity,
-            radiusMaxPixels: 22 * glowIntensity,
+            radiusScale: glowSize,
+            radiusMinPixels: 5 * glowSize,
+            radiusMaxPixels: 22 * glowSize,
             getPosition: d => d.position,
             getRadius: d => 25000 * d.intensity,
             getFillColor: d => {
@@ -1005,7 +1006,7 @@ function createLayers() {
             },
             updateTriggers: {
                 visible: `${glowEnabled}-${equatorCrossingData.length}`,
-                getRadius: `${currentTime.getTime()}-${glowIntensity}`,
+                getRadius: `${currentTime.getTime()}-${glowSize}-${glowIntensity}`,
                 getFillColor: `${currentTime.getTime()}-${glowIntensity}`
             }
         }),
@@ -1021,9 +1022,9 @@ function createLayers() {
             opacity: 1,
             stroked: false,
             filled: true,
-            radiusScale: glowIntensity,
-            radiusMinPixels: 2 * glowIntensity,
-            radiusMaxPixels: 10 * glowIntensity,
+            radiusScale: glowSize,
+            radiusMinPixels: 2 * glowSize,
+            radiusMaxPixels: 10 * glowSize,
             getPosition: d => d.position,
             getRadius: d => 10000 * d.intensity,
             getFillColor: d => {
@@ -1033,7 +1034,7 @@ function createLayers() {
             },
             updateTriggers: {
                 visible: `${glowEnabled}-${equatorCrossingData.length}`,
-                getRadius: `${currentTime.getTime()}-${glowIntensity}`,
+                getRadius: `${currentTime.getTime()}-${glowSize}-${glowIntensity}`,
                 getFillColor: `${currentTime.getTime()}-${glowIntensity}`
             },
             onHover: ({object}) => {

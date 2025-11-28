@@ -16,10 +16,12 @@
 import timeState from '../state/timeState.js';
 import eventBus from '../events/eventBus.js';
 import logger from '../utils/logger.js';
+import { getLeafletMap } from '../map/leaflet.js';
 
 // DOM Elements
 const utcTimeElement = document.getElementById('utc-time-value');
 const simTimeElement = document.getElementById('sim-time-value');
+const zoomLevelElement = document.getElementById('zoom-level-value');
 
 // UTC update interval
 let utcUpdateInterval = null;
@@ -35,7 +37,7 @@ function formatTimeCompact(date, includeDate = false) {
         return includeDate ? '---------- --:--:-- UTC' : '--:--:--';
     }
 
-    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const day = date.getUTCDate().toString().padStart(2, '0');
     const month = months[date.getUTCMonth()];
     const year = date.getUTCFullYear();
@@ -44,7 +46,7 @@ function formatTimeCompact(date, includeDate = false) {
     const seconds = date.getUTCSeconds().toString().padStart(2, '0');
 
     if (includeDate) {
-        return `${day}${month}${year} ${hours}:${minutes}:${seconds} UTC`;
+        return `${day}-${month}-${year} ${hours}:${minutes}:${seconds} UTC`;
     }
     return `${hours}:${minutes}:${seconds}`;
 }
@@ -89,6 +91,17 @@ function isSimInSync() {
  * Update both UTC and SIM displays simultaneously
  * Uses a single timestamp to ensure perfect sync
  */
+/**
+ * Update zoom level display
+ */
+function updateZoomDisplay() {
+    const map = getLeafletMap();
+    if (zoomLevelElement && map) {
+        const zoom = map.getZoom();
+        zoomLevelElement.textContent = zoom.toFixed(1);
+    }
+}
+
 function updateTimeDisplay() {
     const utcTime = new Date();  // Capture once for sync
     const simTime = timeState.getCurrentTime();
@@ -145,6 +158,14 @@ export function initializeCurrentTimeDisplay() {
     eventBus.on('time:applied', () => {
         updateTimeDisplay();
     });
+
+    // Initialize zoom display and listen for zoom events
+    updateZoomDisplay();
+    const map = getLeafletMap();
+    if (map) {
+        map.on('zoomend', updateZoomDisplay);
+        map.on('zoom', updateZoomDisplay);
+    }
 
     logger.success('Time display initialized (UTC + Sim synced)', logger.CATEGORY.UI);
 }
