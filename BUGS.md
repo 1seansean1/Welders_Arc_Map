@@ -36,6 +36,37 @@
 
 ## Recently Fixed
 
+### BUG-017: Satellites Not Saved to Watch Lists
+**ID**: BUG-017
+**Severity**: HIGH
+**Status**: CLOSED
+**Date Reported**: 2025-11-28
+**Date Closed**: 2025-11-28
+
+**Symptoms**:
+- User selects satellites in list editor modal (shows "2 selected")
+- Clicks Save
+- List shows "0" satellites - selections not persisted
+
+**Root Cause**:
+Two bugs in `showListEditorModal` handleSubmit:
+
+1. **Wrong return value**: `satelliteState.addSatellite()` returns `{success, satellite, errors}`, not the satellite directly
+   - Code was: `satId = newSat.id` (undefined!)
+   - Should be: `satId = result.satellite.id`
+
+2. **Wrong field names**: `addSatellite` expects `tle1`/`tle2`, but code passed `tleLine1`/`tleLine2`
+   - Validation failed silently, returning `{success: false}`
+
+**Solution**:
+1. Destructure result correctly: `result.satellite.id`
+2. Use correct field names: `tle1: catalogSat.tleLine1`
+
+**Files Modified**:
+- static/modules/ui/modals.js (showListEditorModal handleSubmit)
+
+---
+
 ### BUG-016: Catalog Edit Modal Performance Degradation
 **ID**: BUG-016
 **Severity**: HIGH
