@@ -23,6 +23,7 @@ import logger from '../utils/logger.js';
 import analysisState from '../state/analysisState.js';
 import sensorState from '../state/sensorState.js';
 import satelliteState from '../state/satelliteState.js';
+import listState from '../state/listState.js';
 import timeState from '../state/timeState.js';
 import { calculateAzimuthElevation } from '../utils/geometry.js';
 import { propagateSatellite } from '../data/propagation.js';
@@ -55,6 +56,9 @@ const COLORS = {
 
 // Animation frame ID for cleanup
 let animationFrameId = null;
+
+// Debug throttle (log every 2 seconds, not every frame)
+let lastDebugLog = 0;
 
 /**
  * Initialize the polar plot
@@ -150,6 +154,15 @@ function setupEventListeners() {
         render();
     });
 
+    // List visibility changes (satellites shown via watch lists)
+    eventBus.on('list:changed', () => {
+        render();
+    });
+
+    eventBus.on('list:visibility:changed', () => {
+        render();
+    });
+
     // Time changes
     eventBus.on('time:changed', () => {
         render();
@@ -218,16 +231,31 @@ export function render() {
     // Draw sensor name
     drawSensorLabel(sensor);
 
-    // Get satellites to display
-    const satellites = satelliteState.getSelectedSatellites();
-    if (satellites.length === 0) return;
+    // Get satellites to display from visible lists (same as map)
+    const visibleSatelliteIds = listState.getVisibleSatelliteIds();
+    const satellites = visibleSatelliteIds
+        .map(id => satelliteState.getSatelliteById(id))
+        .filter(sat => sat !== null);
+
+    if (satellites.length === 0) {
+        logger.diagnostic('No satellites visible from lists', logger.CATEGORY.UI);
+        return;
+    }
 
     // Get current time
     const currentTime = timeState.getCurrentTime();
 
+    // Debug: Log what we're processing (throttled to every 2 seconds)
+    const now = Date.now();
+    const shouldLog = now - lastDebugLog > 2000;
+    if (shouldLog) {
+        lastDebugLog = now;
+        logger.diagnostic(`Processing ${satellites.length} satellites for sensor ${sensor.name}`, logger.CATEGORY.UI, { time: currentTime.toISOString() });
+    }
+
     // Draw each satellite
     satellites.forEach(sat => {
-        drawSatellite(sat, sensor, currentTime);
+        drawSatellite(sat, sensor, currentTime, shouldLog);
     });
 }
 
@@ -316,17 +344,30 @@ function drawSensorLabel(sensor) {
  * @param {Object} satellite - Satellite object with TLE data
  * @param {Object} sensor - Observer sensor
  * @param {Date} currentTime - Current simulation time
+ * @param {boolean} shouldLog - Whether to log debug info (throttled)
  */
-function drawSatellite(satellite, sensor, currentTime) {
+function drawSatellite(satellite, sensor, currentTime, shouldLog = false) {
     // Propagate satellite to current time
     const satPos = propagateSatellite(satellite.tleLine1, satellite.tleLine2, currentTime);
-    if (!satPos) return;
+    if (!satPos) {
+        if (shouldLog) logger.warning(`${satellite.name}: propagation failed`, logger.CATEGORY.UI);
+        return;
+    }
 
     // Calculate look angles from sensor
     const lookAngles = calculateAzimuthElevation(
         sensor.lat, sensor.lon, sensor.alt / 1000 || 0,  // Convert alt from m to km
         satPos.lat, satPos.lon, satPos.alt
     );
+
+    // Debug: Log all satellites and their visibility (throttled)
+    if (shouldLog) {
+        logger.diagnostic(`${satellite.name}: el=${lookAngles.elevation.toFixed(1)}° az=${lookAngles.azimuth.toFixed(1)}° visible=${lookAngles.visible}`, logger.CATEGORY.UI, {
+            lat: satPos.lat.toFixed(1),
+            lon: satPos.lon.toFixed(1),
+            alt: `${satPos.alt.toFixed(0)}km`
+        });
+    }
 
     // Only draw if visible (above horizon)
     if (!lookAngles.visible) return;

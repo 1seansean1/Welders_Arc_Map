@@ -36,6 +36,54 @@
 
 ## Recently Fixed
 
+### BUG-015: Console Logs Not Appearing in UI Log Panel
+**ID**: BUG-015
+**Severity**: MEDIUM
+**Status**: CLOSED
+**Date Reported**: 2025-11-27
+**Date Closed**: 2025-11-27
+
+**Symptoms**:
+- Debug messages appear in browser console but not in UI log panel
+- Users cannot see diagnostic information without opening dev tools
+- Polar plot debug messages (satellite visibility, propagation failures) only in console
+
+**Root Cause**:
+polarPlot.js uses raw `console.log()` statements instead of the `logger` module which routes messages to both console and UI.
+
+**Solution**:
+Replace all `console.log()` calls in polarPlot.js with appropriate `logger` methods (logger.diagnostic, logger.warning, etc.).
+
+**Files Modified**:
+- static/modules/ui/polarPlot.js
+
+---
+
+### BUG-014: Polar Plot Not Rendering Satellites from Watch Lists
+**ID**: BUG-014
+**Severity**: HIGH
+**Status**: CLOSED
+**Date Reported**: 2025-11-27
+**Date Closed**: 2025-11-27
+
+**Symptoms**:
+- Polar plot shows no satellites or only some satellites
+- Satellites visible on map are not shown on polar plot
+- User must individually select satellites in table to see them on polar plot
+
+**Root Cause**:
+Polar plot uses `satelliteState.getSelectedSatellites()` (only `selected: true` satellites) while map uses `listState.getVisibleSatelliteIds()` (list-based visibility). The two systems are not synchronized - polar plot should show satellites from visible lists, not just individually selected ones.
+
+**Solution**:
+1. Import `listState` module in polarPlot.js
+2. Change satellite retrieval from `satelliteState.getSelectedSatellites()` to `listState.getVisibleSatelliteIds()` + `satelliteState.getSatelliteById()`
+3. Subscribe to `list:changed` and `list:visibility:changed` events to re-render when lists change
+
+**Files Modified**:
+- static/modules/ui/polarPlot.js
+
+---
+
 ### BUG-011: Equator Reference Line Not Visible
 **ID**: BUG-011
 **Severity**: MEDIUM
