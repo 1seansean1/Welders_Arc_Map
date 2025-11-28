@@ -2733,17 +2733,17 @@ const LIST_HYPOTHESES = {
         id: 'H-LIST-5',
         name: 'Satellite Table Simplified',
         category: 'list',
-        hypothesis: 'Satellite table has only NORAD and Name columns (no Sel, Star, List)',
+        hypothesis: 'Satellite table has Color, NORAD, and Name columns (no Sel, Star, List)',
         symptom: 'Table still has old columns',
-        prediction: 'Table headers should only be NORAD and Name',
+        prediction: 'Table headers should be Color (blank), NORAD, and Name',
         nullPrediction: 'Table would have 5 columns',
         threshold: { simplifiedTable: true },
         causalChain: [
-            'SYMPTOM: Table has too many columns',
+            'SYMPTOM: Table has wrong columns',
             'PROXIMATE: HTML not updated',
             'ROOT: index.html still has old th elements',
             'MECHANISM: Table headers define column count',
-            'FIX: Remove Sel, Star, List columns from HTML'
+            'FIX: Set columns to Color, NORAD, Name'
         ],
         testFn: async () => {
             const headers = document.querySelectorAll('#satellite-table thead th');
@@ -2754,7 +2754,8 @@ const LIST_HYPOTHESES = {
             const noSel = !headerTexts.some(t => t === 'Sel');
             const noStar = !headerTexts.some(t => t === '★');
             const noList = !headerTexts.some(t => t === 'List');
-            const simplifiedTable = headerCount === 2 && hasNORAD && hasName && noSel && noStar && noList;
+            // Expect 3 columns: Color (blank header), NORAD, Name
+            const simplifiedTable = headerCount === 3 && hasNORAD && hasName && noSel && noStar && noList;
 
             return {
                 passed: simplifiedTable,
@@ -2775,21 +2776,21 @@ const LIST_HYPOTHESES = {
         id: 'H-LIST-6',
         name: '+Sat and +List Buttons Present',
         category: 'list',
-        hypothesis: 'Satellite panel has +Sat and +List buttons',
+        hypothesis: 'Satellite panel has +Sat button, Watch Lists panel has +List button',
         symptom: 'Old Add/Edit/Delete buttons still present',
-        prediction: 'Buttons with ids satellite-add-btn and list-add-btn exist',
+        prediction: 'satellite-add-btn in Satellites panel, watchlist-add-list-btn in Watch Lists panel',
         nullPrediction: 'Old buttons would still exist',
         threshold: { newButtonsPresent: true },
         causalChain: [
-            'SYMPTOM: Wrong buttons in satellite panel',
+            'SYMPTOM: Wrong buttons in panels',
             'PROXIMATE: HTML not updated',
             'ROOT: Button IDs and text not changed',
             'MECHANISM: Button elements define actions',
-            'FIX: Replace buttons in HTML'
+            'FIX: +Sat in Satellites panel, +List in Watch Lists panel'
         ],
         testFn: async () => {
             const satAddBtn = document.getElementById('satellite-add-btn');
-            const listAddBtn = document.getElementById('list-add-btn');
+            const listAddBtn = document.getElementById('watchlist-add-list-btn');
             const oldEditBtn = document.getElementById('satellite-edit-btn');
             const oldDeleteBtn = document.getElementById('satellite-delete-btn');
 

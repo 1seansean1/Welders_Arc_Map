@@ -1,8 +1,8 @@
 # WA_map Bug Tracker
 
 > **Document Type**: BUGS
-> **Version**: 1.0
-> **Last Updated**: 2025-11-26
+> **Version**: 1.1
+> **Last Updated**: 2025-11-27
 > **Maintainer**: AI Governor System
 
 ---
@@ -58,6 +58,31 @@ Alpha value of 60/255 (~24% opacity) combined with 1px width made the line essen
 **Files Modified**:
 - static/modules/map/deckgl.js (alpha, width)
 - static/modules/test/testRegistry.js (test enhancement)
+
+---
+
+### BUG-012: Satellite Displays When No Lists Selected
+**ID**: BUG-012
+**Severity**: MEDIUM
+**Status**: CLOSED
+**Date Reported**: 2025-11-27
+**Date Closed**: 2025-11-27
+
+**Symptoms**:
+- Satellite ground track visible on map even when all list checkboxes are unchecked
+- Expected: No satellites should display when no lists are selected
+
+**Root Cause**:
+`deckgl.js` was rendering satellites from TWO sources: `getSelectedSatellites()` AND `getVisibleSatelliteIds()` from lists. This meant satellites with `selected: true` would always show regardless of list visibility.
+
+**Solution**:
+Changed `satellitesToRender` to only use list-based satellite IDs:
+```javascript
+const satellitesToRender = listSatelliteIds.map(id => satelliteState.getSatelliteById(id)).filter(sat => sat !== null);
+```
+
+**Files Modified**:
+- static/modules/map/deckgl.js (line 523 - satellite rendering source)
 
 ---
 

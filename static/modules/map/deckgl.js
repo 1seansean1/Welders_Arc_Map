@@ -520,7 +520,7 @@ function createLayers() {
         .filter(sat => sat && !selectedSatellites.some(s => s.id === sat.id));
 
     // Merge: selected satellites + list satellites (no duplicates)
-    const satellitesToRender = [...selectedSatellites, ...listSatellites];
+    const satellitesToRender = listSatelliteIds.map(id => satelliteState.getSatelliteById(id)).filter(sat => sat !== null);
     const currentTime = timeState.getCurrentTime();
     const tailMinutes = timeState.getTailMinutes();
     const headMinutes = timeState.getHeadMinutes();

@@ -1,7 +1,7 @@
 # WA_map Test Documentation
 
 > **Document Type**: TESTS
-> **Version**: 1.6
+> **Version**: 1.8
 > **Last Updated**: 2025-11-27
 > **Maintainer**: AI Governor System
 
@@ -29,8 +29,8 @@ All tests follow a **hypothesis-driven** approach inspired by the scientific met
 | Validation | H-VALID-* | 2 | Input validation |
 | Satellite | H-SAT-*, H-GLOW-* | 7 | Satellite rendering and glow effects |
 | Time | H-TIME-* | 8 | Time control functionality |
-| List | H-LIST-* | 4 | User list functionality |
-| **Total** | | **36** | |
+| List | H-LIST-* | 7 | User list functionality |
+| **Total** | | **39** | |
 
 ---
 
@@ -113,6 +113,9 @@ All tests follow a **hypothesis-driven** approach inspired by the scientific met
 | H-LIST-2 | List Satellite Management | PENDING | Add/remove satellites from lists |
 | H-LIST-3 | List Visibility Toggle | PENDING | Toggle visibility changes state and emits event |
 | H-LIST-4 | Visible Satellite IDs Aggregation | PENDING | Union of visible list satellites, no duplicates |
+| H-LIST-5 | Satellite Table Simplified | PENDING | Table has Color, NORAD, Name columns (no Sel/Star/List) |
+| H-LIST-6 | +Sat and +List Buttons | PENDING | +Sat in Satellites panel, +List in Watch Lists panel |
+| H-LIST-7 | Lists Tab Removed | PENDING | No data-section="lists" in navigation |
 
 ---
 
@@ -333,6 +336,7 @@ The test suite is complete when:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.8 | 2025-11-27 | Added H-LIST-5, H-LIST-6, H-LIST-7 (UI tests for Control Panel reorganization); updated count to 39 |
 | 1.7 | 2025-11-27 | Added H-TIME-12 (Ctrl+wheel jog control fix test); updated count to 29 |
 | 1.6 | 2025-11-27 | Added H-LIST-1 to H-LIST-4 (User List tests); updated category count to 28 |
 | 1.5 | 2025-11-27 | Added H-TIME-11 (compact time bar with Flatpickr); updated H-TIME-9 for compact date format |
