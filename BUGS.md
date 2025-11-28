@@ -1,7 +1,7 @@
 # WA_map Bug Tracker
 
 > **Document Type**: BUGS
-> **Version**: 1.1
+> **Version**: 1.2
 > **Last Updated**: 2025-11-27
 > **Maintainer**: AI Governor System
 
@@ -58,6 +58,29 @@ Alpha value of 60/255 (~24% opacity) combined with 1px width made the line essen
 **Files Modified**:
 - static/modules/map/deckgl.js (alpha, width)
 - static/modules/test/testRegistry.js (test enhancement)
+
+---
+
+### BUG-013: Satellite Color Not Saved When Editing
+**ID**: BUG-013
+**Severity**: MEDIUM
+**Status**: CLOSED
+**Date Reported**: 2025-11-27
+**Date Closed**: 2025-11-27
+
+**Symptoms**:
+- Color picker in satellite editor modal has no effect
+- Color column in satellite table always shows grey
+- Ground track colors on map don't reflect selected color
+
+**Root Cause**:
+`editSatellite()` in satelliteCRUD.js was not passing `watchColor` to `updateSatellite()`. The modal correctly returned the selected color, but the CRUD layer dropped it.
+
+**Solution**:
+Added `watchColor: data.watchColor` to the updateSatellite call in satelliteCRUD.js line 87.
+
+**Files Modified**:
+- static/modules/data/satelliteCRUD.js (added watchColor to update call)
 
 ---
 

@@ -83,7 +83,8 @@ export function editSatellite(satelliteId) {
             name: data.name,
             noradId: data.noradId,
             tleLine1: data.tleLine1,
-            tleLine2: data.tleLine2
+            tleLine2: data.tleLine2,
+            watchColor: data.watchColor
         });
 
         if (result.success) {
