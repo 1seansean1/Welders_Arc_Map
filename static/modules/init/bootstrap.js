@@ -213,7 +213,7 @@ function initializePolarPlot() {
             updateDeckOverlay();
         }
 
-        logger.log(\`Polar plot \${enabled ? 'enabled' : 'disabled'}\`, logger.CATEGORY.UI);
+        logger.log(`Polar plot ${enabled ? 'enabled' : 'disabled'}`, logger.CATEGORY.UI);
     });
 
     // Listen for sensor deselection to update map
