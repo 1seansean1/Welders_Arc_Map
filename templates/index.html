@@ -2367,8 +2367,8 @@
 
         .modal-catalog-edit-table-container {
             flex: 1;
+            min-height: 0;  /* Required for flex children with overflow */
             overflow-y: auto;
-            max-height: 350px;
         }
 
         .modal-catalog-edit-table {
@@ -3227,7 +3227,7 @@ SATELLITE NAME 2
                         <div style="flex: 1; padding: 0 8px;">Name</div>
                         <div style="width: 40px; text-align: center;">Lists</div>
                     </div>
-                    <div class="modal-catalog-edit-table-container" id="catalog-edit-table-container" style="height: calc(100% - 90px); overflow: hidden;">
+                    <div class="modal-catalog-edit-table-container" id="catalog-edit-table-container" style="flex: 1; min-height: 0; overflow: hidden;">
                         <!-- Virtual scrolling content populated by JavaScript -->
                     </div>
                     <div class="modal-catalog-edit-help">
