@@ -439,6 +439,50 @@ export function showSatelliteConfirmModal(satellites, onConfirm) {
     overlay.addEventListener('click', handleOverlayClick);
 }
 
+// ============================================
+// WATCH LIST CONFIRMATION MODAL
+// ============================================
+
+/**
+ * Show confirmation modal for watch list deletion
+ * @param {string} listName - Name of the list to delete
+ * @param {Function} onConfirm - Callback when delete is confirmed
+ */
+export function showWatchlistConfirmModal(listName, onConfirm) {
+    const overlay = document.getElementById('watchlist-confirm-modal-overlay');
+    const nameDisplay = document.getElementById('watchlist-confirm-modal-name');
+    const cancelBtn = document.getElementById('watchlist-confirm-modal-cancel');
+    const deleteBtn = document.getElementById('watchlist-confirm-modal-delete');
+
+    nameDisplay.textContent = listName;
+    overlay.classList.add('visible');
+
+    const closeModal = () => {
+        overlay.classList.remove('visible');
+        deleteBtn.removeEventListener('click', handleConfirm);
+        cancelBtn.removeEventListener('click', handleCancel);
+        overlay.removeEventListener('click', handleOverlayClick);
+    };
+
+    const handleCancel = () => {
+        closeModal();
+        logger.diagnostic('Watch list deletion cancelled', logger.CATEGORY.DATA);
+    };
+
+    const handleConfirm = () => {
+        closeModal();
+        onConfirm();
+    };
+
+    const handleOverlayClick = (e) => {
+        if (e.target === overlay) handleCancel();
+    };
+
+    deleteBtn.addEventListener('click', handleConfirm);
+    cancelBtn.addEventListener('click', handleCancel);
+    overlay.addEventListener('click', handleOverlayClick);
+}
+
 
 // ============================================
 // SATELLITE ADD MODAL (with Color and List)
@@ -523,6 +567,8 @@ export function showListEditorModal(list = null, onSave) {
     const searchInput = document.getElementById('list-editor-search');
     const satCountSpan = document.getElementById('list-editor-sat-count');
     const selectedOnlyCheckbox = document.getElementById('list-editor-selected-only');
+    const loadingOverlay = document.getElementById('list-editor-loading');
+    const loadingText = document.getElementById('list-editor-loading-text');
 
     title.textContent = list ? 'Edit List' : 'Create List';
     nameInput.value = list ? list.name : '';
@@ -615,12 +661,7 @@ export function showListEditorModal(list = null, onSave) {
         });
 
         virtualScroller.setData(allSatellites);
-
-        // When editing existing list, show selected satellites first
-        if (list && currentNoradIds.size > 0) {
-            virtualScroller.setSelectedOnly(true);
-            if (selectedOnlyCheckbox) selectedOnlyCheckbox.checked = true;
-        }
+        // Always start with all satellites visible (Selected Only unchecked by default)
         updateCount();
     }
 
@@ -647,12 +688,28 @@ export function showListEditorModal(list = null, onSave) {
         }
     }
 
-    // Select all/none header click
+    // Select all/none header click (with loading for large operations)
     if (listHeaderSel) {
         listHeaderSel.addEventListener('click', () => {
             if (virtualScroller) {
-                virtualScroller.toggleSelectAll();
-                updateCount();
+                const visibleCount = virtualScroller.filteredData ? virtualScroller.filteredData.length : 0;
+                
+                
+                // Show loading for operations with 20+ items
+                if (visibleCount >= 20 && loadingOverlay) {
+                    loadingOverlay.style.display = 'flex';
+                    loadingText.textContent = 'Processing ' + visibleCount + ' satellites...';
+                    
+                    // Small delay to ensure loading is visible, then process
+                    setTimeout(() => {
+                        virtualScroller.toggleSelectAll();
+                        updateCount();
+                        loadingOverlay.style.display = 'none';
+                    }, 400);
+                } else {
+                    virtualScroller.toggleSelectAll();
+                    updateCount();
+                }
             }
         });
     }
@@ -707,7 +764,7 @@ export function showListEditorModal(list = null, onSave) {
     };
 
     if (selectedOnlyCheckbox) {
-        if (!list) selectedOnlyCheckbox.checked = false; // Reset for new list
+        selectedOnlyCheckbox.checked = false; // Always start unchecked
         selectedOnlyCheckbox.addEventListener('change', handleSelectedOnlyChange);
     }
 

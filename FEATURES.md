@@ -1,7 +1,7 @@
 # WA_map Feature Registry
 
 > **Document Type**: FEATURES
-> **Version**: 3.9
+> **Version**: 4.0
 > **Last Updated**: 2025-11-28
 > **Maintainer**: AI Governor System
 
@@ -102,6 +102,9 @@
 | LIST-006 | List localStorage Persistence | P1 | S | DONE | LIST-001 |
 | LIST-007 | +List Modal with Satellite Picker | P1 | M | DONE | LIST-001, SAT-001 |
 | LIST-008 | Consolidated List Management | P1 | M | DONE | LIST-007, UI |
+| LIST-009 | Selected Only Default Unchecked | P2 | XS | DONE | LIST-007 |
+| LIST-010 | Bulk Select Loading Indicator | P2 | S | DONE | LIST-007 |
+| LIST-011 | Custom Delete Confirmation Modal | P2 | S | DONE | LIST-001, UI-005 |
 
 
 ### Catalog Management (CAT)
@@ -353,6 +356,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 4.0 | 2025-11-28 | LIST-009/010/011 DONE: Watch list UX improvements - Selected Only default unchecked, bulk select loading indicator, custom delete confirmation modal; H-UI-14/15 tests added |
 | 3.9 | 2025-11-28 | CAT-005 DONE: Catalog Edit Modal - double-click catalog row opens two-panel modal (satellite list + detail editor), edit satellite name/TLE/color, manage watch list memberships, rename catalog; H-CAT-5/6/7/8 tests added |
 | 3.8 | 2025-11-28 | CAT-001 to CAT-004 DONE: Catalog Management - renamed Satellites panel to Catalogs, catalog state module, catalog table UI with checkbox/name/count columns, Celestrak auto-fetch on startup, +Cat modal with TLE batch import, H-CAT-1/2/3/4 tests added |
 | 3.7 | 2025-11-28 | ANALYSIS-006 to ANALYSIS-011 DONE: Enhanced polar plot with sky tracks (head/tail minutes), track color coding (grey/red/blue/orange), direction chevrons, click-to-select integration, selection highlight ring, enhanced grid labels; H-POLAR-5/6/7 tests added |

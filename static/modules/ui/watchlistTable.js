@@ -15,7 +15,7 @@
 import listState from '../state/listState.js';
 import logger from '../utils/logger.js';
 import eventBus from '../events/eventBus.js';
-import { showListEditorModal } from './modals.js';
+import { showListEditorModal, showWatchlistConfirmModal } from './modals.js';
 
 // ============================================
 // DEPENDENCIES (injected during initialization)
@@ -193,13 +193,13 @@ export function initializeWatchlistTable(options = {}) {
             const list = listState.getListById(listId);
             if (!list) return;
 
-            // Confirm deletion
-            if (confirm(`Delete list "${list.name}"?`)) {
+            // Show custom confirmation modal
+            showWatchlistConfirmModal(list.name, () => {
                 listState.deleteList(listId);
                 renderWatchlistTable();
                 if (updateMapCallback) updateMapCallback();
                 logger.success(`List "${list.name}" deleted`, logger.CATEGORY.DATA);
-            }
+            });
         });
     }
 

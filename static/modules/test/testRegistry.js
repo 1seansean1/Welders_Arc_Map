@@ -1233,6 +1233,56 @@ const UI_HYPOTHESES = {
                 }
             };
         }
+    },
+    'H-UI-14': {
+        id: 'H-UI-14',
+        name: 'Watch List Delete Modal Exists',
+        category: 'ui',
+        hypothesis: 'Custom watch list delete confirmation modal should exist in DOM',
+        symptom: 'Windows native confirm dialog appeared instead of custom modal',
+        prediction: 'Modal overlay element exists with proper structure',
+        nullPrediction: 'Would use browser confirm() with no custom modal',
+        threshold: { modalExists: true },
+        causalChain: [
+            'SYMPTOM: Native Windows popup for delete confirmation',
+            'PROXIMATE: Using confirm() instead of custom modal',
+            'ROOT: watchlistTable.js used browser confirm()',
+            'FIX: Create custom modal matching app design'
+        ],
+        testFn: async () => {
+            const overlay = document.getElementById('watchlist-confirm-modal-overlay');
+            const cancelBtn = document.getElementById('watchlist-confirm-modal-cancel');
+            const deleteBtn = document.getElementById('watchlist-confirm-modal-delete');
+            const allExist = !!overlay && !!cancelBtn && !!deleteBtn;
+            return {
+                passed: allExist,
+                details: { overlayExists: !!overlay, cancelBtnExists: !!cancelBtn, deleteBtnExists: !!deleteBtn }
+            };
+        }
+    },
+    'H-UI-15': {
+        id: 'H-UI-15',
+        name: 'List Editor Loading Indicator Exists',
+        category: 'ui',
+        hypothesis: 'Loading indicator element should exist for bulk satellite operations',
+        symptom: 'No visual feedback during bulk selection',
+        prediction: 'Loading overlay element exists in DOM',
+        nullPrediction: 'Loading element would not exist',
+        threshold: { elementExists: true },
+        causalChain: [
+            'SYMPTOM: No loading feedback for large operations',
+            'ROOT: Missing HTML/CSS/JS for loading state',
+            'FIX: Add loading overlay with spinner'
+        ],
+        testFn: async () => {
+            const loadingOverlay = document.getElementById('list-editor-loading');
+            const loadingText = document.getElementById('list-editor-loading-text');
+            const allExist = !!loadingOverlay && !!loadingText;
+            return {
+                passed: allExist,
+                details: { loadingOverlayExists: !!loadingOverlay, loadingTextExists: !!loadingText }
+            };
+        }
     }
 };
 
