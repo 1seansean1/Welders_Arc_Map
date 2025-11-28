@@ -19,6 +19,13 @@ import logger from '../utils/logger.js';
 let editSatelliteCallback = null;
 let updateMapCallback = null;
 
+// Color definitions for satellite display
+const WATCH_COLORS = {
+    grey: { fill: '#666666', border: '#888888' },
+    red: { fill: '#ff4444', border: '#ff6666' },
+    blue: { fill: '#4488ff', border: '#66aaff' }
+};
+
 export function renderSatelliteTable() {
     const tbody = document.querySelector('#satellite-table tbody');
     if (!tbody) return;
@@ -57,13 +64,31 @@ function createSatelliteRow(sat, index) {
         }
     });
 
+    // Color column (read-only display)
+    const tdColor = document.createElement('td');
+    tdColor.style.cssText = 'text-align: center; padding: 4px;';
+    const colorBox = document.createElement('div');
+    const currentColor = sat.watchColor || 'grey';
+    const colorDef = WATCH_COLORS[currentColor];
+    colorBox.style.cssText = `
+        width: 14px;
+        height: 14px;
+        border: 2px solid ${colorDef.border};
+        background: ${colorDef.fill};
+        border-radius: 2px;
+        display: inline-block;
+    `;
+    colorBox.title = `Color: ${currentColor}`;
+    tdColor.appendChild(colorBox);
+    tr.appendChild(tdColor);
+
     const tdNorad = document.createElement('td');
     tdNorad.style.cssText = 'padding: 4px 8px;';
     tdNorad.textContent = sat.noradId;
     tr.appendChild(tdNorad);
 
     const tdName = document.createElement('td');
-    tdName.style.cssText = 'padding: 4px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px;';
+    tdName.style.cssText = 'padding: 4px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px;';
     tdName.textContent = sat.name;
     tdName.title = sat.name;
     tr.appendChild(tdName);
@@ -119,8 +144,8 @@ function handleColumnHeaderClick(columnName) {
 
 function updateColumnHeaderIndicators() {
     const headers = document.querySelectorAll('#satellite-table th');
-    const columnMap = ['noradId', 'name'];
-    const labelMap = { 'noradId': 'NORAD', 'name': 'Name' };
+    const columnMap = ['color', 'noradId', 'name'];
+    const labelMap = { 'color': '', 'noradId': 'NORAD', 'name': 'Name' };
     headers.forEach((header, index) => {
         const columnName = columnMap[index];
         if (!columnName) return;
@@ -137,10 +162,11 @@ export function initializeSatelliteTable(options = {}) {
     editSatelliteCallback = options.onEdit || null;
     updateMapCallback = options.onMapUpdate || null;
     const headers = document.querySelectorAll('#satellite-table th');
-    const columnMap = ['noradId', 'name'];
+    const columnMap = ['color', 'noradId', 'name'];
     headers.forEach((header, index) => {
         const columnName = columnMap[index];
-        if (columnName) {
+        // Color column is not sortable
+        if (columnName && columnName !== 'color') {
             header.style.cursor = 'pointer';
             header.addEventListener('click', () => {
                 handleColumnHeaderClick(columnName);
@@ -151,6 +177,7 @@ export function initializeSatelliteTable(options = {}) {
     eventBus.on('satellite:added', () => { renderSatelliteTable(); });
     eventBus.on('satellite:updated', () => { renderSatelliteTable(); });
     eventBus.on('satellite:deleted', () => { renderSatelliteTable(); });
+    eventBus.on('satellite:watchcolor:changed', () => { renderSatelliteTable(); });
     logger.success('Satellite table initialized', logger.CATEGORY.SATELLITE);
 }
 

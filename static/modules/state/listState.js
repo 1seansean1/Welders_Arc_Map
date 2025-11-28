@@ -286,6 +286,16 @@ class ListState {
         return this._state.lists.some(l => l.satelliteIds.includes(satelliteId));
     }
 
+    /**
+     * Get satellite IDs in a specific list
+     * @param {number} listId - List ID
+     * @returns {Array<number>} Array of satellite IDs in the list
+     */
+    getSatellitesInList(listId) {
+        const list = this._state.lists.find(l => l.id === listId);
+        return list ? [...list.satelliteIds] : [];
+    }
+
     // ============================================
     // VISIBILITY
     // ============================================

@@ -2193,12 +2193,30 @@
                 </span>
                 <span class="nav-label">Satellites</span>
             </button>
+            <button class="nav-btn" data-section="watchlist">
+                <span class="nav-icon">
+                    <!-- Star icon -->
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                </span>
+                <span class="nav-label">Watch Lists</span>
+            </button>
             <button class="nav-btn" data-section="sensors">
                 <span class="nav-icon">
                     <!-- Sensor icon from sensor.svg -->
                     <img src="/static/sensor.svg" width="14" height="14" style="filter: invert(1);">
                 </span>
                 <span class="nav-label">Sensors</span>
+            </button>
+            <button class="nav-btn" data-section="realtime">
+                <span class="nav-icon">
+                    <!-- Activity/pulse icon -->
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                </span>
+                <span class="nav-label">Real Time Data</span>
             </button>
             <button class="nav-btn" data-section="analysis">
                 <span class="nav-icon">
@@ -2211,15 +2229,8 @@
                 </span>
                 <span class="nav-label">Analysis</span>
             </button>
-            <button class="nav-btn" data-section="realtime">
-                <span class="nav-icon">
-                    <!-- Activity/pulse icon -->
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                    </svg>
-                </span>
-                <span class="nav-label">Real Time Data</span>
-            </button>
+            <!-- Separator between Analysis and Logs -->
+            <hr class="nav-separator" style="border: none; border-top: 1px solid var(--border-color); margin: 8px 0; width: 100%;">
             <button class="nav-btn" data-section="logs">
                 <span class="nav-icon">
                     <!-- File/document icon -->
@@ -2243,16 +2254,6 @@
                 </span>
                 <span class="nav-label">Tests</span>
             </button>
-            <button class="nav-btn" data-section="watchlist">
-                <span class="nav-icon">
-                    <!-- Star icon -->
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                    </svg>
-                </span>
-                <span class="nav-label">Watch List</span>
-            </button>
-
             <button class="nav-btn" data-section="settings">
                 <span class="nav-icon">
                     <!-- Settings/gear icon -->
@@ -2306,6 +2307,7 @@
                         <table class="sensor-table" id="satellite-table">
                             <thead>
                                 <tr>
+                                    <th class="col-color" style="width: 24px;"></th>
                                     <th class="col-norad">NORAD</th>
                                     <th class="col-name">Name</th>
                                 </tr>
@@ -2319,7 +2321,6 @@
                     <!-- Action buttons -->
                     <div class="sensor-actions">
                         <button class="sensor-action-btn sensor-add-btn" id="satellite-add-btn">+Sat</button>
-                        <button class="sensor-action-btn sensor-add-btn" id="list-add-btn">+List</button>
                     </div>
                 </div>
             </div>
@@ -2373,15 +2374,15 @@
             </div>
 
             <div id="content-watchlist" style="display: none;">
-                <!-- Watchlist table -->
+                <!-- Watch Lists table -->
                 <div class="sensor-controls">
                     <div class="sensor-table-wrapper">
                         <table class="sensor-table" id="watchlist-table">
                             <thead>
                                 <tr>
-                                    <th class="col-color" style="width: 24px;"></th>
-                                    <th class="col-norad" style="width: 50px;">NORAD</th>
-                                    <th class="col-name">Name</th>
+                                    <th class="col-sel" style="width: 24px;"></th>
+                                    <th class="col-name">List Name</th>
+                                    <th class="col-count" style="width: 40px;">Sats</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -2391,11 +2392,10 @@
                     </div>
                     <!-- Action buttons -->
                     <div class="sensor-actions" style="margin-top: 8px;">
-                        <button class="sensor-action-btn sensor-add-btn" id="watchlist-add-sat-btn">+Sat</button>
                         <button class="sensor-action-btn sensor-add-btn" id="watchlist-add-list-btn">+List</button>
                     </div>
                     <p style="color: var(--text-muted); font-size: 9px; margin-top: 8px;">
-                        Click color box to cycle: Grey → Red → Blue
+                        Double-click list to edit or delete
                     </p>
                 </div>
             </div>
@@ -2689,6 +2689,14 @@
                     <label class="modal-editor-label" for="satellite-editor-input-tle">TLE (Paste both lines)</label>
                     <textarea class="modal-editor-textarea" id="satellite-editor-input-tle" placeholder="1 25544U 98067A   25328.54472231...&#10;2 25544  51.6316 232.5414..." rows="3" required></textarea>
                 </div>
+                <div class="modal-editor-field">
+                    <label class="modal-editor-label">Color</label>
+                    <div class="modal-color-picker" id="satellite-editor-color-picker">
+                        <button type="button" class="modal-color-btn" data-color="grey" style="background: #666666; border: 2px solid #888888;" title="Grey"></button>
+                        <button type="button" class="modal-color-btn" data-color="red" style="background: #ff4444; border: 2px solid #ff6666;" title="Red"></button>
+                        <button type="button" class="modal-color-btn" data-color="blue" style="background: #4488ff; border: 2px solid #66aaff;" title="Blue"></button>
+                    </div>
+                </div>
                 <div class="modal-editor-buttons">
                     <button type="button" class="modal-editor-btn modal-editor-btn-cancel" id="satellite-editor-modal-cancel">Cancel</button>
                     <button type="submit" class="modal-editor-btn modal-editor-btn-save" id="satellite-editor-modal-save">Save</button>
@@ -2750,6 +2758,7 @@
                     </div>
                 </div>
                 <div class="modal-editor-buttons">
+                    <button type="button" class="modal-editor-btn modal-editor-btn-delete" id="list-editor-modal-delete" style="display: none; background: #cc4444; color: white;">Delete</button>
                     <button type="button" class="modal-editor-btn modal-editor-btn-cancel" id="list-editor-modal-cancel">Cancel</button>
                     <button type="submit" class="modal-editor-btn modal-editor-btn-save" id="list-editor-modal-save">Save</button>
                 </div>

@@ -268,10 +268,10 @@ export function showEditorModal(sensor = null, onSave) {
 
 /**
  * Show satellite editor modal (for add/edit)
- * Opens modal with form for satellite data (name and TLE)
+ * Opens modal with form for satellite data (name, TLE, and color)
  *
  * @param {Object|null} satellite - Satellite object to edit, or null for add
- * @param {Function} onSave - Callback when save is clicked, receives {name, noradId, tleLine1, tleLine2}
+ * @param {Function} onSave - Callback when save is clicked, receives {name, noradId, tleLine1, tleLine2, watchColor}
  */
 export function showSatelliteEditorModal(satellite = null, onSave) {
     const overlay = document.getElementById('satellite-editor-modal-overlay');
@@ -279,6 +279,10 @@ export function showSatelliteEditorModal(satellite = null, onSave) {
     const form = document.getElementById('satellite-editor-modal-form');
     const nameInput = document.getElementById('satellite-editor-input-name');
     const tleInput = document.getElementById('satellite-editor-input-tle');
+    const colorPicker = document.getElementById('satellite-editor-color-picker');
+
+    // Track selected color
+    let selectedColor = satellite?.watchColor || 'grey';
 
     // Set title and populate fields
     if (satellite) {
@@ -291,6 +295,14 @@ export function showSatelliteEditorModal(satellite = null, onSave) {
         tleInput.value = '';
     }
 
+    // Initialize color picker
+    colorPicker.querySelectorAll('.modal-color-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.color === selectedColor) {
+            btn.classList.add('active');
+        }
+    });
+
     // Show modal
     overlay.classList.add('visible');
 
@@ -299,11 +311,21 @@ export function showSatelliteEditorModal(satellite = null, onSave) {
 
     const cancelBtn = document.getElementById('satellite-editor-modal-cancel');
 
+    const handleColorClick = (e) => {
+        if (e.target.classList.contains('modal-color-btn')) {
+            colorPicker.querySelectorAll('.modal-color-btn').forEach(btn => btn.classList.remove('active'));
+            e.target.classList.add('active');
+            selectedColor = e.target.dataset.color;
+        }
+    };
+    colorPicker.addEventListener('click', handleColorClick);
+
     const closeModal = () => {
         overlay.classList.remove('visible');
         form.removeEventListener('submit', handleSubmit);
         cancelBtn.removeEventListener('click', handleCancel);
         overlay.removeEventListener('click', handleOverlayClick);
+        colorPicker.removeEventListener('click', handleColorClick);
     };
 
     const handleCancel = () => {
@@ -339,7 +361,8 @@ export function showSatelliteEditorModal(satellite = null, onSave) {
             name: name,
             noradId: tleResult.noradId,
             tleLine1: tleResult.tleLine1,
-            tleLine2: tleResult.tleLine2
+            tleLine2: tleResult.tleLine2,
+            watchColor: selectedColor
         });
     };
 
