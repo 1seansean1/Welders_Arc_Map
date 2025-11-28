@@ -528,24 +528,37 @@ export function showListEditorModal(list = null, onSave) {
     nameInput.value = list ? list.name : '';
 
     // ========================================
-    // BUILD SATELLITE LIST FROM ALL CATALOGS
+    // BUILD SATELLITE LIST FROM ALL SOURCES
     // ========================================
-    const allCatalogSatellites = [];
+    const allSatellites = [];
     const seenNoradIds = new Set();
 
-    // Get all catalogs and aggregate satellites
+    // First, add all satellites from catalogs
     const catalogs = catalogState.getAllCatalogs();
     for (const catalog of catalogs) {
         for (const sat of catalog.satellites) {
             // Deduplicate by NORAD ID (keep first occurrence)
             if (!seenNoradIds.has(sat.noradId)) {
                 seenNoradIds.add(sat.noradId);
-                allCatalogSatellites.push({
+                allSatellites.push({
                     ...sat,
                     catalogId: catalog.id,
                     catalogName: catalog.name
                 });
             }
+        }
+    }
+
+    // Then, add satellites from satelliteState that aren't in any catalog
+    // These are satellites that were manually added or imported
+    for (const sat of satelliteState.getAllSatellites()) {
+        if (!seenNoradIds.has(sat.noradId)) {
+            seenNoradIds.add(sat.noradId);
+            allSatellites.push({
+                ...sat,
+                catalogId: null,
+                catalogName: '(State)'  // Indicates satellite is in state but not from a catalog
+            });
         }
     }
 
@@ -600,7 +613,7 @@ export function showListEditorModal(list = null, onSave) {
             }
         });
 
-        virtualScroller.setData(allCatalogSatellites);
+        virtualScroller.setData(allSatellites);
 
         // When editing existing list, show selected satellites first
         if (list && currentNoradIds.size > 0) {
@@ -673,7 +686,7 @@ export function showListEditorModal(list = null, onSave) {
             let satId = noradToSatId.get(noradId);
             if (satId === undefined) {
                 // Satellite not in state yet - find it in catalog data and add to state
-                const catalogSat = allCatalogSatellites.find(s => s.noradId === noradId);
+                const catalogSat = allSatellites.find(s => s.noradId === noradId);
                 if (catalogSat) {
                     const newSat = satelliteState.addSatellite({
                         name: catalogSat.name,
@@ -703,7 +716,7 @@ export function showListEditorModal(list = null, onSave) {
     cancelBtn.addEventListener('click', handleCancel);
 
     const openTime = performance.now() - startTime;
-    logger.diagnostic('List modal opened in ' + openTime.toFixed(1) + 'ms (' + allCatalogSatellites.length + ' satellites)', logger.CATEGORY.DATA);
+    logger.diagnostic('List modal opened in ' + openTime.toFixed(1) + 'ms (' + allSatellites.length + ' satellites)', logger.CATEGORY.DATA);
 }
 
 
