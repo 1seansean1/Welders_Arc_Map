@@ -178,6 +178,7 @@ export function toggleSatelliteWatchlist(satelliteId) {
  */
 export function initializeSatelliteButtons() {
     const addSatBtn = document.getElementById('satellite-add-btn');
+    const deleteSatBtn = document.getElementById('satellite-delete-btn');
     const addListBtn = document.getElementById('list-add-btn');
 
     // +Sat button - opens satellite add modal with color and list
@@ -207,6 +208,29 @@ export function initializeSatelliteButtons() {
                 } else {
                     logger.error('Failed to add satellite', logger.CATEGORY.SATELLITE, result.errors);
                 }
+            });
+        });
+    }
+
+    // Delete button - deletes highlighted satellite
+    if (deleteSatBtn) {
+        deleteSatBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const activeRowId = satelliteState.getEditingState().activeRowId;
+            if (!activeRowId) {
+                logger.warning('No satellite selected for deletion', logger.CATEGORY.SATELLITE);
+                return;
+            }
+            const satellite = satelliteState.getSatelliteById(activeRowId);
+            if (!satellite) return;
+
+            // Use confirm modal
+            showSatelliteConfirmModal([satellite], () => {
+                satelliteState.deleteSatellites([activeRowId]);
+                satelliteState.setActiveRow(null);
+                renderSatelliteTable();
+                updateDeckOverlay();
+                logger.success(`Deleted satellite "${satellite.name}"`, logger.CATEGORY.SATELLITE);
             });
         });
     }

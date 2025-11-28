@@ -178,6 +178,31 @@ export function initializeWatchlistTable(options = {}) {
         });
     }
 
+    // Initialize Delete button in watchlist section
+    const deleteListBtn = document.getElementById('watchlist-delete-btn');
+    if (deleteListBtn) {
+        deleteListBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Find selected row
+            const selectedRow = document.querySelector('#watchlist-table tbody tr.selected');
+            if (!selectedRow) {
+                logger.warning('No list selected for deletion', logger.CATEGORY.DATA);
+                return;
+            }
+            const listId = parseInt(selectedRow.dataset.listId, 10);
+            const list = listState.getListById(listId);
+            if (!list) return;
+
+            // Confirm deletion
+            if (confirm(`Delete list "${list.name}"?`)) {
+                listState.deleteList(listId);
+                renderWatchlistTable();
+                if (updateMapCallback) updateMapCallback();
+                logger.success(`List "${list.name}" deleted`, logger.CATEGORY.DATA);
+            }
+        });
+    }
+
     // Initial render
     renderWatchlistTable();
 

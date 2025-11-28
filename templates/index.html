@@ -735,18 +735,18 @@
             flex-shrink: 0;
         }
 
-        /* Navigation Buttons (upper 1/3) */
+        /* Navigation Buttons (upper portion) */
         .nav-section {
-            flex: 0 0 33.333%;
+            flex: 0 0 auto;
             border-bottom: 1px solid #555555;
-            padding: 1px 0;
-            overflow-y: auto;
-            overflow-x: hidden;  /* Remove horizontal scrollbar */
+            padding: 2px 0;
+            overflow-y: hidden;
+            overflow-x: hidden;
         }
 
         .nav-btn {
             width: 100%;
-            height: 28px;
+            height: 22px;
             border: none;
             background: transparent;
             color: var(--text-secondary);
@@ -754,13 +754,13 @@
             display: flex;
             align-items: center;
             justify-content: flex-start;
-            padding: 0 0 0 14px;
-            gap: 6px;
+            padding: 0 0 0 10px;
+            gap: 5px;
             transition: none;
             position: relative;
 
-            /* MOBILE: Minimum touch target size */
-            min-height: 28px;
+            /* Compact button height */
+            min-height: 22px;
         }
 
         .nav-btn:hover {
@@ -2321,7 +2321,11 @@
                     <!-- Action buttons -->
                     <div class="sensor-actions">
                         <button class="sensor-action-btn sensor-add-btn" id="satellite-add-btn">+Sat</button>
+                        <button class="sensor-action-btn sensor-delete-btn" id="satellite-delete-btn">Delete</button>
                     </div>
+                    <p style="color: var(--text-muted); font-size: 9px; margin-top: 8px;">
+                        Double-click satellite to edit
+                    </p>
                 </div>
             </div>
 
@@ -2393,9 +2397,10 @@
                     <!-- Action buttons -->
                     <div class="sensor-actions" style="margin-top: 8px;">
                         <button class="sensor-action-btn sensor-add-btn" id="watchlist-add-list-btn">+List</button>
+                        <button class="sensor-action-btn sensor-delete-btn" id="watchlist-delete-btn">Delete</button>
                     </div>
                     <p style="color: var(--text-muted); font-size: 9px; margin-top: 8px;">
-                        Double-click list to edit or delete
+                        Double-click list to edit
                     </p>
                 </div>
             </div>
