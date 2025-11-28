@@ -579,6 +579,132 @@ export function showListEditorModal(list = null, onSave) {
 }
 
 
+// ============================================
+// CATALOG ADD MODAL
+// ============================================
+
+/**
+ * Show catalog add modal
+ * Opens modal with form for creating a new catalog with TLE paste
+ *
+ * @param {Function} onSave - Callback when save is clicked, receives {name, satellites}
+ */
+export function showCatalogAddModal(onSave) {
+    const overlay = document.getElementById('catalog-add-modal-overlay');
+    const form = document.getElementById('catalog-add-modal-form');
+    const nameInput = document.getElementById('catalog-add-input-name');
+    const tleInput = document.getElementById('catalog-add-input-tle');
+
+    // Reset form
+    nameInput.value = '';
+    tleInput.value = '';
+
+    // Show modal
+    overlay.classList.add('visible');
+
+    // Focus name input
+    setTimeout(() => nameInput.focus(), 100);
+
+    const cancelBtn = document.getElementById('catalog-add-modal-cancel');
+
+    const closeModal = () => {
+        overlay.classList.remove('visible');
+        form.removeEventListener('submit', handleSubmit);
+        cancelBtn.removeEventListener('click', handleCancel);
+        overlay.removeEventListener('click', handleOverlayClick);
+    };
+
+    const handleCancel = () => {
+        closeModal();
+        logger.diagnostic('Catalog add cancelled', logger.CATEGORY.DATA);
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+
+        const name = nameInput.value.trim();
+        const tleText = tleInput.value.trim();
+
+        // Validate name
+        if (!name) {
+            alert('Catalog name is required');
+            nameInput.focus();
+            return;
+        }
+
+        // Parse TLE batch
+        const satellites = [];
+        if (tleText) {
+            const lines = tleText.split('\n').map(l => l.trimEnd());
+            let i = 0;
+            while (i < lines.length) {
+                // Skip empty lines
+                if (!lines[i] || lines[i].trim() === '') {
+                    i++;
+                    continue;
+                }
+
+                // Need at least 3 lines
+                if (i + 2 >= lines.length) {
+                    alert(`Incomplete TLE data at line ${i + 1}. Each satellite needs 3 lines: name, line 1, line 2.`);
+                    tleInput.focus();
+                    return;
+                }
+
+                const nameLine = lines[i];
+                const line1 = lines[i + 1];
+                const line2 = lines[i + 2];
+
+                // Validate TLE lines
+                if (!line1.startsWith('1 ')) {
+                    alert(`Line ${i + 2}: Expected TLE line 1 starting with "1 "`);
+                    tleInput.focus();
+                    return;
+                }
+                if (!line2.startsWith('2 ')) {
+                    alert(`Line ${i + 3}: Expected TLE line 2 starting with "2 "`);
+                    tleInput.focus();
+                    return;
+                }
+
+                // Extract NORAD ID
+                const noradId = parseInt(line1.substring(2, 7).trim(), 10);
+                if (isNaN(noradId)) {
+                    alert(`Invalid NORAD ID at line ${i + 2}`);
+                    tleInput.focus();
+                    return;
+                }
+
+                satellites.push({
+                    name: nameLine.trim(),
+                    noradId: noradId,
+                    tleLine1: line1,
+                    tleLine2: line2
+                });
+
+                i += 3;
+            }
+        }
+
+        closeModal();
+        onSave({ name, satellites });
+    };
+
+    const handleOverlayClick = (e) => {
+        if (e.target === overlay) {
+            handleCancel();
+        }
+    };
+
+    // Prevent event propagation
+    overlay.addEventListener('click', (e) => {
+        e.stopPropagation();
+    });
+
+    form.addEventListener('submit', handleSubmit);
+    cancelBtn.addEventListener('click', handleCancel);
+    overlay.addEventListener('click', handleOverlayClick);
+}
 
 
 // ============================================

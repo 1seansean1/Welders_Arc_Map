@@ -1,7 +1,7 @@
 # WA_map Active Work Plan
 
 > **Document Type**: PLAN
-> **Version**: 1.6
+> **Version**: 1.7
 > **Last Updated**: 2025-11-27
 > **Maintainer**: AI Governor System
 
@@ -575,6 +575,7 @@ EXPANDED ANALYSIS WINDOW PANEL (above time bar):
 
 | Task | Priority | Completed | Notes |
 |------|----------|-----------|-------|
+| Catalog Management Feature | P1 | 2025-11-28 | CAT-001 to CAT-004: Catalogs panel (renamed from Satellites), catalog state module, catalog table UI with checkbox/name/count, Celestrak auto-fetch, +Cat modal with TLE batch import |
 | Polar Plot Analysis Feature | P1 | 2025-11-27 | ANALYSIS-001 to ANALYSIS-005: Analysis panel checkbox, polar plot canvas (az/el sky view), sensor selection, H-POLAR tests |
 | Satellite/List UI Consolidation | P1 | 2025-11-27 | LIST-007/008, SAT-024: +Sat and +List modals, removed duplicate Sel/Star/List columns, removed Lists panel |
 | Time Control UX Polish | P1 | 2025-11-27 | TIME-032/033/034, UI-020/021: Play button preserves time offset, DDMMMYYYY UTC clock format, double-click close pickers, removed time window dropdown and Ctrl+wheel hint |
@@ -700,6 +701,7 @@ EXPANDED ANALYSIS WINDOW PANEL (above time bar):
 │  ├── uiState.js            │  ├── controlPanel.js           │
 │  ├── sensorState.js        │  ├── sensorTable.js            │
 │  ├── satelliteState.js     │  ├── satelliteTable.js         │
+│  ├── catalogState.js       │  ├── catalogTable.js           │
 │  └── timeState.js          │  ├── timeControls.js           │
 │                             │  ├── modals.js                 │
 │                             │  └── logPanel.js               │
@@ -766,6 +768,7 @@ venv\Scripts\python backend\main.py
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.7 | 2025-11-28 | Added Catalog Management feature (CAT-001 to CAT-004): Catalogs panel, state module, table UI, Celestrak auto-fetch, TLE batch import modal |
 | 1.6 | 2025-11-28 | Added Polar Plot feature (ANALYSIS-001 to ANALYSIS-005): Analysis panel, polar canvas, sensor selection, H-POLAR tests |
 | 1.5 | 2025-11-28 | Added User Profiles feature: SQLite database, profile CRUD API, settings persistence, login modal |
 | 1.4 | 2025-11-27 | Added TIME CONTROL ENHANCEMENTS PLAN (TIME-023 to TIME-028): playback rate, jog wheel, seek stubs, presets, analysis window |

@@ -2317,12 +2317,12 @@
                 </span>
                 <span class="nav-label">Time</span>
             </button>
-            <button class="nav-btn" data-section="satellites">
+            <button class="nav-btn" data-section="catalogs">
                 <span class="nav-icon">
                     <!-- Satellite icon from satellite.svg -->
                     <img src="/static/satellite.svg" width="14" height="14" style="filter: invert(1);">
                 </span>
-                <span class="nav-label">Satellites</span>
+                <span class="nav-label">Catalogs</span>
             </button>
             <button class="nav-btn" data-section="watchlist">
                 <span class="nav-icon">
@@ -2431,16 +2431,16 @@
             </div>
 
             <!-- Other sections (hidden by default) -->
-            <div id="content-satellites" style="display: none;">
-                <!-- Satellite table -->
+            <div id="content-catalogs" style="display: none;">
+                <!-- Catalog table -->
                 <div class="sensor-controls">
                     <div class="sensor-table-wrapper">
-                        <table class="sensor-table" id="satellite-table">
+                        <table class="sensor-table" id="catalog-table">
                             <thead>
                                 <tr>
-                                    <th class="col-color" style="width: 24px;"></th>
-                                    <th class="col-norad">NORAD</th>
-                                    <th class="col-name">Name</th>
+                                    <th class="col-sel" style="width: 24px;"></th>
+                                    <th class="col-name">Cat Name</th>
+                                    <th class="col-count" style="width: 40px;">Sats</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -2451,11 +2451,11 @@
 
                     <!-- Action buttons -->
                     <div class="sensor-actions">
-                        <button class="sensor-action-btn sensor-add-btn" id="satellite-add-btn">+Sat</button>
-                        <button class="sensor-action-btn sensor-delete-btn" id="satellite-delete-btn">Delete</button>
+                        <button class="sensor-action-btn sensor-add-btn" id="catalog-add-btn">+Cat</button>
+                        <button class="sensor-action-btn sensor-delete-btn" id="catalog-delete-btn">Delete</button>
                     </div>
                     <p style="color: var(--text-muted); font-size: 9px; margin-top: 8px;">
-                        Double-click satellite to edit
+                        Catalogs contain satellite TLE data
                     </p>
                 </div>
             </div>
@@ -2955,6 +2955,35 @@
     </div>
 
 
+
+    <!-- Catalog Add Modal (for TLE paste) -->
+    <div class="modal-overlay" id="catalog-add-modal-overlay">
+        <div class="modal-editor" style="width: 400px; max-height: 80vh;">
+            <div class="modal-editor-title" id="catalog-add-modal-title">Create Catalog</div>
+            <form class="modal-editor-form" id="catalog-add-modal-form" onsubmit="return false;">
+                <div class="modal-editor-field">
+                    <label class="modal-editor-label" for="catalog-add-input-name">Catalog Name</label>
+                    <input type="text" class="modal-editor-input" id="catalog-add-input-name" placeholder="My Satellites" maxlength="30" required>
+                </div>
+                <div class="modal-editor-field">
+                    <label class="modal-editor-label" for="catalog-add-input-tle">TLE Data (paste multiple satellites)</label>
+                    <textarea class="modal-editor-input" id="catalog-add-input-tle" placeholder="SATELLITE NAME
+1 XXXXX...
+2 XXXXX...
+SATELLITE NAME 2
+1 XXXXX...
+2 XXXXX..." style="height: 200px; font-family: monospace; font-size: 11px; resize: vertical;"></textarea>
+                </div>
+                <p style="color: var(--text-muted); font-size: 9px; margin: 4px 0 12px 0;">
+                    Format: 3 lines per satellite (name, line 1, line 2)
+                </p>
+                <div class="modal-editor-buttons">
+                    <button type="button" class="modal-editor-btn modal-editor-btn-cancel" id="catalog-add-modal-cancel">Cancel</button>
+                    <button type="submit" class="modal-editor-btn modal-editor-btn-save" id="catalog-add-modal-save">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
     <!-- Login Modal -->
     <div class="modal-overlay" id="login-modal-overlay">
         <div class="modal-editor" style="width: 280px;">

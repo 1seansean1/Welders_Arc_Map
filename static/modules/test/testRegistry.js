@@ -3181,6 +3181,181 @@ const POLAR_HYPOTHESES = {
     }
 };
 
+
+// ============================================
+// CATALOG TESTS (H-CAT-*)
+// ============================================
+
+const CATALOG_HYPOTHESES = {
+    'H-CAT-1': {
+        id: 'H-CAT-1',
+        name: 'Catalog Table Renders',
+        category: 'catalog',
+        hypothesis: 'If catalogs exist in catalogState, then the catalog table should render rows',
+        symptom: 'Catalog table shows no rows',
+        prediction: 'Catalog count equals table row count',
+        nullPrediction: 'Table would be empty regardless of state',
+        threshold: { rowMismatch: 0 },
+        causalChain: [
+            'SYMPTOM: No catalog rows in table',
+            'PROXIMATE: renderCatalogTable not called or catalogState empty',
+            'ROOT: Initialization order or event binding issue',
+            'MECHANISM: catalogState.getAllCatalogs() returns data, table renders',
+            'FIX: Verify initializeCatalogTable() is called in bootstrap'
+        ],
+        testFn: async () => {
+            const catalogState = window.catalogState;
+            if (!catalogState) return { passed: false, error: 'catalogState not found on window' };
+
+            const catalogs = catalogState.getAllCatalogs();
+            const tbody = document.querySelector('#catalog-table tbody');
+            if (!tbody) return { passed: false, error: 'catalog-table tbody not found' };
+
+            const rows = tbody.querySelectorAll('tr');
+            const rowCount = rows.length;
+            const catalogCount = catalogs.length;
+
+            return {
+                passed: rowCount === catalogCount,
+                details: { catalogCount, rowCount, match: rowCount === catalogCount }
+            };
+        }
+    },
+    'H-CAT-2': {
+        id: 'H-CAT-2',
+        name: 'Celestrak Auto-Fetch',
+        category: 'catalog',
+        hypothesis: 'If no Celestrak catalog exists, one should be fetched automatically on init',
+        symptom: 'No Celestrak catalog after page load',
+        prediction: 'Celestrak catalog exists with >0 satellites',
+        nullPrediction: 'No catalog would be created automatically',
+        threshold: { minSatellites: 1 },
+        causalChain: [
+            'SYMPTOM: No Celestrak catalog',
+            'PROXIMATE: fetchCelestrak() not called or failed',
+            'ROOT: Network error or API format change',
+            'MECHANISM: catalogState fetches from Celestrak API on init',
+            'FIX: Check network, verify TLE parsing'
+        ],
+        testFn: async () => {
+            const catalogState = window.catalogState;
+            if (!catalogState) return { passed: false, error: 'catalogState not found' };
+
+            // Wait a bit for async fetch to complete
+            await new Promise(r => setTimeout(r, 2000));
+
+            const catalogs = catalogState.getAllCatalogs();
+            const celestrak = catalogs.find(c => c.name === 'Celestrak');
+
+            if (!celestrak) {
+                return { passed: false, details: { message: 'Celestrak catalog not found', catalogs: catalogs.map(c => c.name) } };
+            }
+
+            const satCount = celestrak.satellites.length;
+            return {
+                passed: satCount > 0,
+                details: { catalogName: celestrak.name, satelliteCount: satCount }
+            };
+        }
+    },
+    'H-CAT-3': {
+        id: 'H-CAT-3',
+        name: 'Catalog Visibility Toggle',
+        category: 'catalog',
+        hypothesis: 'If catalog visibility is toggled, getVisibleSatellites should reflect the change',
+        symptom: 'Toggling checkbox has no effect on satellite visibility',
+        prediction: 'Visible satellite count changes when catalog visibility changes',
+        nullPrediction: 'Satellite count would remain constant',
+        threshold: { visibilityWorks: true },
+        causalChain: [
+            'SYMPTOM: Checkbox toggle has no effect',
+            'PROXIMATE: setCatalogVisibility not updating state',
+            'ROOT: Event listener not bound or state not persisted',
+            'MECHANISM: catalogState.visible property filters getVisibleSatellites',
+            'FIX: Verify checkbox change handler calls setCatalogVisibility'
+        ],
+        testFn: async () => {
+            const catalogState = window.catalogState;
+            if (!catalogState) return { passed: false, error: 'catalogState not found' };
+
+            const catalogs = catalogState.getAllCatalogs();
+            if (catalogs.length === 0) {
+                return { passed: true, details: { message: 'No catalogs to test', skipped: true } };
+            }
+
+            const testCatalog = catalogs[0];
+            const originalVisibility = testCatalog.visible !== false;
+
+            // Get initial visible satellites
+            const visibleBefore = catalogState.getVisibleSatellites().length;
+
+            // Toggle visibility
+            catalogState.setCatalogVisibility(testCatalog.id, !originalVisibility);
+            const visibleAfter = catalogState.getVisibleSatellites().length;
+
+            // Restore original visibility
+            catalogState.setCatalogVisibility(testCatalog.id, originalVisibility);
+
+            // If we hid a catalog, visible count should decrease
+            // If we showed a catalog, visible count should increase (or stay same if empty)
+            const changed = visibleBefore !== visibleAfter || testCatalog.satellites.length === 0;
+
+            return {
+                passed: changed,
+                details: {
+                    catalogName: testCatalog.name,
+                    satellitesInCatalog: testCatalog.satellites.length,
+                    visibleBefore,
+                    visibleAfter,
+                    toggledFrom: originalVisibility,
+                    toggledTo: !originalVisibility
+                }
+            };
+        }
+    },
+    'H-CAT-4': {
+        id: 'H-CAT-4',
+        name: 'Catalog Modal Opens',
+        category: 'catalog',
+        hypothesis: 'If +Cat button is clicked, the catalog add modal should become visible',
+        symptom: 'Clicking +Cat does nothing',
+        prediction: 'Modal overlay has visible class after click',
+        nullPrediction: 'Modal would remain hidden',
+        threshold: { modalVisible: true },
+        causalChain: [
+            'SYMPTOM: +Cat button does not open modal',
+            'PROXIMATE: Click handler not bound or showCatalogAddModal not called',
+            'ROOT: Button ID mismatch or initialization failure',
+            'MECHANISM: Button click triggers showCatalogAddModal',
+            'FIX: Verify button ID and event binding in catalogTable.js'
+        ],
+        testFn: async () => {
+            const addBtn = document.getElementById('catalog-add-btn');
+            const overlay = document.getElementById('catalog-add-modal-overlay');
+
+            if (!addBtn) return { passed: false, error: 'catalog-add-btn not found' };
+            if (!overlay) return { passed: false, error: 'catalog-add-modal-overlay not found' };
+
+            const wasVisible = overlay.classList.contains('visible');
+
+            // Click the add button
+            addBtn.click();
+            await new Promise(r => setTimeout(r, 100));
+
+            const isVisible = overlay.classList.contains('visible');
+
+            // Close the modal
+            const cancelBtn = document.getElementById('catalog-add-modal-cancel');
+            if (cancelBtn) cancelBtn.click();
+
+            return {
+                passed: isVisible,
+                details: { wasVisibleBefore: wasVisible, isVisibleAfterClick: isVisible }
+            };
+        }
+    }
+};
+
 // ============================================
 // COMBINED REGISTRY
 // ============================================
@@ -3194,7 +3369,8 @@ export const TEST_REGISTRY = {
     ...SATELLITE_HYPOTHESES,
     ...TIME_HYPOTHESES,
     ...LIST_HYPOTHESES,
-    ...POLAR_HYPOTHESES
+    ...POLAR_HYPOTHESES,
+    ...CATALOG_HYPOTHESES
 };
 
 /**

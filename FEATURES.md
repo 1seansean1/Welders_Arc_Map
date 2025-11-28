@@ -1,7 +1,7 @@
 # WA_map Feature Registry
 
 > **Document Type**: FEATURES
-> **Version**: 3.6
+> **Version**: 3.8
 > **Last Updated**: 2025-11-27
 > **Maintainer**: AI Governor System
 
@@ -102,6 +102,16 @@
 | LIST-006 | List localStorage Persistence | P1 | S | DONE | LIST-001 |
 | LIST-007 | +List Modal with Satellite Picker | P1 | M | DONE | LIST-001, SAT-001 |
 | LIST-008 | Consolidated List Management | P1 | M | DONE | LIST-007, UI |
+
+
+### Catalog Management (CAT)
+
+| ID | Feature | Priority | Complexity | Status | Dependencies |
+|----|---------|----------|------------|--------|--------------|
+| CAT-001 | Catalog State Module | P0 | M | DONE | None |
+| CAT-002 | Catalog Table UI | P1 | M | DONE | CAT-001 |
+| CAT-003 | Celestrak Auto-Fetch | P1 | S | DONE | CAT-001 |
+| CAT-004 | TLE Batch Import Modal | P1 | M | DONE | CAT-001, UI-005 |
 
 ### Sensor Management (SEN)
 
@@ -320,6 +330,7 @@
 |----------|-------|------|-----|------|------|
 | MAP | 15 | 15 | 0 | 0 | 0 |
 | SAT | 23 | 21 | 0 | 1 | 1 |
+| CAT | 4 | 4 | 0 | 0 | 0 |
 | SEN | 9 | 8 | 0 | 0 | 1 |
 | TIME | 34 | 34 | 0 | 0 | 0 |
 | UI | 21 | 20 | 0 | 1 | 0 |
@@ -329,11 +340,11 @@
 | ARCH | 5 | 5 | 0 | 0 | 0 |
 | LIST | 6 | 6 | 0 | 0 | 0 |
 | ANALYSIS | 11 | 11 | 0 | 0 | 0 |
-| **TOTAL** | **158** | **144** | **0** | **7** | **6** |
+| **TOTAL** | **162** | **148** | **0** | **7** | **6** |
 
 *Note: MAP-013 REMOVED (superseded by MAP-012+MAP-016), MAP-016 added - net zero change*
 
-**Completion Rate**: 91% (144/158 features complete)
+**Completion Rate**: 91% (148/162 features complete)
 
 ---
 
@@ -341,6 +352,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 3.8 | 2025-11-28 | CAT-001 to CAT-004 DONE: Catalog Management - renamed Satellites panel to Catalogs, catalog state module, catalog table UI with checkbox/name/count columns, Celestrak auto-fetch on startup, +Cat modal with TLE batch import, H-CAT-1/2/3/4 tests added |
 | 3.7 | 2025-11-28 | ANALYSIS-006 to ANALYSIS-011 DONE: Enhanced polar plot with sky tracks (head/tail minutes), track color coding (grey/red/blue/orange), direction chevrons, click-to-select integration, selection highlight ring, enhanced grid labels; H-POLAR-5/6/7 tests added |
 | 3.6 | 2025-11-27 | ANALYSIS-001 to ANALYSIS-005, UI-007 DONE: Polar Plot feature - Analysis panel checkbox, canvas polar plot (az/el sky view), sensor selection for polar view, H-POLAR-1/2/3/4 tests |
 | 3.5 | 2025-11-27 | LIST-003/004 REMOVED, SAT-007 REMOVED, LIST-007/008 & SAT-024 DONE: Consolidated satellite/list UI with +Sat and +List modal buttons |
