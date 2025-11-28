@@ -28,6 +28,7 @@ import sensorState from '../state/sensorState.js';
 import satelliteState from '../state/satelliteState.js';
 import timeState from '../state/timeState.js';
 import profileState from '../state/profileState.js';
+import analysisState from '../state/analysisState.js';
 
 // Data modules
 import websocketManager from '../data/websocket.js';
@@ -43,6 +44,7 @@ import { initializeCurrentTimeDisplay } from '../ui/currentTimeDisplay.js';
 import { initializeSettingsPanel } from '../ui/settingsPanel.js';
 import { initializeMapTimeBar } from '../ui/mapTimeBar.js';
 import { showLoginModal } from '../ui/modals.js';
+import polarPlot from '../ui/polarPlot.js';
 
 // Sensor & Satellite CRUD
 import { initializeSensors, initializeSensorButtons, editSensor } from '../data/sensorCRUD.js';
@@ -153,6 +155,9 @@ export function init() {
     // Initialize test panel (in Settings section)
     initTestPanel();
 
+    // Initialize polar plot
+    initializePolarPlot();
+
     // Initialize profile login/logout buttons
     initializeProfileControls();
 
@@ -162,6 +167,66 @@ export function init() {
     }
 
     logger.success('Initialization complete', logger.CATEGORY.PANEL);
+}
+
+// ============================================
+// POLAR PLOT INITIALIZATION
+// ============================================
+
+/**
+ * Initialize polar plot panel and checkbox handler
+ */
+function initializePolarPlot() {
+    // Initialize the canvas
+    polarPlot.initialize('polar-plot-canvas');
+
+    // Get DOM elements
+    const checkbox = document.getElementById('analysis-polar-plot');
+    const plotContainer = document.getElementById('polar-plot-container');
+    const placeholder = document.getElementById('polar-plot-placeholder');
+
+    if (!checkbox) {
+        logger.warning('Polar plot checkbox not found', logger.CATEGORY.UI);
+        return;
+    }
+
+    // Handle checkbox changes
+    checkbox.addEventListener('change', (e) => {
+        const enabled = e.target.checked;
+        analysisState.setPolarPlotEnabled(enabled);
+
+        // Toggle visibility
+        if (plotContainer) {
+            plotContainer.style.display = enabled ? 'flex' : 'none';
+        }
+        if (placeholder) {
+            placeholder.style.display = enabled ? 'none' : 'flex';
+        }
+
+        // Trigger polar plot rendering
+        if (enabled) {
+            polarPlot.setVisible(true);
+        } else {
+            polarPlot.setVisible(false);
+            // Clear sensor selection when disabling
+            analysisState.clearPolarViewSensor();
+            updateDeckOverlay();
+        }
+
+        logger.log(\`Polar plot \${enabled ? 'enabled' : 'disabled'}\`, logger.CATEGORY.UI);
+    });
+
+    // Listen for sensor deselection to update map
+    import('../events/eventBus.js').then(({ default: eventBus }) => {
+        eventBus.on('analysis:sensor:deselected', () => {
+            updateDeckOverlay();
+        });
+        eventBus.on('analysis:sensor:selected', () => {
+            updateDeckOverlay();
+        });
+    });
+
+    logger.diagnostic('Polar plot initialized', logger.CATEGORY.UI);
 }
 
 // ============================================

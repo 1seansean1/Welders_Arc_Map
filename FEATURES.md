@@ -1,7 +1,7 @@
 # WA_map Feature Registry
 
 > **Document Type**: FEATURES
-> **Version**: 3.5
+> **Version**: 3.6
 > **Last Updated**: 2025-11-27
 > **Maintainer**: AI Governor System
 
@@ -166,7 +166,7 @@
 | UI-004 | Click-Outside Collapse | P2 | XS | DONE | UI-001 |
 | UI-005 | Modal System | P0 | M | DONE | None |
 | UI-006 | Confirmation Dialogs | P1 | S | DONE | UI-005 |
-| UI-007 | Analysis Section | P2 | L | PLAN | UI-002 |
+| UI-007 | Analysis Section | P2 | L | DONE | UI-002 |
 | UI-008 | Real-time Data Section | P2 | L | PLAN | UI-002, Backend |
 | UI-009 | Settings Section | P2 | M | DONE | UI-002 |
 | UI-010 | Glow Effect Controls | P2 | S | DONE | UI-009, SAT-014 |
@@ -251,6 +251,17 @@
 | ARCH-004 | Deck.gl Batch Manager | P1 | M | DONE | MAP-003 |
 | ARCH-005 | Diagnostics Framework | P1 | M | DONE | MAP-003 |
 
+
+### Analysis Tools (ANALYSIS)
+
+| ID | Feature | Priority | Complexity | Status | Dependencies |
+|----|---------|----------|------------|--------|--------------|
+| ANALYSIS-001 | Analysis State Module | P1 | S | DONE | ARCH-003 |
+| ANALYSIS-002 | Polar Plot Canvas | P1 | M | DONE | ANALYSIS-001, SEN-001 |
+| ANALYSIS-003 | Az/El Calculation | P1 | S | DONE | SAT-006 |
+| ANALYSIS-004 | Sensor Selection for Polar View | P1 | S | DONE | ANALYSIS-001, SEN-007 |
+| ANALYSIS-005 | Polar Plot Hypothesis Tests | P2 | S | DONE | TEST-001, ANALYSIS-002 |
+
 ---
 
 ## Feature Details
@@ -305,17 +316,18 @@
 | SAT | 23 | 21 | 0 | 1 | 1 |
 | SEN | 9 | 8 | 0 | 0 | 1 |
 | TIME | 34 | 34 | 0 | 0 | 0 |
-| UI | 21 | 19 | 0 | 2 | 0 |
+| UI | 21 | 20 | 0 | 1 | 0 |
 | LOG | 10 | 8 | 0 | 0 | 2 |
 | TEST | 15 | 13 | 0 | 1 | 0 |
 | BACK | 9 | 3 | 0 | 4 | 2 |
 | ARCH | 5 | 5 | 0 | 0 | 0 |
 | LIST | 6 | 6 | 0 | 0 | 0 |
-| **TOTAL** | **147** | **132** | **0** | **8** | **6** |
+| ANALYSIS | 5 | 5 | 0 | 0 | 0 |
+| **TOTAL** | **152** | **138** | **0** | **7** | **6** |
 
 *Note: MAP-013 REMOVED (superseded by MAP-012+MAP-016), MAP-016 added - net zero change*
 
-**Completion Rate**: 90% (132/147 features complete)
+**Completion Rate**: 91% (138/152 features complete)
 
 ---
 
@@ -323,6 +335,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 3.6 | 2025-11-27 | ANALYSIS-001 to ANALYSIS-005, UI-007 DONE: Polar Plot feature - Analysis panel checkbox, canvas polar plot (az/el sky view), sensor selection for polar view, H-POLAR-1/2/3/4 tests |
 | 3.5 | 2025-11-27 | LIST-003/004 REMOVED, SAT-007 REMOVED, LIST-007/008 & SAT-024 DONE: Consolidated satellite/list UI with +Sat and +List modal buttons |
 | 3.4 | 2025-11-27 | TIME-032/033/034, UI-020/021 DONE: Play button preserves time offset, DDMMMYYYY UTC clock format, double-click close pickers, remove time window dropdown and Ctrl+wheel hint |
 | 3.3 | 2025-11-27 | SAT-023 DONE: Apex Tick Pulse Controls - independent controls for apex latitude tick marks with horizontal pulse animation |

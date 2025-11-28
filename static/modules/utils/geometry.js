@@ -234,3 +234,106 @@ export function calculateBoundingBox(coordinates) {
 
     return { minLon, minLat, maxLon, maxLat };
 }
+
+
+// ============================================
+// AZIMUTH / ELEVATION CALCULATIONS
+// For satellite look angles from ground observer
+// ============================================
+
+/**
+ * Convert geodetic coordinates (lat, lon, alt) to ECEF (Earth-Centered Earth-Fixed)
+ * Uses WGS84 ellipsoid approximation (simplified to sphere for this application)
+ *
+ * @param {number} lat - Latitude in degrees
+ * @param {number} lon - Longitude in degrees
+ * @param {number} alt - Altitude above sea level in km
+ * @returns {Object} {x, y, z} in kilometers
+ */
+export function geodeticToECEF(lat, lon, alt) {
+    const latRad = degreesToRadians(lat);
+    const lonRad = degreesToRadians(lon);
+    const r = EARTH_RADIUS_KM + alt;
+
+    return {
+        x: r * Math.cos(latRad) * Math.cos(lonRad),
+        y: r * Math.cos(latRad) * Math.sin(lonRad),
+        z: r * Math.sin(latRad)
+    };
+}
+
+/**
+ * Calculate azimuth and elevation from observer to target
+ *
+ * Azimuth: Angle from true North, measured clockwise (0-360 degrees)
+ * Elevation: Angle above the horizon (-90 to 90 degrees)
+ *
+ * @param {number} observerLat - Observer latitude (degrees)
+ * @param {number} observerLon - Observer longitude (degrees)
+ * @param {number} observerAlt - Observer altitude above sea level (km)
+ * @param {number} targetLat - Target latitude (degrees)
+ * @param {number} targetLon - Target longitude (degrees)
+ * @param {number} targetAlt - Target altitude above sea level (km)
+ * @returns {Object} {azimuth, elevation, range, visible}
+ */
+export function calculateAzimuthElevation(observerLat, observerLon, observerAlt,
+                                          targetLat, targetLon, targetAlt) {
+    const obs = geodeticToECEF(observerLat, observerLon, observerAlt);
+    const tgt = geodeticToECEF(targetLat, targetLon, targetAlt);
+
+    const dx = tgt.x - obs.x;
+    const dy = tgt.y - obs.y;
+    const dz = tgt.z - obs.z;
+
+    const range = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+    const latRad = degreesToRadians(observerLat);
+    const lonRad = degreesToRadians(observerLon);
+
+    const sinLat = Math.sin(latRad);
+    const cosLat = Math.cos(latRad);
+    const sinLon = Math.sin(lonRad);
+    const cosLon = Math.cos(lonRad);
+
+    const east = -sinLon * dx + cosLon * dy;
+    const north = -sinLat * cosLon * dx - sinLat * sinLon * dy + cosLat * dz;
+    const up = cosLat * cosLon * dx + cosLat * sinLon * dy + sinLat * dz;
+
+    let azimuth = Math.atan2(east, north);
+    azimuth = radiansToDegrees(azimuth);
+    if (azimuth < 0) azimuth += 360;
+
+    const horizontalDist = Math.sqrt(east * east + north * north);
+    const elevation = radiansToDegrees(Math.atan2(up, horizontalDist));
+
+    return {
+        azimuth: azimuth,
+        elevation: elevation,
+        range: range,
+        visible: elevation >= 0
+    };
+}
+
+/**
+ * Check if satellite is visible from observer location
+ */
+export function isSatelliteVisible(observerLat, observerLon, observerAlt,
+                                   satLat, satLon, satAlt, minElevation = 0) {
+    const lookAngles = calculateAzimuthElevation(
+        observerLat, observerLon, observerAlt,
+        satLat, satLon, satAlt
+    );
+    return lookAngles.elevation >= minElevation;
+}
+
+/**
+ * Calculate look angles for multiple satellites from one observer
+ */
+export function batchCalculateAzEl(observer, satellites) {
+    return satellites.map(sat =>
+        calculateAzimuthElevation(
+            observer.lat, observer.lon, observer.alt || 0,
+            sat.lat, sat.lon, sat.alt
+        )
+    );
+}

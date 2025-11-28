@@ -1,7 +1,7 @@
 # WA_map Active Work Plan
 
 > **Document Type**: PLAN
-> **Version**: 1.0
+> **Version**: 1.6
 > **Last Updated**: 2025-11-27
 > **Maintainer**: AI Governor System
 
@@ -575,6 +575,7 @@ EXPANDED ANALYSIS WINDOW PANEL (above time bar):
 
 | Task | Priority | Completed | Notes |
 |------|----------|-----------|-------|
+| Polar Plot Analysis Feature | P1 | 2025-11-27 | ANALYSIS-001 to ANALYSIS-005: Analysis panel checkbox, polar plot canvas (az/el sky view), sensor selection, H-POLAR tests |
 | Satellite/List UI Consolidation | P1 | 2025-11-27 | LIST-007/008, SAT-024: +Sat and +List modals, removed duplicate Sel/Star/List columns, removed Lists panel |
 | Time Control UX Polish | P1 | 2025-11-27 | TIME-032/033/034, UI-020/021: Play button preserves time offset, DDMMMYYYY UTC clock format, double-click close pickers, removed time window dropdown and Ctrl+wheel hint |
 | Apex Tick Pulse Controls | P2 | 2025-11-27 | SAT-023: Independent controls for apex latitude tick marks with horizontal pulse animation, color picker, opacity slider |
@@ -649,7 +650,7 @@ EXPANDED ANALYSIS WINDOW PANEL (above time bar):
 
 | Task | Complexity | Dependencies |
 |------|------------|--------------|
-| Analysis Section | L | None |
+| ~~Analysis Section~~ | L | None | DONE (Polar Plot) |
 | Real-time Data Section | L | WebSocket |
 | Settings Section Finish | M | None |
 | Log Filtering | M | LOG-009 |
@@ -765,6 +766,7 @@ venv\Scripts\python backend\main.py
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.6 | 2025-11-28 | Added Polar Plot feature (ANALYSIS-001 to ANALYSIS-005): Analysis panel, polar canvas, sensor selection, H-POLAR tests |
 | 1.5 | 2025-11-28 | Added User Profiles feature: SQLite database, profile CRUD API, settings persistence, login modal |
 | 1.4 | 2025-11-27 | Added TIME CONTROL ENHANCEMENTS PLAN (TIME-023 to TIME-028): playback rate, jog wheel, seek stubs, presets, analysis window |
 | 1.3 | 2025-11-26 | Added UI/UX Improvements batch: hold-to-repeat, glow fade, Tests/Watch List panels |

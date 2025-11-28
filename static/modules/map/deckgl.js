@@ -28,6 +28,7 @@ import sensorState from '../state/sensorState.js';
 import satelliteState from '../state/satelliteState.js';
 import timeState from '../state/timeState.js';
 import listState from '../state/listState.js';
+import analysisState from '../state/analysisState.js';
 import { calculateFOVCircle } from '../utils/geometry.js';
 import { calculateGroundTrack } from '../data/propagation.js';
 import eventDetector from '../events/eventDetector.js';
@@ -492,13 +493,21 @@ function createLayers() {
     // Filter to only SELECTED sensors
     const sensorsToRender = sensorState.getSelectedSensors();
 
+    // Get the sensor selected for polar view (if any)
+    const polarViewSensorId = analysisState.getPolarViewSensorId();
+
     // Prepare sensor icon data (donut circles)
-    const sensorIconData = sensorsToRender.map(sensor => ({
-        position: [sensor.lon, sensor.lat],
-        radius: 8000,
-        color: [157, 212, 255],
-        sensor: sensor
-    }));
+    // Highlight sensor selected for polar view with orange color
+    const sensorIconData = sensorsToRender.map(sensor => {
+        const isSelectedForPolar = sensor.id === polarViewSensorId;
+        return {
+            position: [sensor.lon, sensor.lat],
+            radius: isSelectedForPolar ? 10000 : 8000,
+            color: isSelectedForPolar ? [255, 165, 0] : [157, 212, 255],
+            sensor: sensor,
+            isSelectedForPolar: isSelectedForPolar
+        };
+    });
 
     // Prepare FOV polygon data
     const fovPolygonData = sensorsToRender.map(sensor => {
@@ -721,7 +730,11 @@ function createLayers() {
             getRadius: d => d.radius,
             getFillColor: d => {
                 if (d.sensor.iconType === 'filled') return d.color;
-                if (d.sensor.iconType === 'donut') return [157, 212, 255, 0];
+                if (d.sensor.iconType === 'donut') {
+                    // Filled center for polar-selected sensor
+                    if (d.isSelectedForPolar) return [255, 165, 0, 100];
+                    return [157, 212, 255, 0];
+                }
                 return [0, 0, 0, 0];
             },
             getLineColor: d => d.color,
@@ -735,7 +748,8 @@ function createLayers() {
             updateTriggers: {
                 visible: sensorsToRender.length,
                 getPosition: sensorsToRender.map(s => `${s.id}-${s.lon}-${s.lat}`).join(','),
-                getFillColor: sensorsToRender.map(s => `${s.id}-${s.iconType}`).join(',')
+                getFillColor: `${sensorsToRender.map(s => `${s.id}-${s.iconType}`).join(',')}-polar-${polarViewSensorId}`,
+                getLineColor: `polar-${polarViewSensorId}`
             },
             onHover: ({object}) => {
                 if (object) {
@@ -744,6 +758,15 @@ function createLayers() {
                         lat: object.sensor.lat.toFixed(2),
                         lon: object.sensor.lon.toFixed(2)
                     });
+                }
+            },
+            onClick: ({object}) => {
+                if (object && analysisState.isPolarPlotEnabled()) {
+                    // Select this sensor for polar view
+                    analysisState.setPolarViewSensor(object.sensor.id);
+                    logger.log(`Sensor ${object.sensor.name} selected for polar view`, logger.CATEGORY.SENSOR);
+                    // Trigger map update to reflect the selection
+                    updateDeckOverlay();
                 }
             }
         }),

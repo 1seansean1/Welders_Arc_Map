@@ -2908,6 +2908,131 @@ const LIST_HYPOTHESES = {
     }
 };
 
+
+// ============================================
+// POLAR PLOT TESTS
+// ============================================
+
+const POLAR_HYPOTHESES = {
+    'H-POLAR-1': {
+        id: 'H-POLAR-1',
+        name: 'Polar Plot Checkbox Toggle',
+        category: 'polar',
+        hypothesis: 'Polar plot checkbox toggles container visibility',
+        symptom: 'Polar plot does not appear when checkbox is checked',
+        prediction: 'Checkbox checked → container visible, unchecked → container hidden',
+        nullPrediction: 'Container visibility would not change with checkbox',
+        threshold: { visibilityToggled: true },
+        causalChain: [
+            'SYMPTOM: Polar plot not showing',
+            'PROXIMATE: Container display property not changing',
+            'ROOT: Checkbox event handler not connected',
+            'MECHANISM: analysisState not updating',
+            'FIX: Verify bootstrap.js initializePolarPlot() called'
+        ],
+        testFn: async () => {
+            const checkbox = document.getElementById('analysis-polar-plot');
+            const container = document.getElementById('polar-plot-container');
+            if (!checkbox || !container) return { passed: false, error: 'Elements not found' };
+            const initialChecked = checkbox.checked;
+            const initialVisible = container.style.display !== 'none';
+            checkbox.checked = !initialChecked;
+            checkbox.dispatchEvent(new Event('change'));
+            await new Promise(r => setTimeout(r, 50));
+            const afterVisible = container.style.display !== 'none';
+            checkbox.checked = initialChecked;
+            checkbox.dispatchEvent(new Event('change'));
+            return { passed: afterVisible !== initialVisible, details: { initialChecked, initialVisible, afterVisible } };
+        }
+    },
+    'H-POLAR-2': {
+        id: 'H-POLAR-2',
+        name: 'Analysis State Toggle',
+        category: 'polar',
+        hypothesis: 'analysisState correctly tracks polar plot enabled state',
+        symptom: 'State not updating when polar plot toggled',
+        prediction: 'setPolarPlotEnabled() updates isPolarPlotEnabled()',
+        nullPrediction: 'State would remain unchanged',
+        threshold: { stateUpdated: true },
+        causalChain: [
+            'SYMPTOM: Polar plot state incorrect',
+            'PROXIMATE: analysisState._state not updated',
+            'ROOT: setPolarPlotEnabled() not called',
+            'MECHANISM: Event handler missing',
+            'FIX: Verify checkbox change handler calls state'
+        ],
+        testFn: async () => {
+            const analysisState = window.analysisState;
+            if (!analysisState) return { passed: false, error: 'analysisState not available' };
+            const initial = analysisState.isPolarPlotEnabled();
+            analysisState.setPolarPlotEnabled(!initial);
+            const toggled = analysisState.isPolarPlotEnabled();
+            analysisState.setPolarPlotEnabled(initial);
+            return { passed: toggled !== initial, details: { initial, toggled } };
+        }
+    },
+    'H-POLAR-3': {
+        id: 'H-POLAR-3',
+        name: 'Polar View Sensor Selection',
+        category: 'polar',
+        hypothesis: 'Sensor selection for polar view updates state correctly',
+        symptom: 'Clicking sensor does not select it for polar view',
+        prediction: 'setPolarViewSensor() updates getPolarViewSensorId()',
+        nullPrediction: 'Sensor ID would remain null',
+        threshold: { sensorSelected: true },
+        causalChain: [
+            'SYMPTOM: Sensor not selected for polar view',
+            'PROXIMATE: polarViewSensorId not set',
+            'ROOT: setPolarViewSensor() not called on click',
+            'MECHANISM: onClick handler missing in deckgl.js',
+            'FIX: Add onClick to sensor ScatterplotLayer'
+        ],
+        testFn: async () => {
+            const analysisState = window.analysisState;
+            const sensorState = window.sensorState;
+            if (!analysisState || !sensorState) return { passed: false, error: 'State not available' };
+            const sensors = sensorState.getAllSensors();
+            if (!sensors.length) return { passed: false, error: 'No sensors' };
+            const testId = sensors[0].id;
+            analysisState.setPolarViewSensor(testId);
+            const afterSet = analysisState.getPolarViewSensorId();
+            analysisState.clearPolarViewSensor();
+            const afterClear = analysisState.getPolarViewSensorId();
+            return { passed: afterSet === testId && afterClear === null, details: { testId, afterSet, afterClear } };
+        }
+    },
+    'H-POLAR-4': {
+        id: 'H-POLAR-4',
+        name: 'Canvas Rendering',
+        category: 'polar',
+        hypothesis: 'Polar plot canvas renders grid when enabled',
+        symptom: 'Canvas is blank when polar plot enabled',
+        prediction: 'Canvas contains non-transparent pixels after render',
+        nullPrediction: 'Canvas would remain blank',
+        threshold: { hasContent: true },
+        causalChain: [
+            'SYMPTOM: Blank polar plot canvas',
+            'PROXIMATE: ctx.fillRect/stroke not called',
+            'ROOT: render() not executing',
+            'MECHANISM: Canvas context not initialized',
+            'FIX: Verify polarPlot.initialize() and render() called'
+        ],
+        testFn: async () => {
+            const canvas = document.getElementById('polar-plot-canvas');
+            const checkbox = document.getElementById('analysis-polar-plot');
+            if (!canvas || !checkbox) return { passed: false, error: 'Elements not found' };
+            const wasEnabled = checkbox.checked;
+            if (!wasEnabled) { checkbox.checked = true; checkbox.dispatchEvent(new Event('change')); await new Promise(r => setTimeout(r, 100)); }
+            const ctx = canvas.getContext('2d');
+            const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+            let count = 0;
+            for (let i = 3; i < data.length; i += 4) if (data[i] > 0) count++;
+            if (!wasEnabled) { checkbox.checked = false; checkbox.dispatchEvent(new Event('change')); }
+            return { passed: count > 100, details: { width: canvas.width, height: canvas.height, pixels: count } };
+        }
+    }
+};
+
 // ============================================
 // COMBINED REGISTRY
 // ============================================
@@ -2920,7 +3045,8 @@ export const TEST_REGISTRY = {
     ...VALIDATION_HYPOTHESES,
     ...SATELLITE_HYPOTHESES,
     ...TIME_HYPOTHESES,
-    ...LIST_HYPOTHESES
+    ...LIST_HYPOTHESES,
+    ...POLAR_HYPOTHESES
 };
 
 /**

@@ -1427,6 +1427,73 @@
         }
 
         /* ============================================
+           POLAR PLOT
+           ============================================ */
+
+        .polar-plot-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-primary);
+        }
+
+        #polar-plot-canvas {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        /* ============================================
+           ANALYSIS PANEL
+           ============================================ */
+
+        .analysis-controls {
+            padding: 8px;
+        }
+
+        .analysis-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+
+        .analysis-table th {
+            padding: 4px 2px;
+            text-align: left;
+            color: var(--text-muted);
+            font-weight: 500;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .analysis-table td {
+            padding: 6px 2px;
+            border-bottom: 1px solid #2a2a2a;
+            color: var(--text-primary);
+        }
+
+        .analysis-table tbody tr:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .analysis-table label {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .analysis-checkbox {
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+        }
+
+        .analysis-table .col-check {
+            width: 30px;
+            text-align: center;
+        }
+
+        /* ============================================
            LOG PANEL (Bottom 20% of pane-bottom-left)
            ============================================ */
 
@@ -2423,7 +2490,31 @@
             </div>
 
             <div id="content-analysis" style="display: none;">
-                <p style="color: var(--text-muted);">Analysis tools coming soon...</p>
+                <!-- Analysis Tools Checkboxes -->
+                <div class="analysis-controls">
+                    <table class="analysis-table">
+                        <thead>
+                            <tr>
+                                <th class="col-check" style="width: 30px;"></th>
+                                <th class="col-name">Analysis Tool</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr data-tool="polar-plot">
+                                <td class="col-check">
+                                    <input type="checkbox" id="analysis-polar-plot" class="analysis-checkbox">
+                                </td>
+                                <td class="col-name">
+                                    <label for="analysis-polar-plot">Polar Plot</label>
+                                </td>
+                            </tr>
+                            <!-- Future analysis tools can be added here -->
+                        </tbody>
+                    </table>
+                    <p class="helper-text" style="margin-top: 8px; font-size: 10px; color: var(--text-muted);">
+                        Check to enable tool, then click a sensor on the map
+                    </p>
+                </div>
             </div>
 
             <div id="content-realtime" style="display: none;">
@@ -2652,9 +2743,16 @@
             </div>
         </div>
 
-        <!-- Top-right: Coming Soon 1 -->
+        <!-- Top-right: Polar Plot -->
         <div id="pane-top-right" class="pane">
-            <div class="coming-soon">Coming Soon 1</div>
+            <!-- Polar Plot Container (hidden by default) -->
+            <div id="polar-plot-container" class="polar-plot-container" style="display: none;">
+                <canvas id="polar-plot-canvas"></canvas>
+            </div>
+            <!-- Placeholder when polar plot not active -->
+            <div id="polar-plot-placeholder" class="coming-soon">
+                Enable Polar Plot in Analysis panel
+            </div>
         </div>
 
         <!-- Bottom-left: Content + Log Panel -->
