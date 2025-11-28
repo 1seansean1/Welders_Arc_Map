@@ -688,15 +688,19 @@ export function showListEditorModal(list = null, onSave) {
                 // Satellite not in state yet - find it in catalog data and add to state
                 const catalogSat = allSatellites.find(s => s.noradId === noradId);
                 if (catalogSat) {
-                    const newSat = satelliteState.addSatellite({
+                    // addSatellite expects tle1/tle2, not tleLine1/tleLine2
+                    const result = satelliteState.addSatellite({
                         name: catalogSat.name,
                         noradId: catalogSat.noradId,
-                        tleLine1: catalogSat.tleLine1,
-                        tleLine2: catalogSat.tleLine2,
+                        tle1: catalogSat.tleLine1,
+                        tle2: catalogSat.tleLine2,
                         watchColor: catalogSat.watchColor || 'grey'
                     });
-                    satId = newSat.id;
-                    noradToSatId.set(noradId, satId);
+                    // addSatellite returns {success, satellite, errors}
+                    if (result.success && result.satellite) {
+                        satId = result.satellite.id;
+                        noradToSatId.set(noradId, satId);
+                    }
                 }
             }
             if (satId !== undefined) {
