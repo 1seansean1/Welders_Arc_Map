@@ -2279,6 +2279,209 @@
             color: var(--text-muted);
             font-size: 10px;
         }
+        /* Catalog Edit Modal (Two-Panel) */
+        .modal-catalog-edit {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            width: 700px;
+            max-width: 95vw;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-catalog-edit-header {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            gap: 12px;
+        }
+
+        .modal-catalog-edit-title-input {
+            flex: 1;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 3px;
+            padding: 6px 10px;
+            color: var(--text-primary);
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .modal-catalog-edit-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 0 4px;
+        }
+
+        .modal-catalog-edit-close:hover {
+            color: var(--text-primary);
+        }
+
+        .modal-catalog-edit-body {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .modal-catalog-edit-left {
+            width: 45%;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .modal-catalog-edit-right {
+            width: 55%;
+            display: flex;
+            flex-direction: column;
+            padding: 12px;
+            overflow-y: auto;
+        }
+
+        .modal-catalog-edit-table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-color);
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .modal-catalog-edit-add-btn {
+            background: var(--accent-blue-grey);
+            border: none;
+            border-radius: 3px;
+            padding: 3px 8px;
+            color: white;
+            font-size: 10px;
+            cursor: pointer;
+        }
+
+        .modal-catalog-edit-table-container {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 350px;
+        }
+
+        .modal-catalog-edit-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+        }
+
+        .modal-catalog-edit-table th {
+            background: var(--bg-tertiary);
+            padding: 6px 8px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+        }
+
+        .modal-catalog-edit-table td {
+            padding: 5px 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-catalog-edit-table tbody tr {
+            cursor: pointer;
+        }
+
+        .modal-catalog-edit-table tbody tr:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .modal-catalog-edit-table tbody tr.selected {
+            background: var(--accent-blue-grey);
+            color: white;
+        }
+
+        .modal-catalog-edit-help {
+            padding: 6px 12px;
+            font-size: 9px;
+            color: var(--text-muted);
+            text-align: center;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .modal-catalog-edit-detail-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+
+        .modal-catalog-edit-detail-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .modal-catalog-edit-lists {
+            max-height: 100px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 3px;
+            background: var(--bg-tertiary);
+        }
+
+        .modal-catalog-edit-list-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 8px;
+            font-size: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-catalog-edit-list-item:last-child {
+            border-bottom: none;
+        }
+
+        .modal-catalog-edit-detail-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .modal-catalog-edit-footer {
+            padding: 10px 16px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .modal-catalog-edit-color-cell {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid var(--border-color);
+        }
+
+        .modal-catalog-edit-color-cell.grey {
+            background: var(--text-muted);
+        }
+
+        .modal-catalog-edit-color-cell.red {
+            background: var(--accent-red);
+        }
+
+        .modal-catalog-edit-color-cell.blue {
+            background: var(--accent-blue-grey);
+        }
+
+
 
 
     </style>
@@ -2984,6 +3187,84 @@ SATELLITE NAME 2
             </form>
         </div>
     </div>
+
+    <!-- Catalog Edit Modal (two-panel satellite editor) -->
+    <div class="modal-overlay" id="catalog-edit-modal-overlay">
+        <div class="modal-catalog-edit">
+            <div class="modal-catalog-edit-header">
+                <input type="text" class="modal-catalog-edit-title-input" id="catalog-edit-name-input" placeholder="Catalog Name">
+                <button type="button" class="modal-catalog-edit-close" id="catalog-edit-close">&times;</button>
+            </div>
+            <div class="modal-catalog-edit-body">
+                <!-- Left Panel: Satellite Table -->
+                <div class="modal-catalog-edit-left">
+                    <div class="modal-catalog-edit-table-header">
+                        <span>Satellites</span>
+                        <button type="button" class="modal-catalog-edit-add-btn" id="catalog-edit-add-sat">+Sat</button>
+                    </div>
+                    <div class="modal-catalog-edit-table-container">
+                        <table class="modal-catalog-edit-table" id="catalog-edit-sat-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 30px;">Color</th>
+                                    <th style="width: 60px;">NORAD</th>
+                                    <th>Name</th>
+                                    <th style="width: 40px;">Lists</th>
+                                </tr>
+                            </thead>
+                            <tbody id="catalog-edit-sat-tbody">
+                                <!-- Populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="modal-catalog-edit-help">
+                        Click row to edit satellite details
+                    </div>
+                </div>
+                <!-- Right Panel: Satellite Detail Editor -->
+                <div class="modal-catalog-edit-right" id="catalog-edit-detail-panel">
+                    <div class="modal-catalog-edit-detail-placeholder">
+                        Select a satellite to view/edit details
+                    </div>
+                    <!-- Detail form (hidden until satellite selected) -->
+                    <form class="modal-catalog-edit-detail-form" id="catalog-edit-detail-form" style="display: none;">
+                        <div class="modal-editor-field">
+                            <label class="modal-editor-label">Satellite Name</label>
+                            <input type="text" class="modal-editor-input" id="catalog-edit-sat-name" placeholder="Satellite Name">
+                        </div>
+                        <div class="modal-editor-field">
+                            <label class="modal-editor-label">TLE Data</label>
+                            <textarea class="modal-editor-input modal-editor-textarea" id="catalog-edit-sat-tle" placeholder="1 XXXXX...
+2 XXXXX..." style="height: 70px; font-family: monospace; font-size: 10px;"></textarea>
+                        </div>
+                        <div class="modal-editor-field">
+                            <label class="modal-editor-label">Display Color</label>
+                            <div class="modal-color-picker" id="catalog-edit-color-picker">
+                                <button type="button" class="modal-color-btn modal-color-grey" data-color="grey"></button>
+                                <button type="button" class="modal-color-btn modal-color-red" data-color="red"></button>
+                                <button type="button" class="modal-color-btn modal-color-blue" data-color="blue"></button>
+                            </div>
+                        </div>
+                        <div class="modal-editor-field">
+                            <label class="modal-editor-label">Watch Lists</label>
+                            <div class="modal-catalog-edit-lists" id="catalog-edit-lists-container">
+                                <!-- Populated by JavaScript -->
+                            </div>
+                        </div>
+                        <div class="modal-catalog-edit-detail-buttons">
+                            <button type="button" class="modal-editor-btn modal-editor-btn-delete" id="catalog-edit-delete-sat">Delete</button>
+                            <button type="button" class="modal-editor-btn modal-editor-btn-cancel" id="catalog-edit-cancel-sat">Cancel</button>
+                            <button type="submit" class="modal-editor-btn modal-editor-btn-save" id="catalog-edit-save-sat">Save</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="modal-catalog-edit-footer">
+                <button type="button" class="modal-editor-btn modal-editor-btn-cancel" id="catalog-edit-close-btn">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Login Modal -->
     <div class="modal-overlay" id="login-modal-overlay">
         <div class="modal-editor" style="width: 280px;">

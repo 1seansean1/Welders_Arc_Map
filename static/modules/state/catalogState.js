@@ -315,6 +315,83 @@ class CatalogState {
     isCelestrakLoaded() {
         return this._state.celestrakLoaded || this._state.catalogs.some(c => c.name === 'Celestrak');
     }
+
+    /**
+     * Rename a catalog
+     * @param {number} catalogId - Catalog ID
+     * @param {string} newName - New catalog name
+     * @returns {boolean} True if renamed
+     */
+    renameCatalog(catalogId, newName) {
+        const catalog = this._state.catalogs.find(c => c.id === catalogId);
+        if (!catalog) return false;
+
+        const trimmedName = (newName || '').trim();
+        if (!trimmedName) return false;
+
+        catalog.name = trimmedName;
+        this._saveToStorage();
+
+        logger.success('Operation completed', logger.CATEGORY.DATA);
+        eventBus.emit('catalog:updated', { id: catalogId, name: trimmedName });
+
+        return true;
+    }
+
+    /**
+     * Update a satellite within a catalog
+     */
+    updateCatalogSatellite(catalogId, satelliteIndex, updates) {
+        const catalog = this._state.catalogs.find(c => c.id === catalogId);
+        if (!catalog) return false;
+        if (satelliteIndex < 0 || satelliteIndex >= catalog.satellites.length) return false;
+
+        const satellite = catalog.satellites[satelliteIndex];
+        if (updates.name !== undefined) satellite.name = updates.name;
+        if (updates.noradId !== undefined) satellite.noradId = updates.noradId;
+        if (updates.tleLine1 !== undefined) satellite.tleLine1 = updates.tleLine1;
+        if (updates.tleLine2 !== undefined) satellite.tleLine2 = updates.tleLine2;
+
+        this._saveToStorage();
+        logger.success('Operation completed', logger.CATEGORY.DATA);
+        eventBus.emit('catalog:updated', { id: catalogId });
+        return true;
+    }
+
+    /**
+     * Delete a satellite from a catalog
+     */
+    deleteCatalogSatellite(catalogId, satelliteIndex) {
+        const catalog = this._state.catalogs.find(c => c.id === catalogId);
+        if (!catalog) return false;
+        if (satelliteIndex < 0 || satelliteIndex >= catalog.satellites.length) return false;
+
+        const satellite = catalog.satellites[satelliteIndex];
+        catalog.satellites.splice(satelliteIndex, 1);
+        this._saveToStorage();
+        logger.success('Operation completed', logger.CATEGORY.DATA);
+        eventBus.emit('catalog:updated', { id: catalogId });
+        return true;
+    }
+
+    /**
+     * Add a satellite to a catalog
+     */
+    addSatelliteToCatalog(catalogId, satellite) {
+        const catalog = this._state.catalogs.find(c => c.id === catalogId);
+        if (!catalog) return false;
+
+        catalog.satellites.push({
+            name: satellite.name,
+            noradId: satellite.noradId,
+            tleLine1: satellite.tleLine1,
+            tleLine2: satellite.tleLine2
+        });
+        this._saveToStorage();
+        logger.success('Operation completed', logger.CATEGORY.DATA);
+        eventBus.emit('catalog:updated', { id: catalogId });
+        return true;
+    }
 }
 
 // Export singleton instance

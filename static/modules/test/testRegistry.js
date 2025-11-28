@@ -3353,7 +3353,204 @@ const CATALOG_HYPOTHESES = {
                 details: { wasVisibleBefore: wasVisible, isVisibleAfterClick: isVisible }
             };
         }
+    },
+    'H-CAT-5': {
+        id: 'H-CAT-5',
+        name: 'Catalog Edit Modal Opens on Double-Click',
+        category: 'catalog',
+        hypothesis: 'If user double-clicks a catalog row, the catalog edit modal should open',
+        symptom: 'Double-clicking catalog row does nothing',
+        prediction: 'Modal overlay becomes visible after double-click',
+        nullPrediction: 'Modal would remain hidden',
+        threshold: { modalVisible: true },
+        causalChain: [
+            'SYMPTOM: Double-click on catalog row does not open edit modal',
+            'PROXIMATE: dblclick handler not bound or showCatalogEditModal not called',
+            'ROOT: Event listener missing or function import failed',
+            'MECHANISM: catalogTable.js binds dblclick to call showCatalogEditModal',
+            'FIX: Verify dblclick handler in createCatalogRow and import in catalogTable.js'
+        ],
+        testFn: async () => {
+            const catalogState = window.catalogState;
+            if (!catalogState) return { passed: false, error: 'catalogState not found' };
+
+            const catalogs = catalogState.getAllCatalogs();
+            if (catalogs.length === 0) {
+                return { passed: true, details: { message: 'No catalogs to test', skipped: true } };
+            }
+
+            const overlay = document.getElementById('catalog-edit-modal-overlay');
+            if (!overlay) return { passed: false, error: 'catalog-edit-modal-overlay not found' };
+
+            const firstRow = document.querySelector('#catalog-table tbody tr');
+            if (!firstRow) return { passed: false, error: 'No catalog rows found' };
+
+            const wasVisible = overlay.classList.contains('visible');
+
+            // Simulate double-click
+            const dblClickEvent = new MouseEvent('dblclick', { bubbles: true, cancelable: true });
+            firstRow.dispatchEvent(dblClickEvent);
+            await new Promise(r => setTimeout(r, 100));
+
+            const isVisible = overlay.classList.contains('visible');
+
+            // Close modal if opened
+            const closeBtn = document.getElementById('catalog-edit-modal-close');
+            if (closeBtn && isVisible) closeBtn.click();
+
+            return {
+                passed: isVisible,
+                details: { wasVisibleBefore: wasVisible, isVisibleAfterDblClick: isVisible }
+            };
+        }
+    },
+    'H-CAT-6': {
+        id: 'H-CAT-6',
+        name: 'Catalog Edit Modal Shows Satellite List',
+        category: 'catalog',
+        hypothesis: 'If catalog edit modal opens, the satellite table should show satellites from that catalog',
+        symptom: 'Satellite table in edit modal is empty',
+        prediction: 'Table row count matches catalog satellite count',
+        nullPrediction: 'Table would always be empty',
+        threshold: { rowMismatch: 0 },
+        causalChain: [
+            'SYMPTOM: No satellites shown in edit modal',
+            'PROXIMATE: renderSatTable not called or catalog not found',
+            'ROOT: catalogId not passed correctly to showCatalogEditModal',
+            'MECHANISM: Modal renders satellites from catalogState.getCatalogById',
+            'FIX: Verify catalogId passing and renderSatTable function'
+        ],
+        testFn: async () => {
+            const catalogState = window.catalogState;
+            if (!catalogState) return { passed: false, error: 'catalogState not found' };
+
+            const catalogs = catalogState.getAllCatalogs();
+            const catalogWithSats = catalogs.find(c => c.satellites.length > 0);
+            if (!catalogWithSats) {
+                return { passed: true, details: { message: 'No catalogs with satellites to test', skipped: true } };
+            }
+
+            const overlay = document.getElementById('catalog-edit-modal-overlay');
+            if (!overlay) return { passed: false, error: 'catalog-edit-modal-overlay not found' };
+
+            // Find and double-click the row for this catalog
+            const rows = document.querySelectorAll('#catalog-table tbody tr');
+            let targetRow = null;
+            rows.forEach(row => {
+                if (parseInt(row.dataset.catalogId) === catalogWithSats.id) {
+                    targetRow = row;
+                }
+            });
+
+            if (!targetRow) return { passed: false, error: 'Could not find row for catalog with satellites' };
+
+            // Open modal
+            const dblClickEvent = new MouseEvent('dblclick', { bubbles: true, cancelable: true });
+            targetRow.dispatchEvent(dblClickEvent);
+            await new Promise(r => setTimeout(r, 150));
+
+            // Count rows in modal satellite table
+            const modalTbody = document.getElementById('catalog-edit-sat-tbody');
+            const modalRows = modalTbody ? modalTbody.querySelectorAll('tr').length : 0;
+            const expectedCount = catalogWithSats.satellites.length;
+
+            // Close modal
+            const closeBtn = document.getElementById('catalog-edit-modal-close');
+            if (closeBtn) closeBtn.click();
+
+            return {
+                passed: modalRows === expectedCount,
+                details: { catalogName: catalogWithSats.name, expectedSatellites: expectedCount, modalRows }
+            };
+        }
+    },
+    'H-CAT-7': {
+        id: 'H-CAT-7',
+        name: 'Catalog Rename Works',
+        category: 'catalog',
+        hypothesis: 'If catalogState.renameCatalog is called, the catalog name should update',
+        symptom: 'Catalog rename has no effect',
+        prediction: 'Catalog name changes in state after rename',
+        nullPrediction: 'Name would remain unchanged',
+        threshold: { nameUpdated: true },
+        causalChain: [
+            'SYMPTOM: Rename does not update catalog',
+            'PROXIMATE: renameCatalog method not updating state',
+            'ROOT: Method not saving to storage or emitting event',
+            'MECHANISM: catalogState.renameCatalog updates name and saves',
+            'FIX: Verify renameCatalog implementation in catalogState.js'
+        ],
+        testFn: async () => {
+            const catalogState = window.catalogState;
+            if (!catalogState) return { passed: false, error: 'catalogState not found' };
+
+            // Create a test catalog
+            const testName = 'Test Catalog ' + Date.now();
+            const created = catalogState.createCatalog(testName, []);
+
+            // Rename it
+            const newName = 'Renamed ' + Date.now();
+            const renamed = catalogState.renameCatalog(created.id, newName);
+
+            // Check the name changed
+            const updated = catalogState.getCatalogById(created.id);
+            const nameChanged = updated && updated.name === newName;
+
+            // Clean up - delete the test catalog
+            catalogState.deleteCatalog(created.id);
+
+            return {
+                passed: renamed && nameChanged,
+                details: { originalName: testName, newName, renamed, actualName: updated ? updated.name : null }
+            };
+        }
+    },
+    'H-CAT-8': {
+        id: 'H-CAT-8',
+        name: 'Catalog Update Satellite Works',
+        category: 'catalog',
+        hypothesis: 'If catalogState.updateCatalogSatellite is called, the satellite data should update',
+        symptom: 'Satellite updates have no effect',
+        prediction: 'Satellite data changes in catalog after update',
+        nullPrediction: 'Data would remain unchanged',
+        threshold: { satelliteUpdated: true },
+        causalChain: [
+            'SYMPTOM: Satellite edits not saved',
+            'PROXIMATE: updateCatalogSatellite not updating state',
+            'ROOT: Method not finding satellite or not saving',
+            'MECHANISM: catalogState.updateCatalogSatellite modifies satellite in place',
+            'FIX: Verify updateCatalogSatellite implementation'
+        ],
+        testFn: async () => {
+            const catalogState = window.catalogState;
+            if (!catalogState) return { passed: false, error: 'catalogState not found' };
+
+            // Create a test catalog with a satellite
+            const testCatalog = catalogState.createCatalog('Update Test ' + Date.now(), [{
+                name: 'Original Sat',
+                noradId: 99999,
+                tleLine1: '1 99999U 24001A   24001.00000000  .00000000  00000-0  00000-0 0  9999',
+                tleLine2: '2 99999  51.6400   0.0000 0000000   0.0000   0.0000 15.54000000    00'
+            }]);
+
+            // Update the satellite
+            const newName = 'Updated Sat';
+            const updated = catalogState.updateCatalogSatellite(testCatalog.id, 0, { name: newName });
+
+            // Check the update worked
+            const catalog = catalogState.getCatalogById(testCatalog.id);
+            const satNameChanged = catalog && catalog.satellites[0] && catalog.satellites[0].name === newName;
+
+            // Clean up
+            catalogState.deleteCatalog(testCatalog.id);
+
+            return {
+                passed: updated && satNameChanged,
+                details: { originalName: 'Original Sat', newName, updated, actualName: catalog?.satellites[0]?.name }
+            };
+        }
     }
+
 };
 
 // ============================================

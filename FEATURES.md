@@ -1,8 +1,8 @@
 # WA_map Feature Registry
 
 > **Document Type**: FEATURES
-> **Version**: 3.8
-> **Last Updated**: 2025-11-27
+> **Version**: 3.9
+> **Last Updated**: 2025-11-28
 > **Maintainer**: AI Governor System
 
 ---
@@ -112,6 +112,7 @@
 | CAT-002 | Catalog Table UI | P1 | M | DONE | CAT-001 |
 | CAT-003 | Celestrak Auto-Fetch | P1 | S | DONE | CAT-001 |
 | CAT-004 | TLE Batch Import Modal | P1 | M | DONE | CAT-001, UI-005 |
+| CAT-005 | Catalog Edit Modal | P1 | M | DONE | CAT-001, UI-005, LIST-001 |
 
 ### Sensor Management (SEN)
 
@@ -330,7 +331,7 @@
 |----------|-------|------|-----|------|------|
 | MAP | 15 | 15 | 0 | 0 | 0 |
 | SAT | 23 | 21 | 0 | 1 | 1 |
-| CAT | 4 | 4 | 0 | 0 | 0 |
+| CAT | 5 | 5 | 0 | 0 | 0 |
 | SEN | 9 | 8 | 0 | 0 | 1 |
 | TIME | 34 | 34 | 0 | 0 | 0 |
 | UI | 21 | 20 | 0 | 1 | 0 |
@@ -340,11 +341,11 @@
 | ARCH | 5 | 5 | 0 | 0 | 0 |
 | LIST | 6 | 6 | 0 | 0 | 0 |
 | ANALYSIS | 11 | 11 | 0 | 0 | 0 |
-| **TOTAL** | **162** | **148** | **0** | **7** | **6** |
+| **TOTAL** | **163** | **149** | **0** | **7** | **6** |
 
 *Note: MAP-013 REMOVED (superseded by MAP-012+MAP-016), MAP-016 added - net zero change*
 
-**Completion Rate**: 91% (148/162 features complete)
+**Completion Rate**: 91% (149/163 features complete)
 
 ---
 
@@ -352,6 +353,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 3.9 | 2025-11-28 | CAT-005 DONE: Catalog Edit Modal - double-click catalog row opens two-panel modal (satellite list + detail editor), edit satellite name/TLE/color, manage watch list memberships, rename catalog; H-CAT-5/6/7/8 tests added |
 | 3.8 | 2025-11-28 | CAT-001 to CAT-004 DONE: Catalog Management - renamed Satellites panel to Catalogs, catalog state module, catalog table UI with checkbox/name/count columns, Celestrak auto-fetch on startup, +Cat modal with TLE batch import, H-CAT-1/2/3/4 tests added |
 | 3.7 | 2025-11-28 | ANALYSIS-006 to ANALYSIS-011 DONE: Enhanced polar plot with sky tracks (head/tail minutes), track color coding (grey/red/blue/orange), direction chevrons, click-to-select integration, selection highlight ring, enhanced grid labels; H-POLAR-5/6/7 tests added |
 | 3.6 | 2025-11-27 | ANALYSIS-001 to ANALYSIS-005, UI-007 DONE: Polar Plot feature - Analysis panel checkbox, canvas polar plot (az/el sky view), sensor selection for polar view, H-POLAR-1/2/3/4 tests |

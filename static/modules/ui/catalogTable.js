@@ -16,7 +16,7 @@
 import catalogState from '../state/catalogState.js';
 import logger from '../utils/logger.js';
 import eventBus from '../events/eventBus.js';
-import { showCatalogAddModal } from './modals.js';
+import { showCatalogAddModal, showCatalogEditModal } from './modals.js';
 
 let updateMapCallback = null;
 
@@ -70,6 +70,15 @@ function createCatalogRow(catalog, index) {
         catalogState.setActiveRow(catalog.id);
 
         logger.diagnostic('Catalog row selected', logger.CATEGORY.DATA, { name: catalog.name, id: catalog.id });
+    });
+
+    // Double-click handler - open edit modal
+    tr.addEventListener('dblclick', (e) => {
+        if (e.target.type === 'checkbox') return;
+        showCatalogEditModal(catalog.id, () => {
+            renderCatalogTable();
+            if (updateMapCallback) updateMapCallback();
+        });
     });
 
     // Checkbox column (for catalog visibility)
@@ -128,6 +137,10 @@ export function initializeCatalogTable(options = {}) {
         if (updateMapCallback) updateMapCallback();
     });
     eventBus.on('catalog:visibility:changed', () => {
+        if (updateMapCallback) updateMapCallback();
+    });
+    eventBus.on('catalog:updated', () => {
+        renderCatalogTable();
         if (updateMapCallback) updateMapCallback();
     });
 
