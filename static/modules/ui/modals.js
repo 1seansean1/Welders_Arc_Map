@@ -610,7 +610,8 @@ export function showListEditorModal(list = null, onSave) {
                 if (!checked && virtualScroller.showSelectedOnly) {
                     virtualScroller.refilter();
                 }
-            }
+            },
+            onSortChange: updateListHeaderIndicators
         });
 
         virtualScroller.setData(allSatellites);
@@ -621,6 +622,61 @@ export function showListEditorModal(list = null, onSave) {
             if (selectedOnlyCheckbox) selectedOnlyCheckbox.checked = true;
         }
         updateCount();
+    }
+
+    // ========================================
+    // COLUMN HEADER CLICK HANDLERS
+    // ========================================
+    const listHeaderSel = document.getElementById('list-editor-header-sel');
+    const listHeaderNorad = document.getElementById('list-editor-header-norad');
+    const listHeaderName = document.getElementById('list-editor-header-name');
+    const listHeaderCatalog = document.getElementById('list-editor-header-catalog');
+
+    function updateListHeaderIndicators(sortColumn, sortDirection) {
+        if (listHeaderNorad) {
+            listHeaderNorad.textContent = 'NORAD' + (sortColumn === 'norad' ? (sortDirection === 'asc' ? ' ▲' : ' ▼') : '');
+            listHeaderNorad.classList.toggle('sorted', sortColumn === 'norad');
+        }
+        if (listHeaderName) {
+            listHeaderName.textContent = 'Name' + (sortColumn === 'name' ? (sortDirection === 'asc' ? ' ▲' : ' ▼') : '');
+            listHeaderName.classList.toggle('sorted', sortColumn === 'name');
+        }
+        if (listHeaderCatalog) {
+            listHeaderCatalog.textContent = 'Catalog' + (sortColumn === 'catalog' ? (sortDirection === 'asc' ? ' ▲' : ' ▼') : '');
+            listHeaderCatalog.classList.toggle('sorted', sortColumn === 'catalog');
+        }
+    }
+
+    // Select all/none header click
+    if (listHeaderSel) {
+        listHeaderSel.addEventListener('click', () => {
+            if (virtualScroller) {
+                virtualScroller.toggleSelectAll();
+                updateCount();
+            }
+        });
+    }
+
+    // Sort header clicks
+    if (listHeaderNorad) {
+        listHeaderNorad.addEventListener('click', () => {
+            if (virtualScroller) virtualScroller.sort('norad');
+            updateCount();
+        });
+    }
+
+    if (listHeaderName) {
+        listHeaderName.addEventListener('click', () => {
+            if (virtualScroller) virtualScroller.sort('name');
+            updateCount();
+        });
+    }
+
+    if (listHeaderCatalog) {
+        listHeaderCatalog.addEventListener('click', () => {
+            if (virtualScroller) virtualScroller.sort('catalog');
+            updateCount();
+        });
     }
 
     // ========================================
@@ -946,10 +1002,43 @@ export function showCatalogEditModal(catalogId, onUpdate) {
                 selectedSatIndex = originalIndex;
                 renderDetailPanel(sat, originalIndex);
             },
-            getListCount: getListCount
+            getListCount: getListCount,
+            onSortChange: updateHeaderIndicators
         });
 
         virtualScroller.setData(satellites);
+    }
+
+    // ========================================
+    // COLUMN HEADER CLICK HANDLERS
+    // ========================================
+    const headerNorad = document.getElementById('catalog-edit-header-norad');
+    const headerName = document.getElementById('catalog-edit-header-name');
+
+    function updateHeaderIndicators(sortColumn, sortDirection) {
+        // Reset all headers
+        if (headerNorad) {
+            headerNorad.textContent = 'NORAD' + (sortColumn === 'norad' ? (sortDirection === 'asc' ? ' ▲' : ' ▼') : '');
+            headerNorad.classList.toggle('sorted', sortColumn === 'norad');
+        }
+        if (headerName) {
+            headerName.textContent = 'Name' + (sortColumn === 'name' ? (sortDirection === 'asc' ? ' ▲' : ' ▼') : '');
+            headerName.classList.toggle('sorted', sortColumn === 'name');
+        }
+    }
+
+    if (headerNorad) {
+        headerNorad.addEventListener('click', () => {
+            if (virtualScroller) virtualScroller.sort('norad');
+            updateSatCount();
+        });
+    }
+
+    if (headerName) {
+        headerName.addEventListener('click', () => {
+            if (virtualScroller) virtualScroller.sort('name');
+            updateSatCount();
+        });
     }
 
     // Update satellite count display

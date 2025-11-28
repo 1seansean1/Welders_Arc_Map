@@ -240,6 +240,7 @@ export class VirtualScroller {
 /**
  * Specialized virtual scroller for catalog satellite tables
  * Includes color dot, NORAD ID, name, and list count columns
+ * Supports column sorting (3-click cycle: default → asc → desc → default)
  */
 export class CatalogVirtualScroller extends VirtualScroller {
     constructor(container, options) {
@@ -250,6 +251,107 @@ export class CatalogVirtualScroller extends VirtualScroller {
         });
 
         this.getListCount = options.getListCount || (() => 0);
+        this.sortColumn = null;  // 'norad' | 'name' | null
+        this.sortDirection = null;  // 'asc' | 'desc' | null
+        this.onSortChange = options.onSortChange || null;
+    }
+
+    /**
+     * Sort by column with 3-click cycle: default → asc → desc → default
+     * @param {string} column - Column to sort by ('norad' or 'name')
+     */
+    sort(column) {
+        if (this.sortColumn === column) {
+            // Same column - cycle through directions
+            if (this.sortDirection === 'asc') {
+                this.sortDirection = 'desc';
+            } else if (this.sortDirection === 'desc') {
+                this.sortColumn = null;
+                this.sortDirection = null;
+            }
+        } else {
+            // New column - start with ascending
+            this.sortColumn = column;
+            this.sortDirection = 'asc';
+        }
+
+        this.applySort();
+        if (this.onSortChange) {
+            this.onSortChange(this.sortColumn, this.sortDirection);
+        }
+    }
+
+    applySort() {
+        if (!this.sortColumn || !this.sortDirection) {
+            // No sort - use original data order
+            this.filteredData = [...this.data];
+        } else {
+            this.filteredData = [...this.data].sort((a, b) => {
+                let valA, valB;
+                if (this.sortColumn === 'norad') {
+                    valA = a.noradId;
+                    valB = b.noradId;
+                } else if (this.sortColumn === 'name') {
+                    valA = (a.name || '').toLowerCase();
+                    valB = (b.name || '').toLowerCase();
+                }
+
+                let cmp = 0;
+                if (typeof valA === 'string') {
+                    cmp = valA.localeCompare(valB);
+                } else {
+                    cmp = valA - valB;
+                }
+
+                return this.sortDirection === 'asc' ? cmp : -cmp;
+            });
+        }
+
+        this.clearAllRows();
+        this.updateRunwayHeight();
+        this.container.scrollTop = 0;
+        this.render();
+    }
+
+    getSortState() {
+        return { column: this.sortColumn, direction: this.sortDirection };
+    }
+
+    // Override filter to maintain sort
+    filter(query) {
+        if (!query || query.trim() === '') {
+            this.filteredData = [...this.data];
+        } else {
+            const term = query.toLowerCase();
+            this.filteredData = this.data.filter(item => {
+                if (item.name && item.name.toLowerCase().includes(term)) return true;
+                if (item.noradId && String(item.noradId).includes(term)) return true;
+                return false;
+            });
+        }
+
+        // Re-apply sort to filtered data
+        if (this.sortColumn && this.sortDirection) {
+            this.filteredData.sort((a, b) => {
+                let valA, valB;
+                if (this.sortColumn === 'norad') {
+                    valA = a.noradId;
+                    valB = b.noradId;
+                } else if (this.sortColumn === 'name') {
+                    valA = (a.name || '').toLowerCase();
+                    valB = (b.name || '').toLowerCase();
+                }
+
+                let cmp = typeof valA === 'string' ? valA.localeCompare(valB) : valA - valB;
+                return this.sortDirection === 'asc' ? cmp : -cmp;
+            });
+        }
+
+        this.selectedIndex = null;
+        this.clearAllRows();
+        this.updateRunwayHeight();
+        this.container.scrollTop = 0;
+        this.render();
     }
 
     createRow(sat, index) {
@@ -303,6 +405,7 @@ export class CatalogVirtualScroller extends VirtualScroller {
  * Specialized virtual scroller for list satellite picker
  * Includes checkbox, NORAD ID, name, and catalog source columns
  * Supports checking/unchecking satellites for list membership
+ * Supports column sorting (3-click cycle) and select all/none
  */
 export class ListPickerVirtualScroller extends VirtualScroller {
     constructor(container, options) {
@@ -315,21 +418,81 @@ export class ListPickerVirtualScroller extends VirtualScroller {
         this.onCheckChange = options.onCheckChange || null;
         this.showSelectedOnly = false;
         this.searchQuery = '';
+        this.sortColumn = null;  // 'norad' | 'name' | 'catalog' | null
+        this.sortDirection = null;  // 'asc' | 'desc' | null
+        this.onSortChange = options.onSortChange || null;
     }
 
-    // Filter with search query and selected-only mode
-    filter(query, selectedOnly = this.showSelectedOnly) {
-        this.searchQuery = query || '';
-        this.showSelectedOnly = selectedOnly;
+    /**
+     * Sort by column with 3-click cycle: default → asc → desc → default
+     * @param {string} column - Column to sort by ('norad', 'name', or 'catalog')
+     */
+    sort(column) {
+        if (this.sortColumn === column) {
+            if (this.sortDirection === 'asc') {
+                this.sortDirection = 'desc';
+            } else if (this.sortDirection === 'desc') {
+                this.sortColumn = null;
+                this.sortDirection = null;
+            }
+        } else {
+            this.sortColumn = column;
+            this.sortDirection = 'asc';
+        }
 
+        this.applyFilterAndSort();
+        if (this.onSortChange) {
+            this.onSortChange(this.sortColumn, this.sortDirection);
+        }
+    }
+
+    getSortState() {
+        return { column: this.sortColumn, direction: this.sortDirection };
+    }
+
+    /**
+     * Toggle select all/none for visible (filtered) items
+     * If all visible are checked → uncheck all visible
+     * Otherwise → check all visible
+     */
+    toggleSelectAll() {
+        const visibleIds = this.filteredData.map(item => item.noradId);
+        const allChecked = visibleIds.every(id => this.checkedNoradIds.has(id));
+
+        if (allChecked) {
+            // Deselect all visible
+            visibleIds.forEach(id => this.checkedNoradIds.delete(id));
+        } else {
+            // Select all visible
+            visibleIds.forEach(id => this.checkedNoradIds.add(id));
+        }
+
+        // Re-render to update checkboxes
+        this.clearAllRows();
+        this.render();
+
+        if (this.onCheckChange) {
+            this.onCheckChange(null, !allChecked, null);  // null indicates bulk change
+        }
+    }
+
+    /**
+     * Check if all visible items are selected
+     */
+    areAllVisibleSelected() {
+        if (this.filteredData.length === 0) return false;
+        return this.filteredData.every(item => this.checkedNoradIds.has(item.noradId));
+    }
+
+    applyFilterAndSort() {
         let filtered = this.data;
 
-        // Apply selected-only filter first
+        // Apply selected-only filter
         if (this.showSelectedOnly) {
             filtered = filtered.filter(item => this.checkedNoradIds.has(item.noradId));
         }
 
-        // Then apply search query
+        // Apply search query
         if (this.searchQuery.trim() !== '') {
             const term = this.searchQuery.toLowerCase();
             filtered = filtered.filter(item => {
@@ -340,12 +503,39 @@ export class ListPickerVirtualScroller extends VirtualScroller {
             });
         }
 
+        // Apply sort
+        if (this.sortColumn && this.sortDirection) {
+            filtered = [...filtered].sort((a, b) => {
+                let valA, valB;
+                if (this.sortColumn === 'norad') {
+                    valA = a.noradId;
+                    valB = b.noradId;
+                } else if (this.sortColumn === 'name') {
+                    valA = (a.name || '').toLowerCase();
+                    valB = (b.name || '').toLowerCase();
+                } else if (this.sortColumn === 'catalog') {
+                    valA = (a.catalogName || '').toLowerCase();
+                    valB = (b.catalogName || '').toLowerCase();
+                }
+
+                let cmp = typeof valA === 'string' ? valA.localeCompare(valB) : valA - valB;
+                return this.sortDirection === 'asc' ? cmp : -cmp;
+            });
+        }
+
         this.filteredData = filtered;
         this.selectedIndex = null;
         this.clearAllRows();
         this.updateRunwayHeight();
         this.container.scrollTop = 0;
         this.render();
+    }
+
+    // Filter with search query and selected-only mode
+    filter(query, selectedOnly = this.showSelectedOnly) {
+        this.searchQuery = query || '';
+        this.showSelectedOnly = selectedOnly;
+        this.applyFilterAndSort();
     }
 
     setSelectedOnly(selectedOnly) {

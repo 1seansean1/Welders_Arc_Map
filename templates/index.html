@@ -2387,6 +2387,16 @@
             top: 0;
         }
 
+        /* Modal table header columns (sortable) */
+        .modal-header-col.sortable:hover {
+            color: var(--text-primary);
+        }
+
+        .modal-header-col.sorted {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
         .modal-catalog-edit-table td {
             padding: 5px 8px;
             border-bottom: 1px solid var(--border-color);
@@ -3168,11 +3178,11 @@
                             <input type="checkbox" id="list-editor-selected-only"> Selected only
                         </label>
                     </div>
-                    <div style="display: flex; font-size: 10px; padding: 4px 0; border-bottom: 1px solid var(--border-color); color: var(--text-muted);">
-                        <div style="width: 30px; text-align: center;">☑</div>
-                        <div style="width: 55px; text-align: center;">NORAD</div>
-                        <div style="flex: 1; padding: 0 6px;">Name</div>
-                        <div style="width: 80px; text-align: right; padding-right: 4px;">Catalog</div>
+                    <div class="modal-table-header" id="list-editor-headers" style="display: flex; font-size: 10px; padding: 4px 0; border-bottom: 1px solid var(--border-color); color: var(--text-muted);">
+                        <div id="list-editor-header-sel" class="modal-header-col sortable" style="width: 30px; text-align: center; cursor: pointer;" title="Click to select/deselect all">Sel</div>
+                        <div id="list-editor-header-norad" class="modal-header-col sortable" style="width: 55px; text-align: center; cursor: pointer;" title="Click to sort">NORAD</div>
+                        <div id="list-editor-header-name" class="modal-header-col sortable" style="flex: 1; padding: 0 6px; cursor: pointer;" title="Click to sort">Name</div>
+                        <div id="list-editor-header-catalog" class="modal-header-col sortable" style="width: 80px; text-align: right; padding-right: 4px; cursor: pointer;" title="Click to sort">Catalog</div>
                     </div>
                     <div class="modal-satellite-picker" id="list-editor-satellite-picker" style="flex: 1; min-height: 0;">
                         <!-- Populated by JavaScript with virtual scrolling -->
@@ -3236,11 +3246,11 @@ SATELLITE NAME 2
                     <div style="padding: 4px 8px;">
                         <input type="text" class="modal-editor-input" id="catalog-edit-search" placeholder="Search by name or NORAD ID..." style="width: 100%; font-size: 11px; padding: 4px 8px;">
                     </div>
-                    <div class="modal-catalog-edit-table-header" style="font-size: 10px; padding: 4px 0; border-bottom: 1px solid var(--border-color); display: flex;">
-                        <div style="width: 30px; text-align: center;">Color</div>
-                        <div style="width: 60px; text-align: center;">NORAD</div>
-                        <div style="flex: 1; padding: 0 8px;">Name</div>
-                        <div style="width: 40px; text-align: center;">Lists</div>
+                    <div class="modal-table-header" id="catalog-edit-headers" style="font-size: 10px; padding: 4px 0; border-bottom: 1px solid var(--border-color); display: flex; color: var(--text-muted);">
+                        <div id="catalog-edit-header-color" class="modal-header-col" style="width: 30px; text-align: center;">Color</div>
+                        <div id="catalog-edit-header-norad" class="modal-header-col sortable" style="width: 60px; text-align: center; cursor: pointer;" title="Click to sort">NORAD</div>
+                        <div id="catalog-edit-header-name" class="modal-header-col sortable" style="flex: 1; padding: 0 8px; cursor: pointer;" title="Click to sort">Name</div>
+                        <div id="catalog-edit-header-lists" class="modal-header-col" style="width: 40px; text-align: center;">Lists</div>
                     </div>
                     <div class="modal-catalog-edit-table-container" id="catalog-edit-table-container" style="flex: 1; min-height: 0; overflow: hidden;">
                         <!-- Virtual scrolling content populated by JavaScript -->
