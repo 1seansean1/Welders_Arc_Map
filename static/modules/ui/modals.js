@@ -633,7 +633,7 @@ export function showLoginModal(onLogin, onSkip) {
         const username = usernameInput.value.trim();
         const password = passwordInput.value;
 
-        if (\!username) {
+        if (!username) {
             errorField.style.display = 'block';
             errorMessage.textContent = 'Username is required';
             usernameInput.focus();
