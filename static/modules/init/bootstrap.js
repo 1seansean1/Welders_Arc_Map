@@ -153,6 +153,9 @@ export function init() {
     // Initialize test panel (in Settings section)
     initTestPanel();
 
+    // Initialize profile login/logout buttons
+    initializeProfileControls();
+
     // On mobile, start with panel collapsed
     if (uiState.isMobile()) {
         togglePanel(false);
@@ -208,6 +211,69 @@ export function setupGlobalExports() {
             }
         }
     };
+}
+
+// ============================================
+// PROFILE CONTROLS
+// ============================================
+
+/**
+ * Initialize profile login/logout controls in Settings panel
+ */
+function initializeProfileControls() {
+    const loginBtn = document.getElementById('profile-login-btn');
+    const logoutBtn = document.getElementById('profile-logout-btn');
+    const displayName = document.getElementById('profile-display-name');
+
+    // Update UI based on profile state
+    function updateProfileUI() {
+        if (profileState.isLoggedIn()) {
+            displayName.textContent = profileState.getDisplayName() || profileState.getUsername();
+            loginBtn.style.display = 'none';
+            logoutBtn.style.display = 'inline-block';
+        } else {
+            displayName.textContent = 'Not logged in';
+            loginBtn.style.display = 'inline-block';
+            logoutBtn.style.display = 'none';
+        }
+    }
+
+    // Login button click
+    if (loginBtn) {
+        loginBtn.addEventListener('click', () => {
+            showLoginModal(
+                async ({ username, password }) => {
+                    const success = await profileState.login(username, password);
+                    if (success) {
+                        updateProfileUI();
+                        logger.success(`Logged in as ${username}`, logger.CATEGORY.PANEL);
+                    }
+                    return success;
+                },
+                () => {
+                    logger.diagnostic('Login skipped', logger.CATEGORY.PANEL);
+                }
+            );
+        });
+    }
+
+    // Logout button click
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
+            await profileState.logout();
+            updateProfileUI();
+        });
+    }
+
+    // Initial UI update (after default profile loads)
+    setTimeout(updateProfileUI, 500);
+
+    // Listen for profile changes
+    import('../events/eventBus.js').then(({ default: eventBus }) => {
+        eventBus.on('profile:changed', updateProfileUI);
+    });
+
+    logger.diagnostic('Profile controls initialized', logger.CATEGORY.PANEL);
 }
 
 // ============================================

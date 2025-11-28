@@ -2408,6 +2408,16 @@
 
 
             <div id="content-settings" style="display: none;">
+                <!-- Profile Section -->
+                <div class="settings-section" style="margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color);">
+                    <label class="time-label">Profile</label>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
+                        <span id="profile-display-name" style="color: var(--text-secondary); font-size: 12px;">Not logged in</span>
+                        <button id="profile-login-btn" class="sensor-action-btn" style="padding: 4px 12px; font-size: 11px;">Login</button>
+                        <button id="profile-logout-btn" class="sensor-action-btn sensor-delete-btn" style="padding: 4px 12px; font-size: 11px; display: none;">Logout</button>
+                    </div>
+                </div>
+
                 <!-- Ground Track Settings (moved from TIME) -->
                 <div class="settings-section">
                     <label class="time-label">Ground Track</label>
@@ -2800,7 +2810,7 @@
     </div>
 
     <!-- ES6 Module Loading -->
-    <script type="module" src="/static/app.js?v=54"></script>
+    <script type="module" src="/static/app.js?v=55"></script>
 
     <!-- Fallback for browsers without ES6 module support -->
     <script nomodule>
