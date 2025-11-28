@@ -54,11 +54,12 @@ export class VirtualScroller {
 
     setupDOM() {
         this.container.innerHTML = '';
-        // Set required styles WITHOUT overwriting existing height (which may be calc-based)
+        // Set required styles WITHOUT overwriting existing height/flex
         this.container.style.overflowY = 'auto';
         this.container.style.overflowX = 'hidden';
         this.container.style.position = 'relative';
-        this.container.style.contain = 'strict';
+        // Use layout+paint containment (NOT size - that would collapse flex children)
+        this.container.style.contain = 'layout paint';
 
         // Runway creates scrollbar height
         this.runway = document.createElement('div');
