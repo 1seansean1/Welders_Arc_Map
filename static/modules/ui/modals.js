@@ -579,6 +579,123 @@ export function showListEditorModal(list = null, onSave) {
 }
 
 
+
+
+// ============================================
+// LOGIN MODAL
+// ============================================
+
+/**
+ * Show login modal
+ * Dismissible modal for user authentication
+ *
+ * @param {Function} onLogin - Callback when login is attempted, receives {username, password}
+ * @param {Function} onSkip - Callback when skip/cancel is clicked
+ */
+export function showLoginModal(onLogin, onSkip) {
+    const overlay = document.getElementById('login-modal-overlay');
+    const form = document.getElementById('login-modal-form');
+    const usernameInput = document.getElementById('login-input-username');
+    const passwordInput = document.getElementById('login-input-password');
+    const errorField = document.getElementById('login-error-field');
+    const errorMessage = document.getElementById('login-error-message');
+
+    // Reset form
+    usernameInput.value = '';
+    passwordInput.value = '';
+    errorField.style.display = 'none';
+    errorMessage.textContent = '';
+
+    // Show modal
+    overlay.classList.add('visible');
+
+    // Focus username input
+    setTimeout(() => usernameInput.focus(), 100);
+
+    const cancelBtn = document.getElementById('login-modal-cancel');
+
+    const closeModal = () => {
+        overlay.classList.remove('visible');
+        form.removeEventListener('submit', handleSubmit);
+        cancelBtn.removeEventListener('click', handleCancel);
+        overlay.removeEventListener('click', handleOverlayClick);
+    };
+
+    const handleCancel = () => {
+        closeModal();
+        logger.diagnostic('Login skipped', logger.CATEGORY.PANEL);
+        if (onSkip) onSkip();
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value;
+
+        if (\!username) {
+            errorField.style.display = 'block';
+            errorMessage.textContent = 'Username is required';
+            usernameInput.focus();
+            return;
+        }
+
+        // Call login callback
+        try {
+            const success = await onLogin({ username, password });
+            if (success) {
+                closeModal();
+            } else {
+                errorField.style.display = 'block';
+                errorMessage.textContent = 'Invalid username or password';
+                passwordInput.focus();
+                passwordInput.select();
+            }
+        } catch (error) {
+            errorField.style.display = 'block';
+            errorMessage.textContent = error.message || 'Login failed';
+        }
+    };
+
+    const handleOverlayClick = (e) => {
+        if (e.target === overlay) {
+            handleCancel();
+        }
+    };
+
+    // Prevent event propagation
+    overlay.addEventListener('click', (e) => {
+        e.stopPropagation();
+    });
+
+    form.addEventListener('submit', handleSubmit);
+    cancelBtn.addEventListener('click', handleCancel);
+    overlay.addEventListener('click', handleOverlayClick);
+}
+
+/**
+ * Show error in login modal
+ * @param {string} message - Error message to display
+ */
+export function showLoginError(message) {
+    const errorField = document.getElementById('login-error-field');
+    const errorMessage = document.getElementById('login-error-message');
+    if (errorField && errorMessage) {
+        errorField.style.display = 'block';
+        errorMessage.textContent = message;
+    }
+}
+
+/**
+ * Hide login modal programmatically
+ */
+export function hideLoginModal() {
+    const overlay = document.getElementById('login-modal-overlay');
+    if (overlay) {
+        overlay.classList.remove('visible');
+    }
+}
+
 // ============================================
 // PUBLIC API
 // ============================================

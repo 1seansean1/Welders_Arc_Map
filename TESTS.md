@@ -30,7 +30,8 @@ All tests follow a **hypothesis-driven** approach inspired by the scientific met
 | Satellite | H-SAT-*, H-GLOW-* | 7 | Satellite rendering and glow effects |
 | Time | H-TIME-* | 8 | Time control functionality |
 | List | H-LIST-* | 7 | User list functionality |
-| **Total** | | **39** | |
+| Profile | H-PROFILE-* | 7 | User profiles and settings |
+| **Total** | | **46** | |
 
 ---
 
@@ -116,6 +117,18 @@ All tests follow a **hypothesis-driven** approach inspired by the scientific met
 | H-LIST-5 | Satellite Table Simplified | PENDING | Table has Color, NORAD, Name columns (no Sel/Star/List) |
 | H-LIST-6 | +Sat and +List Buttons | PENDING | +Sat in Satellites panel, +List in Watch Lists panel |
 | H-LIST-7 | Lists Tab Removed | PENDING | No data-section="lists" in navigation |
+
+### Profile Tests (H-PROFILE-*)
+
+| ID | Name | Status | Description |
+|----|------|--------|-------------|
+| H-PROFILE-1 | Default Profile Auto-Load | PASS | On init, default profile auto-loaded from backend |
+| H-PROFILE-2 | Login Modal Dismissible | PENDING | Login modal can be skipped without login |
+| H-PROFILE-3 | Profile Settings Persistence | PENDING | Settings saved to backend and restored on reload |
+| H-PROFILE-4 | Profile API CRUD | PASS | Create/Read/Update/Delete profiles via API |
+| H-PROFILE-5 | Login Authentication | PASS | Login with correct credentials returns profile |
+| H-PROFILE-6 | Stubbed Roles Structure | PASS | Roles exist with permissions array (admin/user/viewer) |
+| H-PROFILE-7 | Settings JSON Blob Storage | PASS | Settings stored as JSON with default values |
 
 ---
 

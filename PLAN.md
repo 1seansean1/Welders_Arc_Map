@@ -724,13 +724,20 @@ EXPANDED ANALYSIS WINDOW PANEL (above time bar):
 │  FastAPI (main.py)                                          │
 │  ├── Static file serving                                    │
 │  ├── HTML template rendering                                │
-│  └── WebSocket endpoint (stub)                              │
+│  ├── WebSocket endpoint (stub)                              │
+│  └── SQLite database (profiles, settings)                   │
+├─────────────────────────────────────────────────────────────┤
+│  Implemented (v1.1):                                        │
+│  ├── User Profiles CRUD API                                 │
+│  ├── Settings persistence per profile                       │
+│  ├── Stubbed roles/permissions                              │
+│  └── Login modal (dismissible)                              │
 ├─────────────────────────────────────────────────────────────┤
 │  Future:                                                     │
 │  ├── PostgreSQL + TimescaleDB                               │
 │  ├── Redis caching                                          │
 │  ├── TLE fetching service                                   │
-│  └── Authentication                                          │
+│  └── Full authentication (JWT/sessions)                     │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -758,6 +765,7 @@ venv\Scripts\python backend\main.py
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.5 | 2025-11-28 | Added User Profiles feature: SQLite database, profile CRUD API, settings persistence, login modal |
 | 1.4 | 2025-11-27 | Added TIME CONTROL ENHANCEMENTS PLAN (TIME-023 to TIME-028): playback rate, jog wheel, seek stubs, presets, analysis window |
 | 1.3 | 2025-11-26 | Added UI/UX Improvements batch: hold-to-repeat, glow fade, Tests/Watch List panels |
 | 1.2 | 2025-11-26 | Added TIME-011: Time Slider with Step Controls to recently completed |

@@ -27,6 +27,7 @@ import uiState from '../state/uiState.js';
 import sensorState from '../state/sensorState.js';
 import satelliteState from '../state/satelliteState.js';
 import timeState from '../state/timeState.js';
+import profileState from '../state/profileState.js';
 
 // Data modules
 import websocketManager from '../data/websocket.js';
@@ -41,6 +42,7 @@ import { initializeLogPanel } from '../ui/logPanel.js';
 import { initializeCurrentTimeDisplay } from '../ui/currentTimeDisplay.js';
 import { initializeSettingsPanel } from '../ui/settingsPanel.js';
 import { initializeMapTimeBar } from '../ui/mapTimeBar.js';
+import { showLoginModal } from '../ui/modals.js';
 
 // Sensor & Satellite CRUD
 import { initializeSensors, initializeSensorButtons, editSensor } from '../data/sensorCRUD.js';
@@ -71,6 +73,15 @@ import { initializePaneResizer, initializeMapMaximize, initializeFitEarthButton 
 export function init() {
     // Initialize UI logger first
     logger.init();
+
+    // Load default profile (auto-login)
+    profileState.loadDefaultProfile().then(loaded => {
+        if (loaded) {
+            logger.info('Profile loaded: ' + profileState.getDisplayName());
+        } else {
+            logger.info('No profile loaded - using defaults');
+        }
+    });
 
     logger.info('Initializing Satellite Visualization System');
     logger.info(`Mobile device: ${uiState.isMobile()}`);
@@ -170,6 +181,7 @@ export function setupGlobalExports() {
         sensorState,
         satelliteState,
         timeState,
+        profileState,
         // Functions
         togglePanel,
         fetchSatellites,

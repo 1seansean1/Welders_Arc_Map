@@ -2771,8 +2771,36 @@
         </div>
     </div>
 
+
+    <!-- Login Modal -->
+    <div class="modal-overlay" id="login-modal-overlay">
+        <div class="modal-editor" style="width: 280px;">
+            <div class="modal-editor-title" id="login-modal-title">Login</div>
+            <form class="modal-editor-form" id="login-modal-form" onsubmit="return false;">
+                <div class="modal-editor-field">
+                    <label class="modal-editor-label" for="login-input-username">Username</label>
+                    <input type="text" class="modal-editor-input" id="login-input-username" placeholder="default" autocomplete="username">
+                </div>
+                <div class="modal-editor-field">
+                    <label class="modal-editor-label" for="login-input-password">Password</label>
+                    <input type="password" class="modal-editor-input" id="login-input-password" placeholder="password" autocomplete="current-password">
+                </div>
+                <div class="modal-editor-field" id="login-error-field" style="display: none;">
+                    <span style="color: var(--accent-red); font-size: 10px;" id="login-error-message"></span>
+                </div>
+                <div class="modal-editor-buttons">
+                    <button type="button" class="modal-editor-btn modal-editor-btn-cancel" id="login-modal-cancel">Skip</button>
+                    <button type="submit" class="modal-editor-btn modal-editor-btn-save" id="login-modal-submit">Login</button>
+                </div>
+            </form>
+            <div style="margin-top: 8px; text-align: center; font-size: 9px; color: var(--text-muted);">
+                Default: default / default
+            </div>
+        </div>
+    </div>
+
     <!-- ES6 Module Loading -->
-    <script type="module" src="/static/app.js?v=52"></script>
+    <script type="module" src="/static/app.js?v=53"></script>
 
     <!-- Fallback for browsers without ES6 module support -->
     <script nomodule>

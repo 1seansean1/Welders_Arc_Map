@@ -226,8 +226,20 @@
 | BACK-005 | TimescaleDB for Tracks | P2 | L | PLAN | BACK-004 |
 | BACK-006 | Redis Caching | P2 | M | PLAN | BACK-001 |
 | BACK-007 | TLE Fetching Service | P2 | M | PLAN | BACK-001 |
-| BACK-008 | Authentication | P3 | L | IDEA | BACK-001 |
+| BACK-008 | Authentication | P1 | M | WIP | BACK-001, PROFILE-003 |
 | BACK-009 | Rate Limiting | P3 | S | IDEA | BACK-001 |
+
+### User Profiles (PROFILE)
+
+| ID | Feature | Priority | Complexity | Status | Dependencies |
+|----|---------|----------|------------|--------|--------------|
+| PROFILE-001 | Profile State Module | P0 | M | DONE | ARCH-003 |
+| PROFILE-002 | SQLite Database Setup | P0 | S | DONE | BACK-001 |
+| PROFILE-003 | Profile API Endpoints | P0 | M | DONE | BACK-001, PROFILE-002 |
+| PROFILE-004 | Login Modal UI | P1 | S | DONE | UI-001 |
+| PROFILE-005 | Settings Persistence | P1 | M | DONE | PROFILE-001, PROFILE-002 |
+| PROFILE-006 | Stubbed Roles/Permissions | P2 | XS | DONE | PROFILE-002 |
+| PROFILE-007 | Default Profile Auto-Load | P1 | S | DONE | PROFILE-001, PROFILE-003 |
 
 ### Architecture (ARCH)
 
