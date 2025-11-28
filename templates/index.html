@@ -3193,6 +3193,7 @@ SATELLITE NAME 2
         <div class="modal-catalog-edit">
             <div class="modal-catalog-edit-header">
                 <input type="text" class="modal-catalog-edit-title-input" id="catalog-edit-name-input" placeholder="Catalog Name">
+                <button type="button" class="modal-editor-btn modal-editor-btn-save" id="catalog-edit-save-name-btn" style="padding: 4px 8px; font-size: 10px; margin-right: 8px;">Save</button>
                 <button type="button" class="modal-catalog-edit-close" id="catalog-edit-close">&times;</button>
             </div>
             <div class="modal-catalog-edit-body">
@@ -3231,6 +3232,10 @@ SATELLITE NAME 2
                         <div class="modal-editor-field">
                             <label class="modal-editor-label">Satellite Name</label>
                             <input type="text" class="modal-editor-input" id="catalog-edit-sat-name" placeholder="Satellite Name">
+                        </div>
+                        <div class="modal-editor-field">
+                            <label class="modal-editor-label">NORAD ID</label>
+                            <input type="text" class="modal-editor-input" id="catalog-edit-sat-norad" placeholder="NORAD ID" readonly style="background: var(--input-bg-disabled); color: var(--text-muted);">
                         </div>
                         <div class="modal-editor-field">
                             <label class="modal-editor-label">TLE Data</label>

@@ -3395,7 +3395,7 @@ const CATALOG_HYPOTHESES = {
             const isVisible = overlay.classList.contains('visible');
 
             // Close modal if opened
-            const closeBtn = document.getElementById('catalog-edit-modal-close');
+            const closeBtn = document.getElementById('catalog-edit-close-btn');
             if (closeBtn && isVisible) closeBtn.click();
 
             return {
@@ -3455,7 +3455,7 @@ const CATALOG_HYPOTHESES = {
             const expectedCount = catalogWithSats.satellites.length;
 
             // Close modal
-            const closeBtn = document.getElementById('catalog-edit-modal-close');
+            const closeBtn = document.getElementById('catalog-edit-close-btn');
             if (closeBtn) closeBtn.click();
 
             return {

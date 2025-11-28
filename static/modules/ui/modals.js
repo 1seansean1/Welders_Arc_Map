@@ -731,14 +731,14 @@ export function showCatalogEditModal(catalogId, onUpdate) {
     const nameInput = document.getElementById('catalog-edit-name-input');
     const satTbody = document.getElementById('catalog-edit-sat-tbody');
     const detailForm = document.getElementById('catalog-edit-detail-form');
-    const detailName = document.getElementById('catalog-edit-detail-name');
-    const detailNorad = document.getElementById('catalog-edit-detail-norad');
-    const detailTle = document.getElementById('catalog-edit-detail-tle');
-    const detailColorPicker = document.getElementById('catalog-edit-detail-color');
-    const detailListContainer = document.getElementById('catalog-edit-detail-lists');
-    const detailSaveBtn = document.getElementById('catalog-edit-detail-save');
-    const detailDeleteBtn = document.getElementById('catalog-edit-detail-delete');
-    const closeBtn = document.getElementById('catalog-edit-modal-close');
+    const detailName = document.getElementById('catalog-edit-sat-name');
+    const detailNorad = document.getElementById('catalog-edit-sat-norad');
+    const detailTle = document.getElementById('catalog-edit-sat-tle');
+    const detailColorPicker = document.getElementById('catalog-edit-color-picker');
+    const detailListContainer = document.getElementById('catalog-edit-lists-container');
+    const detailSaveBtn = document.getElementById('catalog-edit-save-sat');
+    const detailDeleteBtn = document.getElementById('catalog-edit-delete-sat');
+    const closeBtn = document.getElementById('catalog-edit-close-btn');
     const saveNameBtn = document.getElementById('catalog-edit-save-name-btn');
 
     // State
