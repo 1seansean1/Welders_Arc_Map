@@ -522,6 +522,7 @@ export function showListEditorModal(list = null, onSave) {
     const picker = document.getElementById('list-editor-satellite-picker');
     const searchInput = document.getElementById('list-editor-search');
     const satCountSpan = document.getElementById('list-editor-sat-count');
+    const selectedOnlyCheckbox = document.getElementById('list-editor-selected-only');
 
     title.textContent = list ? 'Edit List' : 'Create List';
     nameInput.value = list ? list.name : '';
@@ -592,10 +593,20 @@ export function showListEditorModal(list = null, onSave) {
             checkedNoradIds: Array.from(currentNoradIds),
             onCheckChange: (noradId, checked, sat) => {
                 updateCount();
+                // If in selected-only mode and unchecking, need to refilter
+                if (!checked && virtualScroller.showSelectedOnly) {
+                    virtualScroller.refilter();
+                }
             }
         });
 
         virtualScroller.setData(allCatalogSatellites);
+
+        // When editing existing list, show selected satellites first
+        if (list && currentNoradIds.size > 0) {
+            virtualScroller.setSelectedOnly(true);
+            if (selectedOnlyCheckbox) selectedOnlyCheckbox.checked = true;
+        }
         updateCount();
     }
 
@@ -616,6 +627,21 @@ export function showListEditorModal(list = null, onSave) {
         searchInput.addEventListener('input', handleSearch);
     }
 
+    // ========================================
+    // SELECTED ONLY TOGGLE
+    // ========================================
+    const handleSelectedOnlyChange = () => {
+        if (virtualScroller) {
+            virtualScroller.setSelectedOnly(selectedOnlyCheckbox.checked);
+            updateCount();
+        }
+    };
+
+    if (selectedOnlyCheckbox) {
+        if (!list) selectedOnlyCheckbox.checked = false; // Reset for new list
+        selectedOnlyCheckbox.addEventListener('change', handleSelectedOnlyChange);
+    }
+
     overlay.classList.add('visible');
     setTimeout(() => nameInput.focus(), 100);
 
@@ -628,6 +654,7 @@ export function showListEditorModal(list = null, onSave) {
         form.removeEventListener('submit', handleSubmit);
         cancelBtn.removeEventListener('click', handleCancel);
         if (searchInput) searchInput.removeEventListener('input', handleSearch);
+        if (selectedOnlyCheckbox) selectedOnlyCheckbox.removeEventListener('change', handleSelectedOnlyChange);
     };
 
     const handleCancel = () => { closeModal(); logger.diagnostic('List edit cancelled', logger.CATEGORY.DATA); };

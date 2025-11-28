@@ -3162,7 +3162,12 @@
                         <label class="modal-editor-label" style="margin: 0;">Select Satellites</label>
                         <span id="list-editor-sat-count" style="font-size: 10px; color: var(--text-muted);">0 selected</span>
                     </div>
-                    <input type="text" class="modal-editor-input" id="list-editor-search" placeholder="Search by name, NORAD ID, or catalog..." style="margin-bottom: 6px; font-size: 11px;">
+                    <div style="display: flex; gap: 6px; margin-bottom: 6px;">
+                        <input type="text" class="modal-editor-input" id="list-editor-search" placeholder="Search by name, NORAD ID, or catalog..." style="flex: 1; font-size: 11px;">
+                        <label style="display: flex; align-items: center; gap: 4px; font-size: 10px; white-space: nowrap; cursor: pointer;">
+                            <input type="checkbox" id="list-editor-selected-only"> Selected only
+                        </label>
+                    </div>
                     <div style="display: flex; font-size: 10px; padding: 4px 0; border-bottom: 1px solid var(--border-color); color: var(--text-muted);">
                         <div style="width: 30px; text-align: center;">☑</div>
                         <div style="width: 55px; text-align: center;">NORAD</div>

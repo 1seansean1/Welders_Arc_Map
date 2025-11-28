@@ -313,26 +313,47 @@ export class ListPickerVirtualScroller extends VirtualScroller {
 
         this.checkedNoradIds = new Set(options.checkedNoradIds || []);
         this.onCheckChange = options.onCheckChange || null;
+        this.showSelectedOnly = false;
+        this.searchQuery = '';
     }
 
-    // Override filter to also search catalog name
-    filter(query) {
-        if (!query || query.trim() === '') {
-            this.filteredData = this.data;
-        } else {
-            const term = query.toLowerCase();
-            this.filteredData = this.data.filter(item => {
+    // Filter with search query and selected-only mode
+    filter(query, selectedOnly = this.showSelectedOnly) {
+        this.searchQuery = query || '';
+        this.showSelectedOnly = selectedOnly;
+
+        let filtered = this.data;
+
+        // Apply selected-only filter first
+        if (this.showSelectedOnly) {
+            filtered = filtered.filter(item => this.checkedNoradIds.has(item.noradId));
+        }
+
+        // Then apply search query
+        if (this.searchQuery.trim() !== '') {
+            const term = this.searchQuery.toLowerCase();
+            filtered = filtered.filter(item => {
                 if (item.name && item.name.toLowerCase().includes(term)) return true;
                 if (item.noradId && String(item.noradId).includes(term)) return true;
                 if (item.catalogName && item.catalogName.toLowerCase().includes(term)) return true;
                 return false;
             });
         }
+
+        this.filteredData = filtered;
         this.selectedIndex = null;
         this.clearAllRows();
         this.updateRunwayHeight();
         this.container.scrollTop = 0;
         this.render();
+    }
+
+    setSelectedOnly(selectedOnly) {
+        this.filter(this.searchQuery, selectedOnly);
+    }
+
+    refilter() {
+        this.filter(this.searchQuery, this.showSelectedOnly);
     }
 
     createRow(sat, index) {
