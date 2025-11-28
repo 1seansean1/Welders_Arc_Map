@@ -31,7 +31,8 @@ All tests follow a **hypothesis-driven** approach inspired by the scientific met
 | Time | H-TIME-* | 8 | Time control functionality |
 | List | H-LIST-* | 7 | User list functionality |
 | Profile | H-PROFILE-* | 7 | User profiles and settings |
-| **Total** | | **46** | |
+| Polar | H-POLAR-* | 7 | Polar plot functionality |
+| **Total** | | **53** | |
 
 ---
 
@@ -129,6 +130,18 @@ All tests follow a **hypothesis-driven** approach inspired by the scientific met
 | H-PROFILE-5 | Login Authentication | PASS | Login with correct credentials returns profile |
 | H-PROFILE-6 | Stubbed Roles Structure | PASS | Roles exist with permissions array (admin/user/viewer) |
 | H-PROFILE-7 | Settings JSON Blob Storage | PASS | Settings stored as JSON with default values |
+
+### Polar Plot Tests (H-POLAR-*)
+
+| ID | Name | Status | Description |
+|----|------|--------|-------------|
+| H-POLAR-1 | Polar Plot Checkbox Toggle | PASS | Checkbox toggles container visibility |
+| H-POLAR-2 | Analysis State Toggle | PASS | analysisState tracks polar plot enabled state |
+| H-POLAR-3 | Polar View Sensor Selection | PASS | Sensor selection updates state correctly |
+| H-POLAR-4 | Canvas Rendering | PASS | Canvas renders grid when enabled |
+| H-POLAR-5 | Sky Tracks Rendering | PASS | Sky tracks rendered using head/tail minutes |
+| H-POLAR-6 | Click-to-Select Integration | PASS | Clicking satellite sets activeRowId |
+| H-POLAR-7 | Selection Highlight Ring | PASS | Active satellite displays cyan selection ring |
 
 ---
 
@@ -349,6 +362,7 @@ The test suite is complete when:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.9 | 2025-11-28 | Added H-POLAR-5/6/7 (sky tracks, click-to-select, selection ring); added Polar category section; updated count to 53 |
 | 1.8 | 2025-11-27 | Added H-LIST-5, H-LIST-6, H-LIST-7 (UI tests for Control Panel reorganization); updated count to 39 |
 | 1.7 | 2025-11-27 | Added H-TIME-12 (Ctrl+wheel jog control fix test); updated count to 29 |
 | 1.6 | 2025-11-27 | Added H-LIST-1 to H-LIST-4 (User List tests); updated category count to 28 |

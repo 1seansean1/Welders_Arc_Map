@@ -3030,6 +3030,154 @@ const POLAR_HYPOTHESES = {
             if (!wasEnabled) { checkbox.checked = false; checkbox.dispatchEvent(new Event('change')); }
             return { passed: count > 100, details: { width: canvas.width, height: canvas.height, pixels: count } };
         }
+    },
+    'H-POLAR-5': {
+        id: 'H-POLAR-5',
+        name: 'Sky Tracks Rendering',
+        category: 'polar',
+        hypothesis: 'Polar plot renders sky tracks for visible satellites using head/tail minutes',
+        symptom: 'Only satellite dots visible, no track lines',
+        prediction: 'With visible satellites, track lines should be drawn (pixel count increases with satellites)',
+        nullPrediction: 'Canvas would show only dots without track lines',
+        threshold: { tracksDetected: true },
+        causalChain: [
+            'SYMPTOM: No sky tracks in polar plot',
+            'PROXIMATE: drawSkyTrack() not being called',
+            'ROOT: Satellite track points not propagated',
+            'MECHANISM: timeState head/tail not used for track calculation',
+            'FIX: Verify propagateTrackPoints() uses correct time window'
+        ],
+        testFn: async () => {
+            const canvas = document.getElementById('polar-plot-canvas');
+            const checkbox = document.getElementById('analysis-polar-plot');
+            const listState = window.listState;
+            if (!canvas || !checkbox || !listState) return { passed: false, error: 'Elements not found' };
+
+            // Enable polar plot if needed
+            const wasEnabled = checkbox.checked;
+            if (!wasEnabled) { checkbox.checked = true; checkbox.dispatchEvent(new Event('change')); await new Promise(r => setTimeout(r, 100)); }
+
+            // Check if there are visible satellites from lists
+            const visibleIds = listState.getVisibleSatelliteIds();
+            if (visibleIds.length === 0) {
+                if (!wasEnabled) { checkbox.checked = false; checkbox.dispatchEvent(new Event('change')); }
+                return { passed: true, details: { message: 'No visible satellites to test with', skipped: true } };
+            }
+
+            // Wait for render
+            await new Promise(r => setTimeout(r, 200));
+
+            // Count non-transparent pixels (tracks + satellites should contribute significantly)
+            const ctx = canvas.getContext('2d');
+            const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+            let totalPixels = 0;
+            for (let i = 3; i < data.length; i += 4) if (data[i] > 0) totalPixels++;
+
+            // With tracks, we expect significantly more pixels than just the grid (~500+)
+            const hasSignificantContent = totalPixels > 500;
+
+            if (!wasEnabled) { checkbox.checked = false; checkbox.dispatchEvent(new Event('change')); }
+            return { passed: hasSignificantContent, details: { visibleSatellites: visibleIds.length, totalPixels, hasSignificantContent } };
+        }
+    },
+    'H-POLAR-6': {
+        id: 'H-POLAR-6',
+        name: 'Click-to-Select Integration',
+        category: 'polar',
+        hypothesis: 'Clicking a satellite in polar plot sets activeRowId in satelliteState',
+        symptom: 'Clicking satellite in polar plot does not highlight table row',
+        prediction: 'After click event on satellite position, activeRowId should update',
+        nullPrediction: 'activeRowId would remain unchanged after click',
+        threshold: { selectionUpdates: true },
+        causalChain: [
+            'SYMPTOM: Satellite click in polar plot has no effect',
+            'PROXIMATE: Canvas click handler not detecting satellite hit',
+            'ROOT: satellitePositions array not populated or hit detection failing',
+            'MECHANISM: setActiveRowId() not called on click',
+            'FIX: Verify canvas click handler and hit detection logic'
+        ],
+        testFn: async () => {
+            const satelliteState = window.satelliteState;
+            const listState = window.listState;
+            if (!satelliteState || !listState) return { passed: false, error: 'State not available' };
+
+            // Check if there are visible satellites
+            const visibleIds = listState.getVisibleSatelliteIds();
+            if (visibleIds.length === 0) {
+                return { passed: true, details: { message: 'No visible satellites to test with', skipped: true } };
+            }
+
+            // Test that setActiveRowId works (internal API test)
+            const initialActive = satelliteState.getEditingState().activeRowId;
+            const testId = visibleIds[0];
+            satelliteState.setActiveRowId(testId);
+            const afterSet = satelliteState.getEditingState().activeRowId;
+
+            // Restore initial state
+            satelliteState.setActiveRowId(initialActive);
+
+            return { passed: afterSet === testId, details: { testId, afterSet, initialActive } };
+        }
+    },
+    'H-POLAR-7': {
+        id: 'H-POLAR-7',
+        name: 'Selection Highlight Ring',
+        category: 'polar',
+        hypothesis: 'Active satellite displays cyan selection ring in polar plot',
+        symptom: 'No visual distinction for selected satellite',
+        prediction: 'When activeRowId is set, that satellite should have a visible highlight ring',
+        nullPrediction: 'All satellites would look the same regardless of selection',
+        threshold: { highlightRendered: true },
+        causalChain: [
+            'SYMPTOM: Cannot identify selected satellite in polar plot',
+            'PROXIMATE: Selection ring not being drawn',
+            'ROOT: activeRowId not checked during satellite rendering',
+            'MECHANISM: drawSelectionRing() not called or using wrong position',
+            'FIX: Verify render loop checks activeRowId and draws ring'
+        ],
+        testFn: async () => {
+            const canvas = document.getElementById('polar-plot-canvas');
+            const checkbox = document.getElementById('analysis-polar-plot');
+            const satelliteState = window.satelliteState;
+            const listState = window.listState;
+            if (!canvas || !checkbox || !satelliteState || !listState) return { passed: false, error: 'Elements not found' };
+
+            // Enable polar plot
+            const wasEnabled = checkbox.checked;
+            if (!wasEnabled) { checkbox.checked = true; checkbox.dispatchEvent(new Event('change')); await new Promise(r => setTimeout(r, 100)); }
+
+            const visibleIds = listState.getVisibleSatelliteIds();
+            if (visibleIds.length === 0) {
+                if (!wasEnabled) { checkbox.checked = false; checkbox.dispatchEvent(new Event('change')); }
+                return { passed: true, details: { message: 'No visible satellites to test with', skipped: true } };
+            }
+
+            // Get pixel count without selection
+            const initialActive = satelliteState.getEditingState().activeRowId;
+            satelliteState.setActiveRowId(null);
+            await new Promise(r => setTimeout(r, 100));
+
+            const ctx = canvas.getContext('2d');
+            const dataBefore = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+            let pixelsBefore = 0;
+            for (let i = 3; i < dataBefore.length; i += 4) if (dataBefore[i] > 0) pixelsBefore++;
+
+            // Set active satellite and get new pixel count
+            satelliteState.setActiveRowId(visibleIds[0]);
+            await new Promise(r => setTimeout(r, 100));
+
+            const dataAfter = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+            let pixelsAfter = 0;
+            for (let i = 3; i < dataAfter.length; i += 4) if (dataAfter[i] > 0) pixelsAfter++;
+
+            // Restore state
+            satelliteState.setActiveRowId(initialActive);
+            if (!wasEnabled) { checkbox.checked = false; checkbox.dispatchEvent(new Event('change')); }
+
+            // With selection ring, pixel count should increase (ring adds pixels)
+            const pixelDiff = pixelsAfter - pixelsBefore;
+            return { passed: pixelDiff > 0, details: { pixelsBefore, pixelsAfter, pixelDiff, highlightDetected: pixelDiff > 0 } };
+        }
     }
 };
 

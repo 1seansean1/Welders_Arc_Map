@@ -261,6 +261,12 @@
 | ANALYSIS-003 | Az/El Calculation | P1 | S | DONE | SAT-006 |
 | ANALYSIS-004 | Sensor Selection for Polar View | P1 | S | DONE | ANALYSIS-001, SEN-007 |
 | ANALYSIS-005 | Polar Plot Hypothesis Tests | P2 | S | DONE | TEST-001, ANALYSIS-002 |
+| ANALYSIS-006 | Polar Plot Sky Tracks | P1 | M | DONE | ANALYSIS-002, TIME-010 |
+| ANALYSIS-007 | Track Color Coding | P2 | S | DONE | ANALYSIS-006, SAT-019 |
+| ANALYSIS-008 | Direction Chevrons | P2 | S | DONE | ANALYSIS-006 |
+| ANALYSIS-009 | Click-to-Select Integration | P1 | S | DONE | ANALYSIS-002, SAT-009 |
+| ANALYSIS-010 | Selection Highlight Ring | P2 | XS | DONE | ANALYSIS-009 |
+| ANALYSIS-011 | Enhanced Grid Labels | P2 | XS | DONE | ANALYSIS-002 |
 
 ---
 
@@ -322,12 +328,12 @@
 | BACK | 9 | 3 | 0 | 4 | 2 |
 | ARCH | 5 | 5 | 0 | 0 | 0 |
 | LIST | 6 | 6 | 0 | 0 | 0 |
-| ANALYSIS | 5 | 5 | 0 | 0 | 0 |
-| **TOTAL** | **152** | **138** | **0** | **7** | **6** |
+| ANALYSIS | 11 | 11 | 0 | 0 | 0 |
+| **TOTAL** | **158** | **144** | **0** | **7** | **6** |
 
 *Note: MAP-013 REMOVED (superseded by MAP-012+MAP-016), MAP-016 added - net zero change*
 
-**Completion Rate**: 91% (138/152 features complete)
+**Completion Rate**: 91% (144/158 features complete)
 
 ---
 
@@ -335,6 +341,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 3.7 | 2025-11-28 | ANALYSIS-006 to ANALYSIS-011 DONE: Enhanced polar plot with sky tracks (head/tail minutes), track color coding (grey/red/blue/orange), direction chevrons, click-to-select integration, selection highlight ring, enhanced grid labels; H-POLAR-5/6/7 tests added |
 | 3.6 | 2025-11-27 | ANALYSIS-001 to ANALYSIS-005, UI-007 DONE: Polar Plot feature - Analysis panel checkbox, canvas polar plot (az/el sky view), sensor selection for polar view, H-POLAR-1/2/3/4 tests |
 | 3.5 | 2025-11-27 | LIST-003/004 REMOVED, SAT-007 REMOVED, LIST-007/008 & SAT-024 DONE: Consolidated satellite/list UI with +Sat and +List modal buttons |
 | 3.4 | 2025-11-27 | TIME-032/033/034, UI-020/021 DONE: Play button preserves time offset, DDMMMYYYY UTC clock format, double-click close pickers, remove time window dropdown and Ctrl+wheel hint |
