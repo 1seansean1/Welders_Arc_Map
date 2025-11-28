@@ -84,6 +84,8 @@ export class VirtualScroller {
     setData(data) {
         this.data = data;
         this.filteredData = data;
+        // Clear existing rows when data changes
+        this.clearAllRows();
         this.updateRunwayHeight();
         this.render();
     }
@@ -101,9 +103,19 @@ export class VirtualScroller {
             });
         }
         this.selectedIndex = null;
+        // Clear existing rows - data at each index has changed
+        this.clearAllRows();
         this.updateRunwayHeight();
         this.container.scrollTop = 0;
         this.render();
+    }
+
+    clearAllRows() {
+        // Remove all existing row DOM elements
+        for (const [index, row] of this.activeRows) {
+            row.remove();
+        }
+        this.activeRows.clear();
     }
 
     updateRunwayHeight() {
