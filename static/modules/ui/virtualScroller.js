@@ -54,7 +54,11 @@ export class VirtualScroller {
 
     setupDOM() {
         this.container.innerHTML = '';
-        this.container.style.cssText = 'overflow-y:auto;position:relative;contain:strict;height:100%;';
+        // Set required styles WITHOUT overwriting existing height (which may be calc-based)
+        this.container.style.overflowY = 'auto';
+        this.container.style.overflowX = 'hidden';
+        this.container.style.position = 'relative';
+        this.container.style.contain = 'strict';
 
         // Runway creates scrollbar height
         this.runway = document.createElement('div');
