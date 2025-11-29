@@ -105,6 +105,41 @@ function updateZoomDisplay() {
     }
 }
 
+/**
+ * Update canvas size display
+ */
+function updateSizeDisplay() {
+    if (sizeElement) {
+        const mapContainer = document.getElementById('map-container');
+        if (mapContainer) {
+            const rect = mapContainer.getBoundingClientRect();
+            sizeElement.textContent = `${Math.round(rect.width)}x${Math.round(rect.height)}`;
+        }
+    }
+}
+
+/**
+ * Update center lat/lon display
+ */
+function updateCenterDisplay() {
+    const map = getLeafletMap();
+    if (centerElement && map) {
+        const center = map.getCenter();
+        const lat = center.lat.toFixed(2);
+        const lon = center.lng.toFixed(2);
+        centerElement.textContent = `${lat}, ${lon}`;
+    }
+}
+
+/**
+ * Update all map-related displays (zoom, size, center)
+ */
+function updateMapDisplays() {
+    updateZoomDisplay();
+    updateSizeDisplay();
+    updateCenterDisplay();
+}
+
 function updateTimeDisplay() {
     const utcTime = new Date();  // Capture once for sync
     const simTime = timeState.getCurrentTime();
