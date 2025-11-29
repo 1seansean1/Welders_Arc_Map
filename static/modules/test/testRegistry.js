@@ -1384,6 +1384,68 @@ const UI_HYPOTHESES = {
                 details: { loadingOverlayExists: !!loadingOverlay, loadingTextExists: !!loadingText }
             };
         }
+    },
+    'H-UI-16': {
+        id: 'H-UI-16',
+        name: 'Theme Toggle Light/Dark Mode',
+        category: 'ui',
+        hypothesis: 'Theme toggle switches between light and dark modes and persists preference',
+        symptom: 'Theme button does not change app appearance or preference is lost on reload',
+        prediction: 'Clicking theme button toggles data-theme attribute and updates localStorage',
+        nullPrediction: 'Theme would remain fixed regardless of button clicks',
+        threshold: { themeToggled: true, themePersisted: true },
+        causalChain: [
+            'SYMPTOM: Cannot switch between light and dark themes',
+            'PROXIMATE: Theme toggle button not wired up',
+            'ROOT: Missing themeState module or event handlers',
+            'MECHANISM: data-theme attribute on html element controls CSS variables',
+            'FIX: Add themeState module with localStorage persistence'
+        ],
+        testFn: async () => {
+            const themeState = window.themeState;
+            if (!themeState) return { passed: false, error: 'themeState not available on window' };
+            
+            const toggleBtn = document.getElementById('theme-toggle-btn');
+            if (!toggleBtn) return { passed: false, error: 'Theme toggle button not found' };
+            
+            // Get initial state
+            const initialTheme = themeState.getTheme();
+            const initialAttr = document.documentElement.getAttribute('data-theme');
+            
+            // Toggle theme
+            themeState.toggleTheme();
+            await new Promise(resolve => setTimeout(resolve, 50));
+            
+            // Check new state
+            const afterToggleTheme = themeState.getTheme();
+            const afterToggleAttr = document.documentElement.getAttribute('data-theme');
+            
+            // Theme should have changed
+            const themeChanged = initialTheme !== afterToggleTheme;
+            
+            // data-theme attribute should reflect theme (light = 'light', dark = null)
+            const attrCorrect = (afterToggleTheme === 'light' && afterToggleAttr === 'light') ||
+                               (afterToggleTheme === 'dark' && afterToggleAttr === null);
+            
+            // Check localStorage persistence
+            const storedTheme = localStorage.getItem('wa_map_theme');
+            const themePersisted = storedTheme === afterToggleTheme;
+            
+            // Toggle back to restore original state
+            themeState.setTheme(initialTheme);
+            
+            return {
+                passed: themeChanged && attrCorrect && themePersisted,
+                details: {
+                    initialTheme,
+                    afterToggleTheme,
+                    themeChanged,
+                    attrCorrect,
+                    storedTheme,
+                    themePersisted
+                }
+            };
+        }
     }
 };
 

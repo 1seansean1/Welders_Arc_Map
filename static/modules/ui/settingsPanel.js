@@ -1,27 +1,60 @@
 /**
- * Settings Panel Module - Handles glow effect and ground track settings
+ * Settings Panel Module - Handles glow effect, ground track, and theme settings
  *
  * DEPENDENCIES:
  * - timeState: Glow and ground track settings state management
+ * - themeState: Light/dark theme state management
  * - logger: Diagnostic logging
  *
  * Features:
+ * - Theme toggle (light/dark mode)
  * - Ground track tail/head controls (moved from TIME panel)
  * - Glow effect enable/disable toggle
  * - Glow fade in/out duration controls (separate before/after)
  */
 
 import timeState from '../state/timeState.js';
+import themeState from '../state/themeState.js';
 import logger from '../utils/logger.js';
 
 /**
  * Initialize settings panel controls
  */
 export function initializeSettingsPanel() {
+    initializeThemeControls();
     initializeGroundTrackControls();
     initializeGlowControls();
     initializeApexTickControls();
     logger.diagnostic('Settings panel initialized', logger.CATEGORY.UI);
+}
+
+/**
+ * Initialize theme toggle controls
+ */
+function initializeThemeControls() {
+    const themeToggleBtn = document.getElementById('theme-toggle-btn');
+
+    if (!themeToggleBtn) {
+        logger.warning('Theme toggle button not found', logger.CATEGORY.UI);
+        return;
+    }
+
+    // Update button text based on current theme
+    function updateButtonText() {
+        const currentTheme = themeState.getTheme();
+        themeToggleBtn.textContent = currentTheme === 'dark' ? 'Dark Mode' : 'Light Mode';
+    }
+
+    // Set initial button text
+    updateButtonText();
+
+    // Toggle theme on click
+    themeToggleBtn.addEventListener('click', () => {
+        themeState.toggleTheme();
+        updateButtonText();
+    });
+
+    logger.diagnostic('Theme controls initialized', logger.CATEGORY.UI);
 }
 
 /**

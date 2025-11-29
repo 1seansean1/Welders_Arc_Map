@@ -1,7 +1,7 @@
 # WA_map Feature Registry
 
 > **Document Type**: FEATURES
-> **Version**: 4.5
+> **Version**: 4.6
 > **Last Updated**: 2025-11-29
 > **Maintainer**: AI Governor System
 
@@ -196,6 +196,7 @@
 | UI-019 | Ctrl+Wheel Jog Hint Text | P2 | XS | DONE | TIME-024 |
 | UI-020 | Glow Size/Brightness Sliders | P2 | S | DONE | UI-010, SAT-014 |
 | UI-021 | Profile Avatar Circle Fix | P2 | XS | DONE | UI-001 |
+| UI-022 | Theme Toggle (Light/Dark Mode) | P2 | S | DONE | UI-009 |
 
 ### Logging System (LOG)
 
@@ -345,7 +346,7 @@
 | CAT | 5 | 5 | 0 | 0 | 0 |
 | SEN | 9 | 8 | 0 | 0 | 1 |
 | TIME | 34 | 34 | 0 | 0 | 0 |
-| UI | 23 | 22 | 0 | 1 | 0 |
+| UI | 24 | 23 | 0 | 1 | 0 |
 | LOG | 10 | 8 | 0 | 0 | 2 |
 | TEST | 16 | 14 | 0 | 1 | 0 |
 | BACK | 9 | 3 | 0 | 4 | 2 |
@@ -364,6 +365,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 4.6 | 2025-11-29 | UI-022 DONE: Theme Toggle (Light/Dark Mode) - button in SETTINGS panel to switch between light and dark themes; preference persists in localStorage; H-UI-16 test added |
 | 4.5 | 2025-11-29 | TEST-017 DONE: Split Download Buttons - replaced single Download button with "Current Run" (minimal pass info, full fail details, no history) and "Full History" (all details + history) |
 | 4.4 | 2025-11-29 | TEST-016 DONE: Failed-Only Test Report - Download button now exports only failed tests (summary still shows full stats) |
 | 4.3 | 2025-11-29 | ANALYSIS-014 DONE: Sensor click auto-enables polar plot - clicking sensor on map auto-enables polar plot and selects that sensor; H-POLAR-11 test added; Fixed testRegistry.js syntax errors |

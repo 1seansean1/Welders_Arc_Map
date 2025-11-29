@@ -576,6 +576,7 @@ EXPANDED ANALYSIS WINDOW PANEL (above time bar):
 
 | Task | Priority | Completed | Notes |
 |------|----------|-----------|-------|
+| Theme Toggle (Light/Dark Mode) | P2 | 2025-11-29 | UI-022: Theme toggle button in SETTINGS panel, themeState.js module with localStorage persistence, CSS variables for light theme, H-UI-16 test |
 | Sensor Click Auto-Enables Polar Plot | P2 | 2025-11-29 | ANALYSIS-014: Clicking sensor on map auto-enables polar plot and selects sensor; Fixed testRegistry.js syntax errors; H-POLAR-11 test added |
 | Map & UI Enhancements | P2 | 2025-11-28 | MAP-017, UI-020/021: Zoom level display below clocks, glow size/brightness sliders in Settings, profile avatar circle fix, clock format updated to DD-MMM-YYYY UTC; H-STATE-9/10/11 tests added |
 | Watch List UX Improvements | P2 | 2025-11-28 | LIST-009/010/011: Selected Only default unchecked, bulk select loading indicator, custom delete confirmation modal |
