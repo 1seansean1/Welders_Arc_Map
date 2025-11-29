@@ -288,8 +288,11 @@ async def websocket_realtime(websocket: WebSocket):
 
 if __name__ == "__main__":
     import uvicorn
+    import os
     print("Starting Satellite Visualization Server")
     print("API: http://localhost:8000")
     print("Docs: http://localhost:8000/docs")
     print("WebSocket: ws://localhost:8000/ws/realtime")
+    # Change to backend directory for proper module resolution
+    os.chdir(Path(__file__).parent)
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, log_level="info")
