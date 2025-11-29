@@ -28,6 +28,7 @@ export function initializeSettingsPanel() {
     initializeGlowControls();
     initializeApexTickControls();
     initializeProfileDefaultsButton();
+    initializeLogsToggle();
     logger.diagnostic('Settings panel initialized', logger.CATEGORY.UI);
 }
 
@@ -414,6 +415,28 @@ function initializeApexTickControls() {
             }
         });
     }
+}
+
+
+/**
+ * Initialize logs toggle button
+ */
+function initializeLogsToggle() {
+    const toggleBtn = document.getElementById('logs-toggle-btn');
+    const logsContent = document.getElementById('logs-content-inline');
+    
+    if (!toggleBtn || !logsContent) {
+        logger.diagnostic('Logs toggle elements not found', logger.CATEGORY.UI);
+        return;
+    }
+    
+    toggleBtn.addEventListener('click', () => {
+        const isHidden = logsContent.style.display === 'none';
+        logsContent.style.display = isHidden ? 'block' : 'none';
+        toggleBtn.textContent = isHidden ? 'Hide' : 'Show';
+    });
+    
+    logger.diagnostic('Logs toggle initialized', logger.CATEGORY.UI);
 }
 
 // Auto-initialize when module loads

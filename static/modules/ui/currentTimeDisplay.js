@@ -22,9 +22,12 @@ import { getLeafletMap } from '../map/leaflet.js';
 const utcTimeElement = document.getElementById('utc-time-value');
 const simTimeElement = document.getElementById('sim-time-value');
 const zoomLevelElement = document.getElementById('zoom-level-value');
+const sizeElement = document.getElementById('size-value');
+const centerElement = document.getElementById('center-value');
 
 // UTC update interval
 let utcUpdateInterval = null;
+let mapEventsBound = false;
 
 /**
  * Format time for compact display
@@ -131,6 +134,35 @@ function updateTimeDisplay() {
     }
 }
 
+
+/**
+ * Bind map events when map becomes available
+ */
+function bindMapEvents() {
+    if (mapEventsBound) return;
+
+    const map = getLeafletMap();
+    if (!map) return;
+
+    map.on('zoomend', updateMapDisplays);
+    map.on('zoom', updateMapDisplays);
+    map.on('moveend', updateCenterDisplay);
+    map.on('move', updateCenterDisplay);
+
+    // Listen for resize events on the map container
+    const mapContainer = document.getElementById('map-container');
+    if (mapContainer) {
+        const resizeObserver = new ResizeObserver(() => {
+            updateSizeDisplay();
+        });
+        resizeObserver.observe(mapContainer);
+    }
+
+    mapEventsBound = true;
+    updateMapDisplays();
+    logger.diagnostic('Map display events bound', logger.CATEGORY.UI);
+}
+
 /**
  * Initialize the current time display
  */
@@ -159,12 +191,23 @@ export function initializeCurrentTimeDisplay() {
         updateTimeDisplay();
     });
 
-    // Initialize zoom display and listen for zoom events
-    updateZoomDisplay();
-    const map = getLeafletMap();
-    if (map) {
-        map.on('zoomend', updateZoomDisplay);
-        map.on('zoom', updateZoomDisplay);
+    // Try to bind map events immediately
+    bindMapEvents();
+
+    // If map not ready, listen for map:ready event and also retry periodically
+    if (!mapEventsBound) {
+        eventBus.on('map:ready', bindMapEvents);
+
+        // Retry binding every 500ms until successful (max 10 attempts)
+        let attempts = 0;
+        const retryInterval = setInterval(() => {
+            attempts++;
+            if (mapEventsBound || attempts >= 10) {
+                clearInterval(retryInterval);
+                return;
+            }
+            bindMapEvents();
+        }, 500);
     }
 
     logger.success('Time display initialized (UTC + Sim synced)', logger.CATEGORY.UI);
@@ -175,5 +218,6 @@ initializeCurrentTimeDisplay();
 
 export default {
     updateTimeDisplay,
-    initializeCurrentTimeDisplay
+    initializeCurrentTimeDisplay,
+    updateMapDisplays
 };

@@ -1,7 +1,7 @@
 # WA_map Feature Registry
 
 > **Document Type**: FEATURES
-> **Version**: 5.0
+> **Version**: 5.1
 > **Last Updated**: 2025-11-29
 > **Maintainer**: AI Governor System
 
@@ -198,6 +198,8 @@
 | UI-021 | Profile Avatar Circle Fix | P2 | XS | DONE | UI-001 |
 | UI-022 | Theme Toggle (Light/Dark Mode) | P2 | S | DONE | UI-009, MAP-002 |
 | UI-023 | Light Theme Styling Consistency | P2 | S | DONE | UI-022 |
+| UI-024 | Map Info Display (Size/Center) | P2 | XS | DONE | MAP-001, TIME-018 |
+| UI-025 | Logs Section in Settings | P2 | XS | DONE | UI-009 |
 
 ### Logging System (LOG)
 
@@ -347,7 +349,7 @@
 | CAT | 5 | 5 | 0 | 0 | 0 |
 | SEN | 9 | 8 | 0 | 0 | 1 |
 | TIME | 34 | 34 | 0 | 0 | 0 |
-| UI | 25 | 24 | 0 | 1 | 0 |
+| UI | 27 | 26 | 0 | 1 | 0 |
 | LOG | 10 | 8 | 0 | 0 | 2 |
 | TEST | 16 | 14 | 0 | 1 | 0 |
 | BACK | 9 | 3 | 0 | 4 | 2 |
@@ -355,7 +357,7 @@
 | LIST | 6 | 6 | 0 | 0 | 0 |
 | ANALYSIS | 14 | 14 | 0 | 0 | 0 |
 | AUTH | 8 | 8 | 0 | 0 | 0 |
-| **TOTAL** | **179** | **165** | **0** | **7** | **6** |
+| **TOTAL** | **181** | **167** | **0** | **7** | **6** |
 
 *Note: MAP-013 REMOVED (superseded by MAP-012+MAP-016), MAP-016 added - net zero change*
 
@@ -367,6 +369,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 5.1 | 2025-11-29 | UI-024/025 DONE: Map Info Display (zoom/size/center coordinates in top-left overlay), Logs moved to Settings panel; H-UI-14/15/16/17 tests updated |
 | 5.0 | 2025-11-29 | AUTH-001 to AUTH-008 DONE: User Login & Profile Defaults - Required login on app load, profile defaults modal in Settings, expanded settings schema (theme, glow, apex tick, map view), settings persistence per user, stubs for Authentik OAuth/session timeout/multi-user; H-PROFILE-1/2/3 tests added |
 | 4.9 | 2025-11-29 | UI-023 DONE: Light Theme Styling Consistency - SATELLITE/SENSOR control panel icons now visible in light theme; equator glow markers use theme-aware colors (darker blue on light maps); apex latitude markers adjust for theme contrast; clock fonts normalized (consistent weight in light theme); apex opacity slider styled like other sliders; system log border highlight matches other borders; H-UI-17 test added |
 | 4.8 | 2025-11-29 | UI-022 Light Theme Polish: Polar plot theme-aware colors; FOV polygon theme-aware colors (darker blue for light theme); clock glow/text override; map time bar background override; log panel buttons override; panel border highlight override (darker gradient); reduced theme toggle switch size (36x18px); H-UI-16 test updated for checkbox |

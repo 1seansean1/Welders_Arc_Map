@@ -1,7 +1,7 @@
 # WA_map Active Work Plan
 
 > **Document Type**: PLAN
-> **Version**: 2.1
+> **Version**: 2.2
 > **Last Updated**: 2025-11-29
 > **Maintainer**: AI Governor System
 
@@ -577,6 +577,7 @@ EXPANDED ANALYSIS WINDOW PANEL (above time bar):
 
 | Task | Priority | Completed | Notes |
 |------|----------|-----------|-------|
+| Map Info Display & Logs in Settings | P2 | 2025-11-29 | UI-024/025: Zoom/Size/Center display in map overlay, Logs moved to Settings panel with toggle; H-UI-14/15/16/17 tests added |
 | Light Theme Styling Consistency | P2 | 2025-11-29 | UI-023: SATELLITE/SENSOR icons visible, equator glow theme-aware, apex markers contrast adjusted, clock fonts normalized, apex slider styled, log border highlight consistent; H-UI-17 test |
 | Theme Toggle (Light/Dark Mode) | P2 | 2025-11-29 | UI-022: Theme toggle button in SETTINGS panel, themeState.js module with localStorage persistence, CSS variables for light theme, H-UI-16 test |
 | Sensor Click Auto-Enables Polar Plot | P2 | 2025-11-29 | ANALYSIS-014: Clicking sensor on map auto-enables polar plot and selects sensor; Fixed testRegistry.js syntax errors; H-POLAR-11 test added |

@@ -1517,6 +1517,95 @@ const UI_HYPOTHESES = {
                 }
             };
         }
+    }    },
+    'H-UI-14': {
+        id: 'H-UI-14',
+        name: 'Zoom Display Shows Value',
+        hypothesis: 'If map is initialized, then zoom display should show numeric value',
+        prediction: 'Zoom display element contains a numeric value (not "--")',
+        category: 'ui',
+        steps: [
+            { action: 'Find zoom level display element', expected: 'Element exists' },
+            { action: 'Check zoom value is numeric', expected: 'Value is a number like "2.5"' }
+        ],
+        validate: async () => {
+            const zoomEl = document.getElementById('zoom-level-value');
+            const value = zoomEl?.textContent || '--';
+            const isNumeric = !isNaN(parseFloat(value)) && value !== '--';
+            return {
+                passed: zoomEl !== null && isNumeric,
+                elementExists: zoomEl !== null,
+                value: value,
+                isNumeric: isNumeric
+            };
+        }
+    },
+    'H-UI-15': {
+        id: 'H-UI-15',
+        name: 'Size Display Shows Canvas Dimensions',
+        hypothesis: 'If map is initialized, then size display should show WxH format',
+        prediction: 'Size display shows dimensions like "1920x1080"',
+        category: 'ui',
+        steps: [
+            { action: 'Find size display element', expected: 'Element exists' },
+            { action: 'Check size format is WxH', expected: 'Value matches pattern NNNxNNN' }
+        ],
+        validate: async () => {
+            const sizeEl = document.getElementById('size-value');
+            const value = sizeEl?.textContent || '--';
+            const sizePattern = /^\d+x\d+$/;
+            const isValidFormat = sizePattern.test(value);
+            return {
+                passed: sizeEl !== null && isValidFormat,
+                elementExists: sizeEl !== null,
+                value: value,
+                isValidFormat: isValidFormat
+            };
+        }
+    },
+    'H-UI-16': {
+        id: 'H-UI-16',
+        name: 'Center Display Shows Lat/Lon',
+        hypothesis: 'If map is initialized, then center display should show lat, lon coordinates',
+        prediction: 'Center display shows coordinates like "0.00, 0.00"',
+        category: 'ui',
+        steps: [
+            { action: 'Find center display element', expected: 'Element exists' },
+            { action: 'Check center format is lat, lon', expected: 'Value matches pattern N.NN, N.NN' }
+        ],
+        validate: async () => {
+            const centerEl = document.getElementById('center-value');
+            const value = centerEl?.textContent || '--';
+            const coordPattern = /^-?\d+\.\d+,\s*-?\d+\.\d+$/;
+            const isValidFormat = coordPattern.test(value);
+            return {
+                passed: centerEl !== null && isValidFormat,
+                elementExists: centerEl !== null,
+                value: value,
+                isValidFormat: isValidFormat
+            };
+        }
+    },
+    'H-UI-17': {
+        id: 'H-UI-17',
+        name: 'Logs Toggle in Settings',
+        hypothesis: 'Settings panel should have a Logs section with toggle button',
+        prediction: 'Logs toggle button and content area exist in Settings',
+        category: 'ui',
+        steps: [
+            { action: 'Find logs toggle button', expected: 'Button exists' },
+            { action: 'Find logs content area', expected: 'Content area exists' }
+        ],
+        validate: async () => {
+            const toggleBtn = document.getElementById('logs-toggle-btn');
+            const logsContent = document.getElementById('logs-content-inline');
+            return {
+                passed: toggleBtn !== null && logsContent !== null,
+                toggleButtonExists: toggleBtn !== null,
+                contentAreaExists: logsContent !== null,
+                buttonText: toggleBtn?.textContent || ''
+            };
+        }
     }
 };
 
