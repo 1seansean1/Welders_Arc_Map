@@ -773,7 +773,17 @@ function createLayers() {
                 }
             },
             onClick: ({object}) => {
-                if (object && analysisState.isPolarPlotEnabled()) {
+                if (object) {
+                    // Auto-enable polar plot if not already enabled
+                    if (!analysisState.isPolarPlotEnabled()) {
+                        analysisState.setPolarPlotEnabled(true);
+                        const plotContainer = document.getElementById('polar-plot-container');
+                        const checkbox = document.getElementById('analysis-polar-plot');
+                        if (plotContainer) plotContainer.style.display = 'flex';
+                        if (checkbox) checkbox.checked = true;
+                        if (window.polarPlot) window.polarPlot.setVisible(true);
+                        logger.log('Polar plot auto-enabled via sensor click', logger.CATEGORY.SENSOR);
+                    }
                     // Select this sensor for polar view
                     analysisState.setPolarViewSensor(object.sensor.id);
                     logger.log(`Sensor ${object.sensor.name} selected for polar view`, logger.CATEGORY.SENSOR);

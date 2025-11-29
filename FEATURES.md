@@ -1,8 +1,8 @@
 # WA_map Feature Registry
 
 > **Document Type**: FEATURES
-> **Version**: 4.2
-> **Last Updated**: 2025-11-28
+> **Version**: 4.3
+> **Last Updated**: 2025-11-29
 > **Maintainer**: AI Governor System
 
 ---
@@ -286,6 +286,7 @@
 | ANALYSIS-011 | Enhanced Grid Labels | P2 | XS | DONE | ANALYSIS-002 |
 | ANALYSIS-012 | Cross-Panel Entity Selection Sync | P1 | M | DONE | SAT-009, ARCH-002 |
 | ANALYSIS-013 | Orange Theme on Sensor Selection | P1 | S | DONE | ANALYSIS-002, SEN-005 |
+| ANALYSIS-014 | Sensor Click Auto-Enables Polar Plot | P2 | XS | DONE | ANALYSIS-001, MAP-003 |
 
 ---
 
@@ -348,12 +349,12 @@
 | BACK | 9 | 3 | 0 | 4 | 2 |
 | ARCH | 5 | 5 | 0 | 0 | 0 |
 | LIST | 6 | 6 | 0 | 0 | 0 |
-| ANALYSIS | 13 | 13 | 0 | 0 | 0 |
-| **TOTAL** | **168** | **154** | **0** | **7** | **6** |
+| ANALYSIS | 14 | 14 | 0 | 0 | 0 |
+| **TOTAL** | **169** | **155** | **0** | **7** | **6** |
 
 *Note: MAP-013 REMOVED (superseded by MAP-012+MAP-016), MAP-016 added - net zero change*
 
-**Completion Rate**: 92% (154/168 features complete)
+**Completion Rate**: 92% (155/169 features complete)
 
 ---
 
@@ -361,6 +362,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 4.3 | 2025-11-29 | ANALYSIS-014 DONE: Sensor click auto-enables polar plot - clicking sensor on map auto-enables polar plot and selects that sensor; H-POLAR-11 test added; Fixed testRegistry.js syntax errors |
 | 4.2 | 2025-11-28 | MAP-017, UI-020/021 DONE: Zoom level display below clocks, glow size/brightness sliders in Settings, profile avatar circle fix (smaller, always circular), clock format updated to DD-MMM-YYYY UTC; H-STATE-9/10/11 tests added |
 | 4.1 | 2025-11-28 | ANALYSIS-012/013 DONE: Cross-Panel Entity Selection Sync - clicking satellite/sensor in any panel highlights it in all panels (map chevron, polar plot); Orange Theme on Sensor Selection - polar plot gridlines/border turn orange when sensor selected for polar view, FOV polygon turns orange on map; H-POLAR-8/9/10 tests added |
 | 4.0 | 2025-11-28 | LIST-009/010/011 DONE: Watch list UX improvements - Selected Only default unchecked, bulk select loading indicator, custom delete confirmation modal; H-UI-14/15 tests added |

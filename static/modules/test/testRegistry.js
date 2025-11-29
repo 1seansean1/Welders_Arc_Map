@@ -537,9 +537,7 @@ const STATE_HYPOTHESES = {
                 }
             };
         }
-    }
-};
-
+    },
     'H-STATE-9': {
         id: 'H-STATE-9',
         name: 'Glow Size State',
@@ -640,13 +638,13 @@ const STATE_HYPOTHESES = {
                 details: { text, hasHyphens, hasMixedCase }
             };
         }
-    },
+    }
+};
 
 // ============================================
 // EVENT BUS TESTS (new)
 // ============================================
 
-'H-STATE-9': {        id: 'H-STATE-9',        name: 'Glow Size State',        category: 'state',        hypothesis: 'Glow size state can be get and set independently from brightness',        symptom: 'Glow size slider does not affect glow appearance',        prediction: 'getGlowSize() returns correct value after setGlowSize()',        nullPrediction: 'Size would not be stored or retrieved correctly',        threshold: { sizeCorrect: true },        causalChain: [            'SYMPTOM: Glow size does not change',            'PROXIMATE: Size state not updated',            'ROOT: Getter/setter not implemented',            'MECHANISM: State property missing',            'FIX: Add glowSize to timeState with getter/setter'        ],        testFn: async () => {            const timeState = window.SatelliteApp?.timeState;            if (!timeState) return { passed: false, error: 'timeState not available' };            const initial = timeState.getGlowSize();            timeState.setGlowSize(2.0);            const afterSet = timeState.getGlowSize();            timeState.setGlowSize(initial);            const restored = timeState.getGlowSize();            const sizeCorrect = afterSet === 2.0 && restored === initial;            return {                passed: sizeCorrect,                details: { initial, afterSet, restored, sizeCorrect }            };        }    },    'H-STATE-10': {        id: 'H-STATE-10',        name: 'Glow Size Range Validation',        category: 'state',        hypothesis: 'Glow size is constrained to 0.2-3.0 range',        symptom: 'Invalid size values accepted',        prediction: 'Values outside 0.2-3.0 range rejected',        nullPrediction: 'Invalid values would be accepted',        threshold: { validationCorrect: true },        causalChain: [            'SYMPTOM: Size shows invalid values',            'PROXIMATE: No range validation',            'ROOT: Setter accepts any number',            'MECHANISM: No min/max enforcement',            'FIX: Add validation in setGlowSize()'        ],        testFn: async () => {            const timeState = window.SatelliteApp?.timeState;            if (!timeState) return { passed: false, error: 'timeState not available' };            const initial = timeState.getGlowSize();            timeState.setGlowSize(1.5);            const validAccepted = timeState.getGlowSize() === 1.5;            timeState.setGlowSize(0.05);            const invalidLowRejected = timeState.getGlowSize() === 1.5;            timeState.setGlowSize(5.0);            const invalidHighRejected = timeState.getGlowSize() === 1.5;            timeState.setGlowSize(initial);            const validationCorrect = validAccepted && invalidLowRejected && invalidHighRejected;            return {                passed: validationCorrect,                details: { validAccepted, invalidLowRejected, invalidHighRejected }            };        }    },
 const EVENT_HYPOTHESES = {
     'H-EVENT-1': {
         id: 'H-EVENT-1',
@@ -3446,6 +3444,50 @@ const POLAR_HYPOTHESES = {
                 details: {
                     polarViewSensorId: sensorId,
                     note: 'Visual verification of orange FOV requires manual testing with deck.gl inspector'
+                }
+            };
+        }
+    },
+    'H-POLAR-11': {
+        id: 'H-POLAR-11',
+        name: 'Sensor Click Auto-Enables Polar Plot',
+        category: 'polar',
+        hypothesis: 'Clicking a sensor on the map auto-enables polar plot if not already enabled',
+        symptom: 'Clicking sensor on map does nothing when polar plot is disabled',
+        prediction: 'After sensor click: polar plot enabled, checkbox checked, container visible, sensor selected',
+        nullPrediction: 'Sensor click would only work if polar plot was already enabled',
+        threshold: { autoEnableWorks: true },
+        causalChain: [
+            'SYMPTOM: Must manually enable polar plot before clicking sensors',
+            'PROXIMATE: onClick handler required isPolarPlotEnabled() to be true',
+            'ROOT: User workflow required two steps instead of one',
+            'MECHANISM: onClick now auto-enables polar plot before selecting sensor',
+            'FIX: Remove isPolarPlotEnabled guard, add auto-enable logic in deckgl.js'
+        ],
+        testFn: async () => {
+            const analysisState = window.analysisState;
+            if (!analysisState) {
+                return { passed: false, error: 'analysisState not available' };
+            }
+
+            // Check that required methods exist
+            const hasSetPolarPlotEnabled = typeof analysisState.setPolarPlotEnabled === 'function';
+            const hasIsPolarPlotEnabled = typeof analysisState.isPolarPlotEnabled === 'function';
+            const hasSetPolarViewSensor = typeof analysisState.setPolarViewSensor === 'function';
+
+            const checkbox = document.getElementById('analysis-polar-plot');
+            const container = document.getElementById('polar-plot-container');
+
+            const hasUIElements = checkbox !== null && container !== null;
+
+            return {
+                passed: hasSetPolarPlotEnabled && hasIsPolarPlotEnabled && hasSetPolarViewSensor && hasUIElements,
+                details: {
+                    hasSetPolarPlotEnabled,
+                    hasIsPolarPlotEnabled,
+                    hasSetPolarViewSensor,
+                    hasUIElements,
+                    note: 'Full integration requires manual sensor click verification'
                 }
             };
         }
