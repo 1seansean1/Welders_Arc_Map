@@ -637,6 +637,46 @@
             --accent-red: #cc3333;
         }
 
+        /* Light theme - Clock display text shadow (dark on light) */
+        [data-theme="light"] .current-time-display {
+            text-shadow: 0 1px 2px rgba(255,255,255,0.9), 0 0 4px rgba(255,255,255,0.7);
+        }
+        [data-theme="light"] .time-value {
+            color: #1a1a1a;
+        }
+        [data-theme="light"] .time-label {
+            color: #555555;
+        }
+
+        /* Light theme - Map time bar background */
+        [data-theme="light"] .map-time-bar {
+            background: rgba(255, 255, 255, 0.95);
+            border-color: #cccccc;
+        }
+
+        /* Light theme - Log inline controls background */
+        [data-theme="light"] .log-inline-controls {
+            background: rgba(255, 255, 255, 0.92);
+        }
+
+        /* Light theme - Grid resize handle highlight (darker for visibility) */
+        [data-theme="light"] .grid-resize-vertical::before {
+            background: linear-gradient(180deg,
+                rgba(0, 102, 204, 0.7) 0%,
+                rgba(0, 130, 230, 0.85) 25%,
+                rgba(0, 150, 255, 0.9) 50%,
+                rgba(0, 130, 230, 0.85) 75%,
+                rgba(0, 102, 204, 0.7) 100%);
+        }
+        [data-theme="light"] .grid-resize-horizontal::before {
+            background: linear-gradient(90deg,
+                rgba(0, 102, 204, 0.7) 0%,
+                rgba(0, 130, 230, 0.85) 25%,
+                rgba(0, 150, 255, 0.9) 50%,
+                rgba(0, 130, 230, 0.85) 75%,
+                rgba(0, 102, 204, 0.7) 100%);
+        }
+
         /* Theme transition for smooth switching */
         body, .control-panel, .panel-content, .settings-section,
         .sensor-table, .satellite-table, .log-panel, #map {
@@ -1378,8 +1418,8 @@
         .theme-switch {
             position: relative;
             display: inline-block;
-            width: 52px;
-            height: 28px;
+            width: 36px;
+            height: 18px;
         }
 
         .theme-switch input {
@@ -1397,15 +1437,15 @@
             bottom: 0;
             background-color: var(--accent-blue-grey);
             transition: 0.3s;
-            border-radius: 28px;
-            border: 2px solid var(--accent-blue-grey);
+            border-radius: 18px;
+            border: 1px solid var(--accent-blue-grey);
         }
 
         .theme-slider:before {
             position: absolute;
             content: "";
-            height: 20px;
-            width: 20px;
+            height: 12px;
+            width: 12px;
             left: 2px;
             bottom: 2px;
             background-color: var(--bg-primary);
@@ -1418,7 +1458,7 @@
         }
 
         .theme-switch input:checked + .theme-slider:before {
-            transform: translateX(24px);
+            transform: translateX(18px);
         }
 
         .theme-switch input:focus + .theme-slider {

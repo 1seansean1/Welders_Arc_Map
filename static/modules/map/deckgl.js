@@ -29,9 +29,37 @@ import satelliteState from '../state/satelliteState.js';
 import timeState from '../state/timeState.js';
 import listState from '../state/listState.js';
 import analysisState from '../state/analysisState.js';
+import themeState from '../state/themeState.js';
 import { calculateFOVCircle } from '../utils/geometry.js';
 import { calculateGroundTrack } from '../data/propagation.js';
 import eventDetector from '../events/eventDetector.js';
+
+// Theme-aware FOV colors
+const FOV_COLORS = {
+    dark: {
+        fill: [157, 212, 255, 30],
+        line: [157, 212, 255, 120],
+        fillSelected: [255, 165, 0, 50],
+        lineSelected: [255, 165, 0, 150],
+        sensorFill: [157, 212, 255, 0],
+        sensorFillSelected: [255, 165, 0, 100]
+    },
+    light: {
+        fill: [0, 100, 180, 40],
+        line: [0, 100, 180, 150],
+        fillSelected: [200, 120, 0, 60],
+        lineSelected: [200, 120, 0, 180],
+        sensorFill: [0, 100, 180, 0],
+        sensorFillSelected: [200, 120, 0, 120]
+    }
+};
+
+/**
+ * Get theme-appropriate FOV colors
+ */
+function getFOVColors() {
+    return themeState.isDarkTheme() ? FOV_COLORS.dark : FOV_COLORS.light;
+}
 
 // Store reference to the LeafletLayer instance
 let deckLayer = null;
@@ -192,6 +220,12 @@ function setupTimeStateSync() {
             action,
             listId
         });
+        updateDeckOverlay();
+    });
+
+    // Update when theme changes (for FOV colors)
+    eventBus.on('theme:changed', ({ theme }) => {
+        logger.info('Theme changed, updating FOV colors', logger.CATEGORY.SYNC, { theme });
         updateDeckOverlay();
     });
 
@@ -709,8 +743,14 @@ function createLayers() {
             wireframe: false,
             lineWidthMinPixels: 1,
             getPolygon: d => d.polygon,
-            getFillColor: d => d.isSelectedForPolar ? [255, 165, 0, 50] : [157, 212, 255, 30],
-            getLineColor: d => d.isSelectedForPolar ? [255, 165, 0, 150] : [157, 212, 255, 120],
+            getFillColor: d => {
+                const colors = getFOVColors();
+                return d.isSelectedForPolar ? colors.fillSelected : colors.fill;
+            },
+            getLineColor: d => {
+                const colors = getFOVColors();
+                return d.isSelectedForPolar ? colors.lineSelected : colors.line;
+            },
             getLineWidth: 1,
             transitions: {
                 getPolygon: 0,
@@ -741,11 +781,12 @@ function createLayers() {
             getPosition: d => d.position,
             getRadius: d => d.radius,
             getFillColor: d => {
+                const colors = getFOVColors();
                 if (d.sensor.iconType === 'filled') return d.color;
                 if (d.sensor.iconType === 'donut') {
                     // Filled center for polar-selected sensor
-                    if (d.isSelectedForPolar) return [255, 165, 0, 100];
-                    return [157, 212, 255, 0];
+                    if (d.isSelectedForPolar) return colors.sensorFillSelected;
+                    return colors.sensorFill;
                 }
                 return [0, 0, 0, 0];
             },

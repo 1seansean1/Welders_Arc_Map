@@ -27,6 +27,7 @@ import sensorState from '../state/sensorState.js';
 import satelliteState from '../state/satelliteState.js';
 import listState from '../state/listState.js';
 import timeState from '../state/timeState.js';
+import themeState from '../state/themeState.js';
 import { calculateAzimuthElevation } from '../utils/geometry.js';
 import { propagateSatellite } from '../data/propagation.js';
 
@@ -40,14 +41,15 @@ let centerY = 0;
 let radius = 0;
 let padding = 40;
 
-// Colors (matching app theme)
-const COLORS = {
+// Colors for dark theme
+const COLORS_DARK = {
     background: '#0d1117',
     gridLines: 'rgba(88, 166, 255, 0.3)',
     gridLabels: 'rgba(88, 166, 255, 0.7)',
     cardinalLabels: 'rgba(200, 200, 200, 0.9)',
     azimuthLabels: 'rgba(150, 150, 150, 0.6)',
     horizon: 'rgba(88, 166, 255, 0.5)',
+    noSensorMessage: 'rgba(150, 150, 150, 0.7)',
     // Orange theme (sensor selected for polar view)
     gridLinesOrange: 'rgba(255, 165, 0, 0.3)',
     gridLabelsOrange: 'rgba(255, 165, 0, 0.7)',
@@ -56,12 +58,46 @@ const COLORS = {
         grey: [180, 180, 180],
         red: [255, 100, 100],
         blue: [100, 150, 255],
-        orange: [255, 165, 0]  // Active row highlight (standard orange)
+        orange: [255, 165, 0]
     },
-    selectionRing: 'rgba(255, 165, 0, 0.8)',  // Orange ring for selected
+    selectionRing: 'rgba(255, 165, 0, 0.8)',
     trackDefault: 'rgba(150, 150, 150, 0.4)',
     currentPosition: 'rgba(255, 200, 100, 1.0)'
 };
+
+// Colors for light theme
+const COLORS_LIGHT = {
+    background: '#f5f5f5',
+    gridLines: 'rgba(0, 80, 160, 0.25)',
+    gridLabels: 'rgba(0, 80, 160, 0.7)',
+    cardinalLabels: 'rgba(40, 40, 40, 0.9)',
+    azimuthLabels: 'rgba(80, 80, 80, 0.6)',
+    horizon: 'rgba(0, 80, 160, 0.5)',
+    noSensorMessage: 'rgba(80, 80, 80, 0.7)',
+    // Orange theme (sensor selected for polar view)
+    gridLinesOrange: 'rgba(200, 120, 0, 0.3)',
+    gridLabelsOrange: 'rgba(200, 120, 0, 0.8)',
+    horizonOrange: 'rgba(200, 120, 0, 0.6)',
+    satellite: {
+        grey: [100, 100, 100],
+        red: [200, 60, 60],
+        blue: [40, 100, 200],
+        orange: [200, 120, 0]
+    },
+    selectionRing: 'rgba(200, 120, 0, 0.8)',
+    trackDefault: 'rgba(100, 100, 100, 0.4)',
+    currentPosition: 'rgba(200, 140, 60, 1.0)'
+};
+
+// Current colors (will be set based on theme)
+let COLORS = COLORS_DARK;
+
+/**
+ * Get current theme colors
+ */
+function getThemeColors() {
+    return themeState.isDarkTheme() ? COLORS_DARK : COLORS_LIGHT;
+}
 
 // Animation frame ID for cleanup
 let animationFrameId = null;
@@ -195,6 +231,15 @@ function setupEventListeners() {
     eventBus.on('time:track:changed', () => {
         render();
     });
+
+    // Theme changes
+    eventBus.on('theme:changed', () => {
+        COLORS = getThemeColors();
+        render();
+    });
+
+    // Set initial colors based on current theme
+    COLORS = getThemeColors();
 }
 
 /**
@@ -443,7 +488,7 @@ function drawGrid(useOrangeTheme = false) {
  * Draw message when no sensor is selected
  */
 function drawNoSensorMessage() {
-    ctx.fillStyle = 'rgba(150, 150, 150, 0.7)';
+    ctx.fillStyle = COLORS.noSensorMessage;
     ctx.font = '12px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';

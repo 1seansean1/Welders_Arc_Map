@@ -1405,8 +1405,8 @@ const UI_HYPOTHESES = {
             const themeState = window.themeState;
             if (!themeState) return { passed: false, error: 'themeState not available on window' };
             
-            const toggleBtn = document.getElementById('theme-toggle-btn');
-            if (!toggleBtn) return { passed: false, error: 'Theme toggle button not found' };
+            const toggleCheckbox = document.getElementById('theme-toggle-checkbox');
+            if (!toggleCheckbox) return { passed: false, error: 'Theme toggle checkbox not found' };
             
             // Get initial state
             const initialTheme = themeState.getTheme();

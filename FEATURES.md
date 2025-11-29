@@ -1,7 +1,7 @@
 # WA_map Feature Registry
 
 > **Document Type**: FEATURES
-> **Version**: 4.7
+> **Version**: 4.8
 > **Last Updated**: 2025-11-29
 > **Maintainer**: AI Governor System
 
@@ -365,6 +365,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 4.8 | 2025-11-29 | UI-022 Light Theme Polish: Polar plot theme-aware colors; FOV polygon theme-aware colors (darker blue for light theme); clock glow/text override; map time bar background override; log panel buttons override; panel border highlight override (darker gradient); reduced theme toggle switch size (36x18px); H-UI-16 test updated for checkbox |
 | 4.7 | 2025-11-29 | UI-022 Enhanced: Theme toggle now uses styled pill switch with accent blue color; map tiles switch between CartoDB Dark Matter and Positron; tile layer switching on theme change |
 | 4.6 | 2025-11-29 | UI-022 DONE: Theme Toggle (Light/Dark Mode) - button in SETTINGS panel to switch between light and dark themes; preference persists in localStorage; H-UI-16 test added |
 | 4.5 | 2025-11-29 | TEST-017 DONE: Split Download Buttons - replaced single Download button with "Current Run" (minimal pass info, full fail details, no history) and "Full History" (all details + history) |
