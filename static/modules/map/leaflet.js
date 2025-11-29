@@ -193,15 +193,16 @@ export function switchTileLayer(theme) {
     const map = window.leafletMap;
     const currentTileLayer = window.leafletTileLayer;
     
-    if (\!map || \!currentTileLayer) {
+    if (!map || !currentTileLayer) {
         logger.warning('Cannot switch tiles: map or tile layer not initialized', logger.CATEGORY.MAP);
         return;
     }
-    
+
     const newUrl = TILE_URLS[theme] || TILE_URLS.dark;
-    
+
     // Update the tile layer URL
     currentTileLayer.setUrl(newUrl);
-    
-    logger.info(\, logger.CATEGORY.MAP);
+
+    const tileName = theme === 'dark' ? 'Dark Matter' : 'Positron';
+    logger.info('Tile layer switched to ' + tileName, logger.CATEGORY.MAP);
 }
