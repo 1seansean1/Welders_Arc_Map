@@ -32,6 +32,13 @@ import logger from '../utils/logger.js';
  */
 let calendarJustClosed = false;
 
+/**
+ * Timestamp of last nav button click to debounce double-clicks
+ * Prevents double-click from toggling panel twice (collapse then expand)
+ */
+let lastNavClickTime = 0;
+const NAV_CLICK_DEBOUNCE_MS = 300;
+
 // DOM element references (initialized in init())
 let panel = null;
 let collapseBtn = null;
@@ -144,6 +151,13 @@ function handleCollapseClick(e) {
  */
 function handleNavButtonClick(e, section) {
     e.stopPropagation(); // Prevent any parent handlers
+
+    // Debounce to prevent double-click from toggling twice
+    const now = Date.now();
+    if (now - lastNavClickTime < NAV_CLICK_DEBOUNCE_MS) {
+        return;
+    }
+    lastNavClickTime = now;
 
     const wasExpanded = uiState.isPanelExpanded();
 
