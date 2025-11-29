@@ -530,7 +530,7 @@ function downloadReport() {
         return;
     }
 
-    // Build comprehensive report
+    // Build report with only failed tests (summary still shows full stats)
     const report = {
         generated: new Date().toISOString(),
         summary: {
@@ -541,14 +541,14 @@ function downloadReport() {
             passRate: ((lastRun.summary.passed / lastRun.summary.total) * 100).toFixed(1) + '%',
             totalDuration: lastRun.results.reduce((sum, r) => sum + (r.duration || 0), 0) + 'ms'
         },
-        tests: lastRun.results.map(result => {
+        tests: lastRun.results.filter(result => !result.passed).map(result => {
             const hyp = getHypothesis(result.hypothesisId);
             return {
                 id: result.hypothesisId,
                 name: hyp.name,
                 hypothesis: hyp.hypothesis,
                 prediction: hyp.prediction,
-                status: result.passed ? 'PASS' : 'FAIL',
+                status: 'FAIL',
                 duration: result.duration + 'ms',
                 details: result.details
             };
