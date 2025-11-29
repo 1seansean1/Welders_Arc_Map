@@ -643,9 +643,14 @@
         }
         [data-theme="light"] .time-value {
             color: #1a1a1a;
+            font-weight: 600;
         }
         [data-theme="light"] .time-label {
             color: #555555;
+            font-weight: 600;
+        }
+        [data-theme="light"] .time-label.sim-label {
+            font-weight: 600;
         }
 
         /* Light theme - Map time bar background */
@@ -669,6 +674,16 @@
                 rgba(0, 102, 204, 0.7) 100%);
         }
         [data-theme="light"] .grid-resize-horizontal::before {
+            background: linear-gradient(90deg,
+                rgba(0, 102, 204, 0.7) 0%,
+                rgba(0, 130, 230, 0.85) 25%,
+                rgba(0, 150, 255, 0.9) 50%,
+                rgba(0, 130, 230, 0.85) 75%,
+                rgba(0, 102, 204, 0.7) 100%);
+        }
+
+        /* Light theme - Log panel resize handle (darker for visibility) */
+        [data-theme="light"] .log-resize-handle::before {
             background: linear-gradient(90deg,
                 rgba(0, 102, 204, 0.7) 0%,
                 rgba(0, 130, 230, 0.85) 25%,
@@ -845,6 +860,14 @@
         /* Override img filter for active state */
         .nav-btn.active .nav-icon img {
             filter: invert(1) sepia(1) saturate(5) hue-rotate(175deg);
+        }
+
+        /* Light theme - Remove invert filter from nav icon images (makes them visible) */
+        [data-theme="light"] .nav-icon img {
+            filter: none !important;
+        }
+        [data-theme="light"] .nav-btn.active .nav-icon img {
+            filter: sepia(1) saturate(5) hue-rotate(175deg) !important;
         }
 
         /* Removed the green bar ::before element */
@@ -3071,7 +3094,7 @@
 
                     <div class="track-duration-control">
                         <span class="track-label">Opacity</span>
-                        <input type="range" id="apex-tick-opacity-input" min="10" max="100" value="80" style="width: 80px;" />
+                        <input type="range" class="track-slider" id="apex-tick-opacity-input" min="10" max="100" value="80" style="width: 80px;" />
                         <span class="track-unit" id="apex-tick-opacity-value">80%</span>
                     </div>
                 </div>

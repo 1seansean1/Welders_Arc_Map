@@ -1,7 +1,7 @@
 # WA_map Feature Registry
 
 > **Document Type**: FEATURES
-> **Version**: 4.8
+> **Version**: 4.9
 > **Last Updated**: 2025-11-29
 > **Maintainer**: AI Governor System
 
@@ -197,6 +197,7 @@
 | UI-020 | Glow Size/Brightness Sliders | P2 | S | DONE | UI-010, SAT-014 |
 | UI-021 | Profile Avatar Circle Fix | P2 | XS | DONE | UI-001 |
 | UI-022 | Theme Toggle (Light/Dark Mode) | P2 | S | DONE | UI-009, MAP-002 |
+| UI-023 | Light Theme Styling Consistency | P2 | S | DONE | UI-022 |
 
 ### Logging System (LOG)
 
@@ -346,18 +347,18 @@
 | CAT | 5 | 5 | 0 | 0 | 0 |
 | SEN | 9 | 8 | 0 | 0 | 1 |
 | TIME | 34 | 34 | 0 | 0 | 0 |
-| UI | 24 | 23 | 0 | 1 | 0 |
+| UI | 25 | 24 | 0 | 1 | 0 |
 | LOG | 10 | 8 | 0 | 0 | 2 |
 | TEST | 16 | 14 | 0 | 1 | 0 |
 | BACK | 9 | 3 | 0 | 4 | 2 |
 | ARCH | 5 | 5 | 0 | 0 | 0 |
 | LIST | 6 | 6 | 0 | 0 | 0 |
 | ANALYSIS | 14 | 14 | 0 | 0 | 0 |
-| **TOTAL** | **170** | **156** | **0** | **7** | **6** |
+| **TOTAL** | **171** | **157** | **0** | **7** | **6** |
 
 *Note: MAP-013 REMOVED (superseded by MAP-012+MAP-016), MAP-016 added - net zero change*
 
-**Completion Rate**: 92% (157/171 features complete)
+**Completion Rate**: 92% (158/172 features complete)
 
 ---
 
@@ -365,6 +366,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 4.9 | 2025-11-29 | UI-023 DONE: Light Theme Styling Consistency - SATELLITE/SENSOR control panel icons now visible in light theme; equator glow markers use theme-aware colors (darker blue on light maps); apex latitude markers adjust for theme contrast; clock fonts normalized (consistent weight in light theme); apex opacity slider styled like other sliders; system log border highlight matches other borders; H-UI-17 test added |
 | 4.8 | 2025-11-29 | UI-022 Light Theme Polish: Polar plot theme-aware colors; FOV polygon theme-aware colors (darker blue for light theme); clock glow/text override; map time bar background override; log panel buttons override; panel border highlight override (darker gradient); reduced theme toggle switch size (36x18px); H-UI-16 test updated for checkbox |
 | 4.7 | 2025-11-29 | UI-022 Enhanced: Theme toggle now uses styled pill switch with accent blue color; map tiles switch between CartoDB Dark Matter and Positron; tile layer switching on theme change |
 | 4.6 | 2025-11-29 | UI-022 DONE: Theme Toggle (Light/Dark Mode) - button in SETTINGS panel to switch between light and dark themes; preference persists in localStorage; H-UI-16 test added |

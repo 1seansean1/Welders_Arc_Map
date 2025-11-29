@@ -54,6 +54,33 @@ const FOV_COLORS = {
     }
 };
 
+// Theme-aware Equator Glow colors
+const GLOW_COLORS = {
+    dark: {
+        // Original bluish glow - good on dark maps
+        halo: [120, 160, 220],
+        outer: [130, 170, 230],
+        middle: [150, 190, 240],
+        inner: [170, 200, 250],
+        core: [200, 220, 255]
+    },
+    light: {
+        // Darker blue/purple glow - visible on light maps
+        halo: [60, 80, 160],
+        outer: [70, 90, 170],
+        middle: [80, 100, 180],
+        inner: [90, 110, 190],
+        core: [100, 120, 200]
+    }
+};
+
+/**
+ * Get theme-appropriate glow colors
+ */
+function getGlowColors() {
+    return themeState.isDarkTheme() ? GLOW_COLORS.dark : GLOW_COLORS.light;
+}
+
 /**
  * Get theme-appropriate FOV colors
  */
@@ -251,6 +278,26 @@ function hexToRgb(hex) {
 }
 
 /**
+ * Adjust color for better contrast on light theme
+ * Darkens bright colors when on light theme for better visibility
+ * @param {number[]} rgb - RGB array [r, g, b]
+ * @returns {number[]} Adjusted RGB array
+ */
+function adjustColorForTheme(rgb) {
+    if (themeState.isDarkTheme()) {
+        return rgb; // No adjustment needed for dark theme
+    }
+    // For light theme, darken bright colors
+    // Calculate luminance
+    const luminance = (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) / 255;
+    if (luminance > 0.5) {
+        // Darken bright colors by 40% for better contrast on light map
+        return rgb.map(c => Math.round(c * 0.6));
+    }
+    return rgb;
+}
+
+/**
  * Create apex tick pulse layers for horizontal pulsing effect at latitude apex points
  * @param {Array} apexTickData - Array of apex tick data from eventDetector
  * @param {boolean} apexTickEnabled - Whether apex ticks are enabled
@@ -262,8 +309,8 @@ function hexToRgb(hex) {
  * @returns {Array} Array of PathLayer objects
  */
 function createApexTickPulseLayers(apexTickData, apexTickEnabled, apexTickPulseSpeed, apexTickPulseWidth, apexTickColor, apexTickOpacity, currentTime) {
-    // Parse apex tick color
-    const apexRgb = hexToRgb(apexTickColor);
+    // Parse apex tick color and adjust for theme (darkens bright colors on light theme)
+    const apexRgb = adjustColorForTheme(hexToRgb(apexTickColor));
 
     // Calculate pulse phase based on time (0-1 oscillating)
     const pulsePhase = (Math.sin(currentTime.getTime() / 1000 * apexTickPulseSpeed * Math.PI * 2) + 1) / 2;
@@ -959,14 +1006,15 @@ function createLayers() {
             getPosition: d => d.position,
             getRadius: d => 120000 * d.intensity,
             getFillColor: d => {
-                // Ultra-faint outer halo
+                // Ultra-faint outer halo (theme-aware)
+                const glowColors = getGlowColors();
                 const alpha = Math.floor(d.intensity * 25 * glowIntensity);
-                return [120, 160, 220, Math.min(50, alpha)];
+                return [...glowColors.halo, Math.min(50, alpha)];
             },
             updateTriggers: {
                 visible: `${glowEnabled}-${equatorCrossingData.length}`,
                 getRadius: `${currentTime.getTime()}-${glowSize}-${glowIntensity}`,
-                getFillColor: `${currentTime.getTime()}-${glowIntensity}`
+                getFillColor: `${currentTime.getTime()}-${glowIntensity}-${themeState.getTheme()}`
             }
         }),
 
@@ -987,18 +1035,15 @@ function createLayers() {
             getPosition: d => d.position,
             getRadius: d => 85000 * d.intensity,
             getFillColor: d => {
+                // Theme-aware outer glow
+                const glowColors = getGlowColors();
                 const alpha = Math.floor(d.intensity * 45 * glowIntensity);
-                if (d.isFuture) {
-                    // Approaching: cooler blue tint
-                    return [130, 170, 240, Math.min(70, alpha)];
-                }
-                // Receding: warmer blue-white
-                return [150, 185, 235, Math.min(70, alpha)];
+                return [...glowColors.outer, Math.min(70, alpha)];
             },
             updateTriggers: {
                 visible: `${glowEnabled}-${equatorCrossingData.length}`,
                 getRadius: `${currentTime.getTime()}-${glowSize}-${glowIntensity}`,
-                getFillColor: `${currentTime.getTime()}-${glowIntensity}`
+                getFillColor: `${currentTime.getTime()}-${glowIntensity}-${themeState.getTheme()}`
             }
         }),
 
@@ -1019,16 +1064,15 @@ function createLayers() {
             getPosition: d => d.position,
             getRadius: d => 50000 * d.intensity,
             getFillColor: d => {
+                // Theme-aware middle glow
+                const glowColors = getGlowColors();
                 const alpha = Math.floor(d.intensity * 100 * glowIntensity);
-                if (d.isFuture) {
-                    return [160, 195, 250, Math.min(130, alpha)];
-                }
-                return [180, 210, 245, Math.min(130, alpha)];
+                return [...glowColors.middle, Math.min(130, alpha)];
             },
             updateTriggers: {
                 visible: `${glowEnabled}-${equatorCrossingData.length}`,
                 getRadius: `${currentTime.getTime()}-${glowSize}-${glowIntensity}`,
-                getFillColor: `${currentTime.getTime()}-${glowIntensity}`
+                getFillColor: `${currentTime.getTime()}-${glowIntensity}-${themeState.getTheme()}`
             }
         }),
 
@@ -1049,16 +1093,15 @@ function createLayers() {
             getPosition: d => d.position,
             getRadius: d => 25000 * d.intensity,
             getFillColor: d => {
+                // Theme-aware inner glow
+                const glowColors = getGlowColors();
                 const alpha = Math.floor(d.intensity * 180 * glowIntensity);
-                if (d.isFuture) {
-                    return [200, 225, 255, Math.min(200, alpha)];
-                }
-                return [210, 230, 250, Math.min(200, alpha)];
+                return [...glowColors.inner, Math.min(200, alpha)];
             },
             updateTriggers: {
                 visible: `${glowEnabled}-${equatorCrossingData.length}`,
                 getRadius: `${currentTime.getTime()}-${glowSize}-${glowIntensity}`,
-                getFillColor: `${currentTime.getTime()}-${glowIntensity}`
+                getFillColor: `${currentTime.getTime()}-${glowIntensity}-${themeState.getTheme()}`
             }
         }),
 
@@ -1079,14 +1122,15 @@ function createLayers() {
             getPosition: d => d.position,
             getRadius: d => 10000 * d.intensity,
             getFillColor: d => {
-                // Bright white-blue core
+                // Theme-aware bright core
+                const glowColors = getGlowColors();
                 const alpha = Math.floor(d.intensity * 230 * glowIntensity + 25);
-                return [240, 248, 255, Math.min(255, alpha)];
+                return [...glowColors.core, Math.min(255, alpha)];
             },
             updateTriggers: {
                 visible: `${glowEnabled}-${equatorCrossingData.length}`,
                 getRadius: `${currentTime.getTime()}-${glowSize}-${glowIntensity}`,
-                getFillColor: `${currentTime.getTime()}-${glowIntensity}`
+                getFillColor: `${currentTime.getTime()}-${glowIntensity}-${themeState.getTheme()}`
             },
             onHover: ({object}) => {
                 if (object) {

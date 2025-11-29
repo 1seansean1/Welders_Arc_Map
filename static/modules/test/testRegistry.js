@@ -1446,6 +1446,77 @@ const UI_HYPOTHESES = {
                 }
             };
         }
+    },
+    'H-UI-17': {
+        id: 'H-UI-17',
+        name: 'Light Theme Styling Consistency',
+        category: 'ui',
+        hypothesis: 'If light theme is active, control panel icons, clock fonts, sliders, and borders should be styled consistently for visibility',
+        symptom: 'UI elements invisible or inconsistent in light theme mode',
+        prediction: 'SATELLITE/SENSOR icons visible, clock labels same weight, apex slider styled, borders highlighted',
+        nullPrediction: 'Elements would be invisible or have mismatched styles in light theme',
+        threshold: { allStylesCorrect: true },
+        causalChain: [
+            'SYMPTOM: UI elements hard to see in light theme',
+            'PROXIMATE: CSS overrides missing for light theme',
+            'ROOT: Initial implementation only targeted dark theme',
+            'MECHANISM: img filter not inverted, fonts/sliders not normalized',
+            'FIX: Added light theme CSS overrides and theme-aware colors'
+        ],
+        testFn: async () => {
+            // Save initial theme
+            const initialTheme = themeState.getTheme();
+            
+            // Switch to light theme for testing
+            themeState.setTheme('light');
+            await new Promise(r => setTimeout(r, 100)); // Wait for CSS to apply
+            
+            // Test 1: SATELLITE/SENSOR icons should have filter: none or sepia filter (not invert)
+            const navIcons = document.querySelectorAll('.nav-icon img');
+            let iconsCorrect = true;
+            navIcons.forEach(img => {
+                const filter = window.getComputedStyle(img).filter;
+                // In light theme, icons should NOT have invert(1) as main filter
+                // (none or sepia variants are acceptable)
+                if (filter && filter.includes('invert(1)') && !filter.includes('sepia')) {
+                    iconsCorrect = false;
+                }
+            });
+            
+            // Test 2: Clock labels should have consistent font-weight
+            const timeLabels = document.querySelectorAll('.current-time-display .time-label');
+            let clockFontsConsistent = true;
+            let firstWeight = null;
+            timeLabels.forEach(label => {
+                const weight = window.getComputedStyle(label).fontWeight;
+                if (firstWeight === null) {
+                    firstWeight = weight;
+                } else if (weight !== firstWeight) {
+                    clockFontsConsistent = false;
+                }
+            });
+            
+            // Test 3: Apex opacity slider should have track-slider class
+            const apexSlider = document.getElementById('apex-tick-opacity-input');
+            const apexSliderStyled = apexSlider && apexSlider.classList.contains('track-slider');
+            
+            // Restore initial theme
+            themeState.setTheme(initialTheme);
+            
+            const allPassed = iconsCorrect && clockFontsConsistent && apexSliderStyled;
+            
+            return {
+                passed: allPassed,
+                details: {
+                    iconsCorrect,
+                    iconCount: navIcons.length,
+                    clockFontsConsistent,
+                    labelCount: timeLabels.length,
+                    firstFontWeight: firstWeight,
+                    apexSliderStyled
+                }
+            };
+        }
     }
 };
 
