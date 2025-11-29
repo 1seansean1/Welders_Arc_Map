@@ -35,7 +35,7 @@
 ---
 
 ## Recently Fixed
-### BUG-018: Double-Click on Nav Button Toggles Panel Twice**ID**: BUG-018**Severity**: Minor**Status**: FIXED**Reported**: 2025-11-29**Fixed**: 2025-11-29**Description**: Double-clicking on an active nav button (e.g., Catalogs) does not collapse the control panel as expected. Instead, it toggles twice - collapse then immediately expand.**Root Cause**: Double-click fires two click events. First click collapses the panel, second click sees panel is collapsed and expands it again.**Fix**: Added 300ms debounce to nav button click handler in controlPanel.js to ignore rapid successive clicks.**Files Modified**:- static/modules/ui/controlPanel.js
+### BUG-018: Double-Click on Nav Button Toggles Panel Twice**ID**: BUG-018**Severity**: Minor**Status**: FIXED**Reported**: 2025-11-29**Fixed**: 2025-11-29**Description**: Double-clicking on an active nav button (e.g., Catalogs) does not collapse the control panel as expected. Instead, it toggles twice - collapse then immediately expand.**Root Cause**: Double-click fires two click events. First click collapses the panel, second click sees panel is collapsed and expands it again.**Fix**: 1. 'catalogs' was missing from validSections in uiState.js (main fix) 2. Added 300ms debounce to nav button click handler in controlPanel.js to ignore rapid successive clicks.**Files Modified**:- static/modules/ui/controlPanel.js
 
 ### BUG-017: Satellites Not Saved to Watch Lists
 **ID**: BUG-017

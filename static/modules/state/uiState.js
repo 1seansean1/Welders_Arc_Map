@@ -40,7 +40,7 @@ class UIState {
         // Private state object
         this._state = {
             panelExpanded: false,
-            activeSection: 'time', // 'time', 'sensors', 'satellites', 'settings'
+            activeSection: 'time', // 'time', 'sensors', 'catalogs', 'settings'
             isMobile: window.innerWidth < 768
         };
 
@@ -170,7 +170,7 @@ class UIState {
 
     /**
      * Set active section
-     * @param {string} section - Section name ('time', 'sensors', 'satellites', 'settings')
+     * @param {string} section - Section name ('time', 'sensors', 'catalogs', 'settings')
      * @returns {string} New active section
      */
     setActiveSection(section) {
@@ -180,7 +180,7 @@ class UIState {
         }
 
         // Validate section name
-        const validSections = ['time', 'sensors', 'satellites', 'analysis', 'realtime', 'logs', 'tests', 'watchlist', 'lists', 'settings'];
+        const validSections = ['time', 'sensors', 'catalogs', 'analysis', 'realtime', 'logs', 'tests', 'watchlist', 'lists', 'settings'];
         if (!validSections.includes(section)) {
             logger.log(`setActiveSection: invalid section "${section}"`, logger.CATEGORY.ERROR);
             return this._state.activeSection;
