@@ -134,6 +134,9 @@ export function initializeLeaflet() {
 
         tileLayer.addTo(map);
 
+        // Store tile layer reference for theme switching
+        window.leafletTileLayer = tileLayer;
+
         // Add minimal zoom control (top-right corner)
         L.control.zoom({
             position: 'topright'
