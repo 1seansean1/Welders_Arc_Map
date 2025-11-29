@@ -1,7 +1,7 @@
 # WA_map Feature Registry
 
 > **Document Type**: FEATURES
-> **Version**: 4.6
+> **Version**: 4.7
 > **Last Updated**: 2025-11-29
 > **Maintainer**: AI Governor System
 
@@ -196,7 +196,7 @@
 | UI-019 | Ctrl+Wheel Jog Hint Text | P2 | XS | DONE | TIME-024 |
 | UI-020 | Glow Size/Brightness Sliders | P2 | S | DONE | UI-010, SAT-014 |
 | UI-021 | Profile Avatar Circle Fix | P2 | XS | DONE | UI-001 |
-| UI-022 | Theme Toggle (Light/Dark Mode) | P2 | S | DONE | UI-009 |
+| UI-022 | Theme Toggle (Light/Dark Mode) | P2 | S | DONE | UI-009, MAP-002 |
 
 ### Logging System (LOG)
 
@@ -365,6 +365,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 4.7 | 2025-11-29 | UI-022 Enhanced: Theme toggle now uses styled pill switch with accent blue color; map tiles switch between CartoDB Dark Matter and Positron; tile layer switching on theme change |
 | 4.6 | 2025-11-29 | UI-022 DONE: Theme Toggle (Light/Dark Mode) - button in SETTINGS panel to switch between light and dark themes; preference persists in localStorage; H-UI-16 test added |
 | 4.5 | 2025-11-29 | TEST-017 DONE: Split Download Buttons - replaced single Download button with "Current Run" (minimal pass info, full fail details, no history) and "Full History" (all details + history) |
 | 4.4 | 2025-11-29 | TEST-016 DONE: Failed-Only Test Report - Download button now exports only failed tests (summary still shows full stats) |

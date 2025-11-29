@@ -30,6 +30,8 @@
  */
 
 import logger from '../utils/logger.js';
+import eventBus from '../events/eventBus.js';
+import themeState from '../state/themeState.js';
 
 // ============================================
 // CONFIGURATION
@@ -44,6 +46,14 @@ const INITIAL_VIEW_STATE = {
     zoom: 1,  // Global view (zoomed all the way out)
     minZoom: 1,  // Very zoomed out
     maxZoom: 19  // Very zoomed in (street level)
+};
+
+/**
+ * Tile layer URLs for light and dark themes
+ */
+const TILE_URLS = {
+    dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
 };
 
 // ============================================
@@ -142,13 +152,18 @@ export function initializeLeaflet() {
         );
 
         logger.diagnostic('Map configuration', logger.CATEGORY.MAP, {
-            tiles: 'CartoDB Dark Matter',
+            tiles: initialTheme === 'dark' ? 'CartoDB Dark Matter' : 'CartoDB Positron',
             projection: 'Web Mercator',
             bundleSize: '39 KB'
         });
 
         // Make accessible globally
         window.leafletMap = map;
+
+        // Listen for theme changes to swap tile layer
+        eventBus.on('theme:changed', ({ theme }) => {
+            switchTileLayer(theme);
+        });
 
         return map;
 
@@ -168,4 +183,25 @@ export function initializeLeaflet() {
  */
 export function getLeafletMap() {
     return window.leafletMap || null;
+}
+
+/**
+ * Switch tile layer based on theme
+ * @param {string} theme - 'light' or 'dark'
+ */
+export function switchTileLayer(theme) {
+    const map = window.leafletMap;
+    const currentTileLayer = window.leafletTileLayer;
+    
+    if (\!map || \!currentTileLayer) {
+        logger.warning('Cannot switch tiles: map or tile layer not initialized', logger.CATEGORY.MAP);
+        return;
+    }
+    
+    const newUrl = TILE_URLS[theme] || TILE_URLS.dark;
+    
+    // Update the tile layer URL
+    currentTileLayer.setUrl(newUrl);
+    
+    logger.info(\, logger.CATEGORY.MAP);
 }

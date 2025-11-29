@@ -32,26 +32,20 @@ export function initializeSettingsPanel() {
  * Initialize theme toggle controls
  */
 function initializeThemeControls() {
-    const themeToggleBtn = document.getElementById('theme-toggle-btn');
+    const themeCheckbox = document.getElementById('theme-toggle-checkbox');
 
-    if (!themeToggleBtn) {
-        logger.warning('Theme toggle button not found', logger.CATEGORY.UI);
+    if (!themeCheckbox) {
+        logger.warning('Theme toggle checkbox not found', logger.CATEGORY.UI);
         return;
     }
 
-    // Update button text based on current theme
-    function updateButtonText() {
-        const currentTheme = themeState.getTheme();
-        themeToggleBtn.textContent = currentTheme === 'dark' ? 'Dark Mode' : 'Light Mode';
-    }
+    // Set initial checkbox state (checked = dark mode)
+    themeCheckbox.checked = themeState.isDarkTheme();
 
-    // Set initial button text
-    updateButtonText();
-
-    // Toggle theme on click
-    themeToggleBtn.addEventListener('click', () => {
-        themeState.toggleTheme();
-        updateButtonText();
+    // Handle toggle change
+    themeCheckbox.addEventListener('change', (e) => {
+        const newTheme = e.target.checked ? 'dark' : 'light';
+        themeState.setTheme(newTheme);
     });
 
     logger.diagnostic('Theme controls initialized', logger.CATEGORY.UI);
