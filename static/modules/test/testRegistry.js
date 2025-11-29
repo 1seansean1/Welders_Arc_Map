@@ -1517,7 +1517,7 @@ const UI_HYPOTHESES = {
                 }
             };
         }
-    }    },
+    },
     'H-UI-14': {
         id: 'H-UI-14',
         name: 'Zoom Display Shows Value',
