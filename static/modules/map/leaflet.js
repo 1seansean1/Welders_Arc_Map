@@ -106,9 +106,13 @@ export function initializeLeaflet() {
             maxBoundsViscosity: 1.0  // Hard stop at boundaries (1.0 = cannot drag beyond)
         });
 
-        // Add CartoDB Dark Matter tiles (ultra-minimalistic dark theme)
+        // Get initial theme-appropriate tile URL
+        const initialTheme = themeState.getTheme();
+        const initialTileUrl = TILE_URLS[initialTheme] || TILE_URLS.dark;
+
+        // Add CartoDB tiles (theme-aware)
         // Free for non-commercial use, no API token required
-        const tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        const tileLayer = L.tileLayer(initialTileUrl, {
             attribution: '©OpenStreetMap, ©CARTO',
             subdomains: 'abcd',  // Use a, b, c, d subdomains for parallel loading
             maxZoom: 19,
