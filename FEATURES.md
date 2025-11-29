@@ -1,7 +1,7 @@
 # WA_map Feature Registry
 
 > **Document Type**: FEATURES
-> **Version**: 4.4
+> **Version**: 4.5
 > **Last Updated**: 2025-11-29
 > **Maintainer**: AI Governor System
 
@@ -232,6 +232,7 @@
 | TEST-014 | Enhanced Test Report Download | P2 | S | DONE | TEST-009, TEST-002 |
 | TEST-015 | Column Sorting Hypothesis Test | P2 | XS | DONE | TEST-013, TEST-001 |
 | TEST-016 | Failed-Only Test Report | P2 | XS | DONE | TEST-014 |
+| TEST-017 | Split Download Buttons | P1 | XS | DONE | TEST-016 |
 
 ### Backend Infrastructure (BACK)
 
@@ -355,7 +356,7 @@
 
 *Note: MAP-013 REMOVED (superseded by MAP-012+MAP-016), MAP-016 added - net zero change*
 
-**Completion Rate**: 92% (156/170 features complete)
+**Completion Rate**: 92% (157/171 features complete)
 
 ---
 
@@ -363,6 +364,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 4.5 | 2025-11-29 | TEST-017 DONE: Split Download Buttons - replaced single Download button with "Current Run" (minimal pass info, full fail details, no history) and "Full History" (all details + history) |
 | 4.4 | 2025-11-29 | TEST-016 DONE: Failed-Only Test Report - Download button now exports only failed tests (summary still shows full stats) |
 | 4.3 | 2025-11-29 | ANALYSIS-014 DONE: Sensor click auto-enables polar plot - clicking sensor on map auto-enables polar plot and selects that sensor; H-POLAR-11 test added; Fixed testRegistry.js syntax errors |
 | 4.2 | 2025-11-28 | MAP-017, UI-020/021 DONE: Zoom level display below clocks, glow size/brightness sliders in Settings, profile avatar circle fix (smaller, always circular), clock format updated to DD-MMM-YYYY UTC; H-STATE-9/10/11 tests added |

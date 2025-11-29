@@ -262,7 +262,8 @@ function createTestPanelHTML() {
             <div class="sensor-actions">
                 <button class="sensor-action-btn sensor-add-btn" id="run-all-tests-btn">Run All</button>
                 <button class="sensor-action-btn" id="clear-history-btn">Clear</button>
-                <button class="sensor-action-btn" id="download-report-btn">Download</button>
+                <button class="sensor-action-btn" id="download-current-btn">Current Run</button>
+                <button class="sensor-action-btn" id="download-history-btn">Full History</button>
             </div>
         </div>
 
@@ -387,7 +388,8 @@ function setupEventListeners() {
         // Reset all status indicators
         TEST_LIST.forEach(test => updateTestStatus(test.id, '', '-'));
     });
-    document.getElementById('download-report-btn')?.addEventListener('click', downloadReport);
+    document.getElementById('download-current-btn')?.addEventListener('click', downloadCurrentRun);
+    document.getElementById('download-history-btn')?.addEventListener('click', downloadFullHistory);
 
     // Column header sorting
     document.querySelectorAll('.sortable-header').forEach(header => {
@@ -519,18 +521,17 @@ function refreshTableBody() {
 }
 
 /**
- * Download detailed test report
+ * Download current run report (minimal pass info, full fail details, no history)
  */
-function downloadReport() {
+function downloadCurrentRun() {
     const lastRun = testResults.getLastRun();
-    const allRuns = testResults.getAllRuns();
 
     if (!lastRun) {
         logger.warning('No test results to download', logger.CATEGORY.SYNC);
         return;
     }
 
-    // Build report with only failed tests (summary still shows full stats)
+    // Build report with minimal pass info, full fail details, NO history
     const report = {
         generated: new Date().toISOString(),
         summary: {
@@ -541,14 +542,75 @@ function downloadReport() {
             passRate: ((lastRun.summary.passed / lastRun.summary.total) * 100).toFixed(1) + '%',
             totalDuration: lastRun.results.reduce((sum, r) => sum + (r.duration || 0), 0) + 'ms'
         },
-        tests: lastRun.results.filter(result => !result.passed).map(result => {
+        tests: lastRun.results.map(result => {
+            const hyp = getHypothesis(result.hypothesisId);
+            if (result.passed) {
+                // Minimal info for passing tests: id, name, status only
+                return {
+                    id: result.hypothesisId,
+                    name: hyp.name,
+                    status: 'PASS'
+                };
+            } else {
+                // Full details for failing tests
+                return {
+                    id: result.hypothesisId,
+                    name: hyp.name,
+                    hypothesis: hyp.hypothesis,
+                    prediction: hyp.prediction,
+                    status: 'FAIL',
+                    duration: result.duration + 'ms',
+                    details: result.details
+                };
+            }
+        })
+    };
+
+    // Create and download file
+    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `test-current-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    logger.info('Current run report downloaded', logger.CATEGORY.SYNC);
+}
+
+/**
+ * Download full history report (all test details + history)
+ */
+function downloadFullHistory() {
+    const lastRun = testResults.getLastRun();
+    const allRuns = testResults.getAllRuns();
+
+    if (!lastRun) {
+        logger.warning('No test results to download', logger.CATEGORY.SYNC);
+        return;
+    }
+
+    // Build full report with all test details and history
+    const report = {
+        generated: new Date().toISOString(),
+        summary: {
+            lastRun: lastRun.timestamp,
+            passed: lastRun.summary.passed,
+            failed: lastRun.summary.failed,
+            total: lastRun.summary.total,
+            passRate: ((lastRun.summary.passed / lastRun.summary.total) * 100).toFixed(1) + '%',
+            totalDuration: lastRun.results.reduce((sum, r) => sum + (r.duration || 0), 0) + 'ms'
+        },
+        tests: lastRun.results.map(result => {
             const hyp = getHypothesis(result.hypothesisId);
             return {
                 id: result.hypothesisId,
                 name: hyp.name,
                 hypothesis: hyp.hypothesis,
                 prediction: hyp.prediction,
-                status: 'FAIL',
+                status: result.passed ? 'PASS' : 'FAIL',
                 duration: result.duration + 'ms',
                 details: result.details
             };
@@ -569,13 +631,13 @@ function downloadReport() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `test-report-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `test-history-${new Date().toISOString().slice(0, 10)}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    logger.info('Test report downloaded', logger.CATEGORY.SYNC);
+    logger.info('Full history report downloaded', logger.CATEGORY.SYNC);
 }
 
 /**
@@ -747,7 +809,7 @@ function updateTestStatus(testId, state, text) {
 }
 
 function disableButtons(disabled) {
-    ['run-all-tests-btn', 'clear-history-btn', 'download-report-btn'].forEach(id => {
+    ['run-all-tests-btn', 'clear-history-btn', 'download-current-btn', 'download-history-btn'].forEach(id => {
         const btn = document.getElementById(id);
         if (btn) btn.disabled = disabled;
     });
