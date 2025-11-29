@@ -15,7 +15,9 @@
 
 import timeState from '../state/timeState.js';
 import themeState from '../state/themeState.js';
+import profileState from '../state/profileState.js';
 import logger from '../utils/logger.js';
+import { showProfileDefaultsModal } from './modals.js';
 
 /**
  * Initialize settings panel controls
@@ -25,7 +27,90 @@ export function initializeSettingsPanel() {
     initializeGroundTrackControls();
     initializeGlowControls();
     initializeApexTickControls();
+    initializeProfileDefaultsButton();
     logger.diagnostic('Settings panel initialized', logger.CATEGORY.UI);
+}
+
+/**
+ * Initialize profile defaults button
+ */
+function initializeProfileDefaultsButton() {
+    const btn = document.getElementById('profile-defaults-btn');
+    if (!btn) {
+        logger.warning('Profile defaults button not found', logger.CATEGORY.UI);
+        return;
+    }
+
+    btn.addEventListener('click', () => {
+        const currentSettings = profileState.getSettings();
+        showProfileDefaultsModal(currentSettings, async (newSettings) => {
+            // Save to profile
+            await profileState.saveSettings(newSettings);
+            
+            // Apply settings to current session
+            if (newSettings.theme) themeState.setTheme(newSettings.theme);
+            if (newSettings.tailMinutes !== undefined) timeState.setTailMinutes(newSettings.tailMinutes);
+            if (newSettings.headMinutes !== undefined) timeState.setHeadMinutes(newSettings.headMinutes);
+            if (newSettings.glowEnabled !== undefined) timeState.setGlowEnabled(newSettings.glowEnabled);
+            if (newSettings.glowSize !== undefined) timeState.setGlowSize(newSettings.glowSize);
+            if (newSettings.glowIntensity !== undefined) timeState.setGlowIntensity(newSettings.glowIntensity);
+            if (newSettings.glowFadeInMinutes !== undefined) timeState.setGlowFadeInMinutes(newSettings.glowFadeInMinutes);
+            if (newSettings.glowFadeOutMinutes !== undefined) timeState.setGlowFadeOutMinutes(newSettings.glowFadeOutMinutes);
+            if (newSettings.apexTickEnabled !== undefined) timeState.setApexTickEnabled(newSettings.apexTickEnabled);
+            if (newSettings.apexTickPulseSpeed !== undefined) timeState.setApexTickPulseSpeed(newSettings.apexTickPulseSpeed);
+            if (newSettings.apexTickPulseWidth !== undefined) timeState.setApexTickPulseWidth(newSettings.apexTickPulseWidth);
+            if (newSettings.apexTickColor !== undefined) timeState.setApexTickColor(newSettings.apexTickColor);
+            if (newSettings.apexTickOpacity !== undefined) timeState.setApexTickOpacity(newSettings.apexTickOpacity);
+            
+            // Update UI controls to reflect new values
+            updateSettingsUI();
+        });
+    });
+}
+
+/**
+ * Update settings UI controls to reflect current state
+ */
+function updateSettingsUI() {
+    // Theme
+    const themeCheckbox = document.getElementById('theme-toggle-checkbox');
+    if (themeCheckbox) themeCheckbox.checked = themeState.isDarkTheme();
+    
+    // Ground track
+    const tailSlider = document.getElementById('track-tail-slider');
+    const tailInput = document.getElementById('track-tail-input');
+    const headSlider = document.getElementById('track-head-slider');
+    const headInput = document.getElementById('track-head-input');
+    if (tailSlider) tailSlider.value = timeState.getTailMinutes();
+    if (tailInput) tailInput.value = timeState.getTailMinutes();
+    if (headSlider) headSlider.value = timeState.getHeadMinutes();
+    if (headInput) headInput.value = timeState.getHeadMinutes();
+    
+    // Glow
+    const glowEnabledCheckbox = document.getElementById('glow-enabled-checkbox');
+    const sizeSlider = document.getElementById('glow-size-slider');
+    const sizeValue = document.getElementById('glow-size-value');
+    const brightnessSlider = document.getElementById('glow-brightness-slider');
+    const brightnessValue = document.getElementById('glow-brightness-value');
+    if (glowEnabledCheckbox) glowEnabledCheckbox.checked = timeState.isGlowEnabled();
+    if (sizeSlider) sizeSlider.value = Math.round(timeState.getGlowSize() * 100);
+    if (sizeValue) sizeValue.textContent = timeState.getGlowSize().toFixed(1) + 'x';
+    if (brightnessSlider) brightnessSlider.value = Math.round(timeState.getGlowIntensity() * 100);
+    if (brightnessValue) brightnessValue.textContent = timeState.getGlowIntensity().toFixed(1) + 'x';
+    
+    // Apex tick
+    const apexEnabledCheckbox = document.getElementById('apex-tick-enabled-checkbox');
+    const speedInput = document.getElementById('apex-tick-speed-input');
+    const widthInput = document.getElementById('apex-tick-width-input');
+    const colorInput = document.getElementById('apex-tick-color-input');
+    const opacityInput = document.getElementById('apex-tick-opacity-input');
+    const opacityValue = document.getElementById('apex-tick-opacity-value');
+    if (apexEnabledCheckbox) apexEnabledCheckbox.checked = timeState.isApexTickEnabled();
+    if (speedInput) speedInput.value = timeState.getApexTickPulseSpeed();
+    if (widthInput) widthInput.value = timeState.getApexTickPulseWidth();
+    if (colorInput) colorInput.value = timeState.getApexTickColor();
+    if (opacityInput) opacityInput.value = Math.round(timeState.getApexTickOpacity() * 100);
+    if (opacityValue) opacityValue.textContent = Math.round(timeState.getApexTickOpacity() * 100) + '%';
 }
 
 /**

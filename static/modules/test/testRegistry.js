@@ -4028,6 +4028,75 @@ const CATALOG_HYPOTHESES = {
 // ============================================
 // COMBINED REGISTRY
 // ============================================
+// PROFILE HYPOTHESES
+// ============================================
+
+const PROFILE_HYPOTHESES = {
+    'H-PROFILE-1': {
+        id: 'H-PROFILE-1',
+        name: 'Login Modal Shows on Load',
+        hypothesis: 'If app requires login, login modal should appear on load before user is logged in',
+        prediction: 'Login modal overlay should be visible when app starts and user is not logged in',
+        category: 'Profile',
+        steps: [
+            { action: 'Check login modal overlay exists', expected: 'Modal overlay element present' },
+            { action: 'Check if modal has visible class when not logged in', expected: 'Modal visible when profileState.isLoggedIn() is false' }
+        ],
+        validate: async () => {
+            const overlay = document.getElementById('login-modal-overlay');
+            const isLoggedIn = window.SatelliteApp?.profileState?.isLoggedIn?.() ?? false;
+            return {
+                passed: overlay !== null && (!isLoggedIn ? overlay.classList.contains('visible') : true),
+                overlayExists: overlay !== null,
+                isLoggedIn: isLoggedIn
+            };
+        }
+    },
+    'H-PROFILE-2': {
+        id: 'H-PROFILE-2',
+        name: 'Profile Defaults Modal Exists',
+        hypothesis: 'If user clicks Defaults button, profile defaults modal should appear',
+        prediction: 'Profile defaults modal overlay element exists in DOM',
+        category: 'Profile',
+        steps: [
+            { action: 'Check profile defaults modal overlay exists', expected: 'Modal element present in DOM' },
+            { action: 'Check modal has form elements', expected: 'Form inputs for settings present' }
+        ],
+        validate: async () => {
+            const overlay = document.getElementById('profile-defaults-modal-overlay');
+            const themeSelect = document.getElementById('profile-default-theme');
+            const tailInput = document.getElementById('profile-default-tail');
+            const saveBtn = document.getElementById('profile-defaults-save');
+            return {
+                passed: overlay !== null && themeSelect !== null && tailInput !== null && saveBtn !== null,
+                overlayExists: overlay !== null,
+                hasThemeSelect: themeSelect !== null,
+                hasTailInput: tailInput !== null,
+                hasSaveBtn: saveBtn !== null
+            };
+        }
+    },
+    'H-PROFILE-3': {
+        id: 'H-PROFILE-3',
+        name: 'Profile Defaults Button Exists',
+        hypothesis: 'Settings panel should have a Defaults button to open profile defaults modal',
+        prediction: 'Profile defaults button exists in Settings section',
+        category: 'Profile',
+        steps: [
+            { action: 'Find profile defaults button', expected: 'Button with id profile-defaults-btn exists' }
+        ],
+        validate: async () => {
+            const btn = document.getElementById('profile-defaults-btn');
+            return {
+                passed: btn !== null,
+                buttonExists: btn !== null,
+                buttonText: btn?.textContent || ''
+            };
+        }
+    }
+};
+
+// ============================================
 
 export const TEST_REGISTRY = {
     ...MAP_HYPOTHESES,
@@ -4039,7 +4108,8 @@ export const TEST_REGISTRY = {
     ...TIME_HYPOTHESES,
     ...LIST_HYPOTHESES,
     ...POLAR_HYPOTHESES,
-    ...CATALOG_HYPOTHESES
+    ...CATALOG_HYPOTHESES,
+    ...PROFILE_HYPOTHESES
 };
 
 /**

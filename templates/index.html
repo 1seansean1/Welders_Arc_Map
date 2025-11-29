@@ -2983,6 +2983,7 @@
                         <span id="profile-display-name" style="color: var(--text-secondary); font-size: 12px;">Not logged in</span>
                         <button id="profile-login-btn" class="sensor-action-btn" style="padding: 4px 12px; font-size: 11px;">Login</button>
                         <button id="profile-logout-btn" class="sensor-action-btn sensor-delete-btn" style="padding: 4px 12px; font-size: 11px; display: none;">Logout</button>
+                        <button id="profile-defaults-btn" class="sensor-action-btn" style="padding: 4px 12px; font-size: 11px;">Defaults</button>
                     </div>
                 </div>
 
@@ -3540,6 +3541,71 @@ SATELLITE NAME 2
             </div>
             <div class="modal-catalog-edit-footer">
                 <button type="button" class="modal-editor-btn modal-editor-btn-cancel" id="catalog-edit-close-btn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Defaults Modal -->
+    <div class="modal-overlay" id="profile-defaults-modal-overlay">
+        <div class="modal-editor" style="width: 500px; max-height: 80vh; overflow-y: auto;">
+            <div class="modal-editor-title">Profile Defaults</div>
+            <div class="modal-editor-form" id="profile-defaults-form">
+                <div class="modal-editor-field" style="border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 12px;">
+                    <label class="modal-editor-label" style="font-weight: 600;">Appearance</label>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <label style="font-size: 11px;">Theme:</label>
+                        <select id="profile-default-theme" class="modal-editor-input" style="width: auto;">
+                            <option value="dark">Dark</option>
+                            <option value="light">Light</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-editor-field" style="border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 12px;">
+                    <label class="modal-editor-label" style="font-weight: 600;">Ground Track</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div><label style="font-size: 10px;">Tail (min)</label><input type="number" id="profile-default-tail" class="modal-editor-input" min="0" max="90" value="45"></div>
+                        <div><label style="font-size: 10px;">Head (min)</label><input type="number" id="profile-default-head" class="modal-editor-input" min="0" max="90" value="0"></div>
+                    </div>
+                </div>
+                <div class="modal-editor-field" style="border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 12px;">
+                    <label class="modal-editor-label" style="font-weight: 600;">Glow Effect</label>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                        <input type="checkbox" id="profile-default-glow-enabled" checked>
+                        <label for="profile-default-glow-enabled" style="font-size: 11px;">Enable Glow</label>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div><label style="font-size: 10px;">Size</label><input type="number" id="profile-default-glow-size" class="modal-editor-input" min="0.2" max="3" step="0.1" value="1.0"></div>
+                        <div><label style="font-size: 10px;">Brightness</label><input type="number" id="profile-default-glow-intensity" class="modal-editor-input" min="0.1" max="2" step="0.1" value="1.0"></div>
+                        <div><label style="font-size: 10px;">Fade In</label><input type="number" id="profile-default-glow-fade-in" class="modal-editor-input" min="1" max="30" value="5"></div>
+                        <div><label style="font-size: 10px;">Fade Out</label><input type="number" id="profile-default-glow-fade-out" class="modal-editor-input" min="1" max="30" value="5"></div>
+                    </div>
+                </div>
+                <div class="modal-editor-field" style="border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 12px;">
+                    <label class="modal-editor-label" style="font-weight: 600;">Apex Tick</label>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                        <input type="checkbox" id="profile-default-apex-enabled" checked>
+                        <label for="profile-default-apex-enabled" style="font-size: 11px;">Enable</label>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div><label style="font-size: 10px;">Speed</label><input type="number" id="profile-default-apex-speed" class="modal-editor-input" min="0.5" max="5" step="0.5" value="1.0"></div>
+                        <div><label style="font-size: 10px;">Width</label><input type="number" id="profile-default-apex-width" class="modal-editor-input" min="1" max="10" step="0.5" value="3.0"></div>
+                        <div><label style="font-size: 10px;">Color</label><input type="color" id="profile-default-apex-color" class="modal-editor-input" value="#ff6600"></div>
+                        <div><label style="font-size: 10px;">Opacity</label><input type="number" id="profile-default-apex-opacity" class="modal-editor-input" min="10" max="100" value="80"></div>
+                    </div>
+                </div>
+                <div class="modal-editor-field">
+                    <label class="modal-editor-label" style="font-weight: 600;">Map View</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                        <div><label style="font-size: 10px;">Lon</label><input type="number" id="profile-default-map-lon" class="modal-editor-input" min="-180" max="180" value="0"></div>
+                        <div><label style="font-size: 10px;">Lat</label><input type="number" id="profile-default-map-lat" class="modal-editor-input" min="-90" max="90" value="0"></div>
+                        <div><label style="font-size: 10px;">Zoom</label><input type="number" id="profile-default-map-zoom" class="modal-editor-input" min="1" max="18" value="2"></div>
+                    </div>
+                </div>
+                <div class="modal-editor-buttons">
+                    <button type="button" class="modal-editor-btn cancel" id="profile-defaults-cancel">Cancel</button>
+                    <button type="button" class="modal-editor-btn delete" id="profile-defaults-reset" style="background: var(--accent-orange);">Reset</button>
+                    <button type="button" class="modal-editor-btn save" id="profile-defaults-save">Save</button>
+                </div>
             </div>
         </div>
     </div>

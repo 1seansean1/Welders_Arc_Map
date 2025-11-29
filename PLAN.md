@@ -1,7 +1,7 @@
 # WA_map Active Work Plan
 
 > **Document Type**: PLAN
-> **Version**: 2.0
+> **Version**: 2.1
 > **Last Updated**: 2025-11-29
 > **Maintainer**: AI Governor System
 
@@ -19,6 +19,7 @@
 
 | Task | Priority | Status | Notes |
 |------|----------|--------|-------|
+| User Login & Profile Defaults (AUTH-001 to AUTH-008) | P1 | COMPLETE | Required login, profile defaults modal, settings persistence |
 | Test Failure Fixes (H-TIME-1, H-UI-5, H-PERF-1) | P1 | ACTIVE | 3 failing tests from latest run |
 | Time Control Enhancements (TIME-023 to TIME-028) | P1 | COMPLETE | Playback rate, jog wheel, presets, analysis window |
 | Catalog Edit Modal (CAT-005) | P1 | COMPLETE | Two-panel modal for editing catalogs/satellites |

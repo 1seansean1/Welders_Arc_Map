@@ -133,7 +133,7 @@ export function showConfirmModal(sensors, onConfirm) {
     };
 
     const handleOverlayClick = (e) => {
-        if (e.target === overlay) {
+        if (e.target === overlay && dismissible) {
             handleCancel();
         }
     };
@@ -249,7 +249,7 @@ export function showEditorModal(sensor = null, onSave) {
     };
 
     const handleOverlayClick = (e) => {
-        if (e.target === overlay) {
+        if (e.target === overlay && dismissible) {
             handleCancel();
         }
     };
@@ -369,7 +369,7 @@ export function showSatelliteEditorModal(satellite = null, onSave) {
     };
 
     const handleOverlayClick = (e) => {
-        if (e.target === overlay) {
+        if (e.target === overlay && dismissible) {
             handleCancel();
         }
     };
@@ -424,7 +424,7 @@ export function showSatelliteConfirmModal(satellites, onConfirm) {
     };
 
     const handleOverlayClick = (e) => {
-        if (e.target === overlay) {
+        if (e.target === overlay && dismissible) {
             handleCancel();
         }
     };
@@ -949,7 +949,7 @@ export function showCatalogAddModal(onSave) {
     };
 
     const handleOverlayClick = (e) => {
-        if (e.target === overlay) {
+        if (e.target === overlay && dismissible) {
             handleCancel();
         }
     };
@@ -1327,12 +1327,16 @@ export function showCatalogEditModal(catalogId, onUpdate) {
 
 /**
  * Show login modal
- * Dismissible modal for user authentication
+ * Modal for user authentication with optional dismissibility
  *
  * @param {Function} onLogin - Callback when login is attempted, receives {username, password}
- * @param {Function} onSkip - Callback when skip/cancel is clicked
+ * @param {Function} onSkip - Callback when skip/cancel is clicked (ignored if not dismissible)
+ * @param {Object} options - Options object
+ * @param {boolean} options.dismissible - If false, modal cannot be dismissed without login (default: true)
  */
-export function showLoginModal(onLogin, onSkip) {
+export function showLoginModal(onLogin, onSkip, options = {}) {
+    const { dismissible = true } = options;
+    
     const overlay = document.getElementById('login-modal-overlay');
     const form = document.getElementById('login-modal-form');
     const usernameInput = document.getElementById('login-input-username');
@@ -1353,15 +1357,21 @@ export function showLoginModal(onLogin, onSkip) {
     setTimeout(() => usernameInput.focus(), 100);
 
     const cancelBtn = document.getElementById('login-modal-cancel');
+    
+    // Hide cancel button if not dismissible
+    if (cancelBtn) {
+        cancelBtn.style.display = dismissible ? 'inline-block' : 'none';
+    }
 
     const closeModal = () => {
         overlay.classList.remove('visible');
         form.removeEventListener('submit', handleSubmit);
-        cancelBtn.removeEventListener('click', handleCancel);
+        if (cancelBtn) cancelBtn.removeEventListener('click', handleCancel);
         overlay.removeEventListener('click', handleOverlayClick);
     };
 
     const handleCancel = () => {
+        if (!dismissible) return; // Ignore if not dismissible
         closeModal();
         logger.diagnostic('Login skipped', logger.CATEGORY.PANEL);
         if (onSkip) onSkip();
@@ -1398,7 +1408,7 @@ export function showLoginModal(onLogin, onSkip) {
     };
 
     const handleOverlayClick = (e) => {
-        if (e.target === overlay) {
+        if (e.target === overlay && dismissible) {
             handleCancel();
         }
     };
@@ -1434,6 +1444,132 @@ export function hideLoginModal() {
     if (overlay) {
         overlay.classList.remove('visible');
     }
+}
+
+// ============================================
+// PROFILE DEFAULTS MODAL
+// ============================================
+
+/**
+ * Show profile defaults modal
+ * Allows user to configure default preferences that are saved to their profile
+ *
+ * @param {Object} currentSettings - Current profile settings to populate the form
+ * @param {Function} onSave - Callback when settings are saved, receives settings object
+ */
+export function showProfileDefaultsModal(currentSettings, onSave) {
+    const overlay = document.getElementById('profile-defaults-modal-overlay');
+    if (!overlay) {
+        logger.warning('Profile defaults modal not found', logger.CATEGORY.UI);
+        return;
+    }
+
+    // Get form elements
+    const themeSelect = document.getElementById('profile-default-theme');
+    const tailInput = document.getElementById('profile-default-tail');
+    const headInput = document.getElementById('profile-default-head');
+    const glowEnabled = document.getElementById('profile-default-glow-enabled');
+    const glowSize = document.getElementById('profile-default-glow-size');
+    const glowIntensity = document.getElementById('profile-default-glow-intensity');
+    const glowFadeIn = document.getElementById('profile-default-glow-fade-in');
+    const glowFadeOut = document.getElementById('profile-default-glow-fade-out');
+    const apexEnabled = document.getElementById('profile-default-apex-enabled');
+    const apexSpeed = document.getElementById('profile-default-apex-speed');
+    const apexWidth = document.getElementById('profile-default-apex-width');
+    const apexColor = document.getElementById('profile-default-apex-color');
+    const apexOpacity = document.getElementById('profile-default-apex-opacity');
+    const mapLon = document.getElementById('profile-default-map-lon');
+    const mapLat = document.getElementById('profile-default-map-lat');
+    const mapZoom = document.getElementById('profile-default-map-zoom');
+    const cancelBtn = document.getElementById('profile-defaults-cancel');
+    const resetBtn = document.getElementById('profile-defaults-reset');
+    const saveBtn = document.getElementById('profile-defaults-save');
+
+    // Populate form with current settings
+    if (themeSelect) themeSelect.value = currentSettings.theme || 'dark';
+    if (tailInput) tailInput.value = currentSettings.tailMinutes ?? 45;
+    if (headInput) headInput.value = currentSettings.headMinutes ?? 0;
+    if (glowEnabled) glowEnabled.checked = currentSettings.glowEnabled ?? true;
+    if (glowSize) glowSize.value = currentSettings.glowSize ?? 1.0;
+    if (glowIntensity) glowIntensity.value = currentSettings.glowIntensity ?? 1.0;
+    if (glowFadeIn) glowFadeIn.value = currentSettings.glowFadeInMinutes ?? 5;
+    if (glowFadeOut) glowFadeOut.value = currentSettings.glowFadeOutMinutes ?? 5;
+    if (apexEnabled) apexEnabled.checked = currentSettings.apexTickEnabled ?? true;
+    if (apexSpeed) apexSpeed.value = currentSettings.apexTickPulseSpeed ?? 1.0;
+    if (apexWidth) apexWidth.value = currentSettings.apexTickPulseWidth ?? 3.0;
+    if (apexColor) apexColor.value = currentSettings.apexTickColor || '#ff6600';
+    if (apexOpacity) apexOpacity.value = (currentSettings.apexTickOpacity ?? 0.8) * 100;
+    if (mapLon) mapLon.value = currentSettings.mapCenter?.[0] ?? 0;
+    if (mapLat) mapLat.value = currentSettings.mapCenter?.[1] ?? 0;
+    if (mapZoom) mapZoom.value = currentSettings.mapZoom ?? 2;
+
+    // Show modal
+    overlay.classList.add('visible');
+
+    const closeModal = () => {
+        overlay.classList.remove('visible');
+        cancelBtn?.removeEventListener('click', handleCancel);
+        resetBtn?.removeEventListener('click', handleReset);
+        saveBtn?.removeEventListener('click', handleSave);
+        overlay.removeEventListener('click', handleOverlayClick);
+    };
+
+    const handleCancel = () => closeModal();
+
+    const handleReset = () => {
+        // Reset to default values
+        if (themeSelect) themeSelect.value = 'dark';
+        if (tailInput) tailInput.value = 45;
+        if (headInput) headInput.value = 0;
+        if (glowEnabled) glowEnabled.checked = true;
+        if (glowSize) glowSize.value = 1.0;
+        if (glowIntensity) glowIntensity.value = 1.0;
+        if (glowFadeIn) glowFadeIn.value = 5;
+        if (glowFadeOut) glowFadeOut.value = 5;
+        if (apexEnabled) apexEnabled.checked = true;
+        if (apexSpeed) apexSpeed.value = 1.0;
+        if (apexWidth) apexWidth.value = 3.0;
+        if (apexColor) apexColor.value = '#ff6600';
+        if (apexOpacity) apexOpacity.value = 80;
+        if (mapLon) mapLon.value = 0;
+        if (mapLat) mapLat.value = 0;
+        if (mapZoom) mapZoom.value = 2;
+    };
+
+    const handleSave = async () => {
+        const newSettings = {
+            theme: themeSelect?.value || 'dark',
+            tailMinutes: parseInt(tailInput?.value) || 45,
+            headMinutes: parseInt(headInput?.value) || 0,
+            glowEnabled: glowEnabled?.checked ?? true,
+            glowSize: parseFloat(glowSize?.value) || 1.0,
+            glowIntensity: parseFloat(glowIntensity?.value) || 1.0,
+            glowFadeInMinutes: parseInt(glowFadeIn?.value) || 5,
+            glowFadeOutMinutes: parseInt(glowFadeOut?.value) || 5,
+            apexTickEnabled: apexEnabled?.checked ?? true,
+            apexTickPulseSpeed: parseFloat(apexSpeed?.value) || 1.0,
+            apexTickPulseWidth: parseFloat(apexWidth?.value) || 3.0,
+            apexTickColor: apexColor?.value || '#ff6600',
+            apexTickOpacity: (parseInt(apexOpacity?.value) || 80) / 100,
+            mapCenter: [parseFloat(mapLon?.value) || 0, parseFloat(mapLat?.value) || 0],
+            mapZoom: parseInt(mapZoom?.value) || 2
+        };
+
+        if (onSave) {
+            await onSave(newSettings);
+        }
+        closeModal();
+        logger.success('Profile defaults saved', logger.CATEGORY.PANEL);
+    };
+
+    const handleOverlayClick = (e) => {
+        if (e.target === overlay) handleCancel();
+    };
+
+    cancelBtn?.addEventListener('click', handleCancel);
+    resetBtn?.addEventListener('click', handleReset);
+    saveBtn?.addEventListener('click', handleSave);
+    overlay.addEventListener('click', handleOverlayClick);
 }
 
 // ============================================

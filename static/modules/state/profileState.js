@@ -37,28 +37,76 @@ import { CONFIG } from '../../config.js';
 
 /**
  * Default settings for new profiles
+ * All user preferences are stored here and synced to backend
  */
 const DEFAULT_SETTINGS = {
-    // Map view defaults
-    mapCenter: [0, 0],
+    // ============================================
+    // APPEARANCE
+    // ============================================
+    theme: 'dark', // 'dark' or 'light'
+
+    // ============================================
+    // MAP VIEW
+    // ============================================
+    mapCenter: [0, 0],      // [lon, lat]
     mapZoom: 2,
 
-    // UI preferences
+    // ============================================
+    // UI LAYOUT
+    // ============================================
     panelExpanded: true,
-    activeSection: 'satellites',
+    activeSection: 'satellites', // 'satellites', 'sensors', 'settings', etc.
     logPanelHeight: 150,
 
-    // Time settings
-    tailMinutes: 45,
-    headMinutes: 0,
-    glowEnabled: true,
-    glowIntensity: 1.0,
-    apexTickEnabled: true,
+    // ============================================
+    // GROUND TRACK SETTINGS
+    // ============================================
+    tailMinutes: 45,    // Minutes of track behind satellite (0-90)
+    headMinutes: 0,     // Minutes of track ahead of satellite (0-90)
 
-    // Selected items (stored as IDs)
+    // ============================================
+    // GLOW DOT SETTINGS (equator crossing effects)
+    // ============================================
+    glowEnabled: true,
+    glowSize: 1.0,           // Size multiplier (0.2-3.0)
+    glowIntensity: 1.0,      // Brightness multiplier (0.1-2.0)
+    glowFadeInMinutes: 5,    // Fade in duration (1-30 minutes)
+    glowFadeOutMinutes: 5,   // Fade out duration (1-30 minutes)
+
+    // ============================================
+    // APEX TICK SETTINGS (latitude indicator)
+    // ============================================
+    apexTickEnabled: true,
+    apexTickPulseSpeed: 1.0,   // Cycles per second (0.5-5.0)
+    apexTickPulseWidth: 3.0,   // Degrees latitude (1-10)
+    apexTickColor: '#ff6600',  // Hex color
+    apexTickOpacity: 0.8,      // Opacity (0.1-1.0)
+
+    // ============================================
+    // SELECTED ITEMS (stored as IDs)
+    // ============================================
     selectedSatellites: [],
     selectedSensors: [],
-    activeWatchlistId: null
+    activeWatchlistId: null,
+    polarViewSensorId: null,   // Sensor selected for polar view
+
+    // ============================================
+    // VISIBILITY SETTINGS
+    // ============================================
+    visibleCatalogs: [],       // Catalog IDs with visibility enabled
+    visibleWatchlists: [],     // Watchlist IDs with visibility enabled
+
+    // ============================================
+    // FUTURE: Authentik OAuth settings (stub)
+    // ============================================
+    // authProvider: null,     // 'local' or 'authentik'
+    // authentikToken: null,   // OAuth token from Authentik
+
+    // ============================================
+    // FUTURE: Session settings (stub)
+    // ============================================
+    // sessionTimeout: null,   // Session timeout in minutes (null = no timeout)
+    // lastActivity: null,     // Timestamp of last activity
 };
 
 /**
@@ -471,6 +519,117 @@ class ProfileState {
             logger.error(`Delete profile failed: ${error.message}`, logger.CATEGORY.PANEL);
             return false;
         }
+    }
+
+    // ============================================
+    // AUTHENTIK OAUTH (STUB - Future Implementation)
+    // ============================================
+
+    /**
+     * Initialize Authentik OAuth login flow
+     * STUB: To be implemented when Authentik integration is ready
+     * 
+     * @param {string} authentikUrl - Authentik server URL
+     * @param {string} clientId - OAuth client ID
+     * @returns {Promise<boolean>} True if redirect initiated
+     */
+    async loginWithAuthentik(authentikUrl, clientId) {
+        // STUB: Future implementation will:
+        // 1. Redirect to Authentik login page
+        // 2. Handle OAuth callback with authorization code
+        // 3. Exchange code for tokens
+        // 4. Create/update local profile with Authentik user info
+        logger.warning('Authentik OAuth not yet implemented', logger.CATEGORY.PANEL);
+        return false;
+    }
+
+    /**
+     * Handle Authentik OAuth callback
+     * STUB: To be implemented when Authentik integration is ready
+     * 
+     * @param {string} authorizationCode - OAuth authorization code from callback
+     * @returns {Promise<boolean>} True if login successful
+     */
+    async handleAuthentikCallback(authorizationCode) {
+        // STUB: Future implementation
+        logger.warning('Authentik callback handler not yet implemented', logger.CATEGORY.PANEL);
+        return false;
+    }
+
+    /**
+     * Refresh Authentik OAuth token
+     * STUB: To be implemented when Authentik integration is ready
+     * 
+     * @returns {Promise<boolean>} True if token refreshed
+     */
+    async refreshAuthentikToken() {
+        // STUB: Future implementation
+        return false;
+    }
+
+    // ============================================
+    // SESSION MANAGEMENT (STUB - Future Implementation)
+    // ============================================
+
+    /**
+     * Start session timeout monitoring
+     * STUB: To be implemented when session timeout feature is ready
+     * 
+     * @param {number} timeoutMinutes - Session timeout in minutes
+     */
+    startSessionTimeout(timeoutMinutes) {
+        // STUB: Future implementation will:
+        // 1. Store timeout duration
+        // 2. Start activity monitoring
+        // 3. Auto-logout after inactivity
+        logger.diagnostic('Session timeout not yet implemented', logger.CATEGORY.PANEL);
+    }
+
+    /**
+     * Reset session activity timer
+     * STUB: To be implemented when session timeout feature is ready
+     */
+    resetSessionActivity() {
+        // STUB: Future implementation will reset the inactivity timer
+    }
+
+    /**
+     * Stop session timeout monitoring
+     * STUB: To be implemented when session timeout feature is ready
+     */
+    stopSessionTimeout() {
+        // STUB: Future implementation
+    }
+
+    /**
+     * Check if session has expired
+     * STUB: To be implemented when session timeout feature is ready
+     * 
+     * @returns {boolean} True if session expired
+     */
+    isSessionExpired() {
+        // STUB: Always returns false until implemented
+        return false;
+    }
+
+    // ============================================
+    // MULTI-USER (STUB - Future Implementation)
+    // ============================================
+
+    /**
+     * Switch to a different user profile
+     * STUB: To be implemented for multi-user support
+     * 
+     * @param {number} profileId - Profile ID to switch to
+     * @returns {Promise<boolean>} True if switch successful
+     */
+    async switchProfile(profileId) {
+        // STUB: Future implementation will:
+        // 1. Save current profile settings
+        // 2. Load new profile and its settings
+        // 3. Apply new settings to UI
+        logger.warning('Profile switching not yet implemented', logger.CATEGORY.PANEL);
+        return false;
     }
 
     // ============================================

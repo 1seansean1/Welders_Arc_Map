@@ -77,19 +77,63 @@ export function init() {
     // Initialize UI logger first
     logger.init();
 
-    // Load default profile (auto-login)
-    profileState.loadDefaultProfile().then(loaded => {
-        if (loaded) {
-            logger.info('Profile loaded: ' + profileState.getDisplayName());
-        } else {
-            logger.info('No profile loaded - using defaults');
-        }
-    });
-
     logger.info('Initializing Satellite Visualization System');
     logger.info(`Mobile device: ${uiState.isMobile()}`);
-    logger.info(`Window size: ${window.innerWidth} × ${window.innerHeight}`);
+    logger.info(`Window size: ${window.innerWidth} x ${window.innerHeight}`);
 
+    // Require login before initializing app
+    requireLogin();
+}
+
+/**
+ * Require user login before app initialization
+ * Shows non-dismissible login modal
+ */
+function requireLogin() {
+    showLoginModal(
+        async ({ username, password }) => {
+            const success = await profileState.login(username, password);
+            if (success) {
+                logger.success(`Logged in as ${username}`, logger.CATEGORY.PANEL);
+                applyProfileSettings();
+                initializeApp();
+            }
+            return success;
+        },
+        null,
+        { dismissible: false }
+    );
+}
+
+/**
+ * Apply profile settings to UI components
+ */
+function applyProfileSettings() {
+    const settings = profileState.getSettings();
+    if (settings.theme) {
+        import('../state/themeState.js').then(({ default: themeState }) => {
+            themeState.setTheme(settings.theme);
+        });
+    }
+    if (settings.glowEnabled !== undefined) timeState.setGlowEnabled(settings.glowEnabled);
+    if (settings.glowSize !== undefined) timeState.setGlowSize(settings.glowSize);
+    if (settings.glowIntensity !== undefined) timeState.setGlowIntensity(settings.glowIntensity);
+    if (settings.glowFadeInMinutes !== undefined) timeState.setGlowFadeInMinutes(settings.glowFadeInMinutes);
+    if (settings.glowFadeOutMinutes !== undefined) timeState.setGlowFadeOutMinutes(settings.glowFadeOutMinutes);
+    if (settings.apexTickEnabled !== undefined) timeState.setApexTickEnabled(settings.apexTickEnabled);
+    if (settings.apexTickPulseSpeed !== undefined) timeState.setApexTickPulseSpeed(settings.apexTickPulseSpeed);
+    if (settings.apexTickPulseWidth !== undefined) timeState.setApexTickPulseWidth(settings.apexTickPulseWidth);
+    if (settings.apexTickColor !== undefined) timeState.setApexTickColor(settings.apexTickColor);
+    if (settings.apexTickOpacity !== undefined) timeState.setApexTickOpacity(settings.apexTickOpacity);
+    if (settings.tailMinutes !== undefined) timeState.setTailMinutes(settings.tailMinutes);
+    if (settings.headMinutes !== undefined) timeState.setHeadMinutes(settings.headMinutes);
+    logger.info('Profile settings applied', logger.CATEGORY.PANEL);
+}
+
+/**
+ * Initialize application components after login
+ */
+function initializeApp() {
     // Initialize control panel (expand/collapse, section switching)
     initializeControlPanel();
 
@@ -130,13 +174,8 @@ export function init() {
 
     // Initialize Deck.gl overlay (if map loaded successfully)
     if (map) {
-        // Leaflet map is ready immediately (no 'load' event needed)
-        // Wait a frame to ensure DOM is fully updated
         requestAnimationFrame(() => {
             initializeDeckGL(map);
-
-            // CRITICAL: Call updateDeckOverlay() to render sensor layers
-            // Without this, sensors with selected=true won't appear until user toggles checkbox
             requestAnimationFrame(() => {
                 updateDeckOverlay();
                 logger.success('Map and visualization layers loaded', logger.CATEGORY.MAP);
@@ -338,13 +377,14 @@ function initializeProfileControls() {
         }
     }
 
-    // Show login modal handler
+    // Show login modal handler (for manual re-login)
     function handleShowLogin() {
         showLoginModal(
             async ({ username, password }) => {
                 const success = await profileState.login(username, password);
                 if (success) {
                     updateProfileUI();
+                    applyProfileSettings();
                     logger.success(`Logged in as ${username}`, logger.CATEGORY.PANEL);
                 }
                 return success;
@@ -365,16 +405,30 @@ function initializeProfileControls() {
         loginBtn.addEventListener('click', handleShowLogin);
     }
 
-    // Logout button click
+    // Logout button click - requires re-login
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async () => {
             await profileState.logout();
             updateProfileUI();
+            // Show login modal after logout (non-dismissible)
+            showLoginModal(
+                async ({ username, password }) => {
+                    const success = await profileState.login(username, password);
+                    if (success) {
+                        updateProfileUI();
+                        applyProfileSettings();
+                        logger.success(`Logged in as ${username}`, logger.CATEGORY.PANEL);
+                    }
+                    return success;
+                },
+                null,
+                { dismissible: false }
+            );
         });
     }
 
-    // Initial UI update (after default profile loads)
-    setTimeout(updateProfileUI, 500);
+    // Initial UI update
+    updateProfileUI();
 
     // Listen for profile changes
     import('../events/eventBus.js').then(({ default: eventBus }) => {

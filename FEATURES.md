@@ -1,7 +1,7 @@
 # WA_map Feature Registry
 
 > **Document Type**: FEATURES
-> **Version**: 4.9
+> **Version**: 5.0
 > **Last Updated**: 2025-11-29
 > **Maintainer**: AI Governor System
 
@@ -354,11 +354,12 @@
 | ARCH | 5 | 5 | 0 | 0 | 0 |
 | LIST | 6 | 6 | 0 | 0 | 0 |
 | ANALYSIS | 14 | 14 | 0 | 0 | 0 |
-| **TOTAL** | **171** | **157** | **0** | **7** | **6** |
+| AUTH | 8 | 8 | 0 | 0 | 0 |
+| **TOTAL** | **179** | **165** | **0** | **7** | **6** |
 
 *Note: MAP-013 REMOVED (superseded by MAP-012+MAP-016), MAP-016 added - net zero change*
 
-**Completion Rate**: 92% (158/172 features complete)
+**Completion Rate**: 92% (166/180 features complete)
 
 ---
 
@@ -366,6 +367,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 5.0 | 2025-11-29 | AUTH-001 to AUTH-008 DONE: User Login & Profile Defaults - Required login on app load, profile defaults modal in Settings, expanded settings schema (theme, glow, apex tick, map view), settings persistence per user, stubs for Authentik OAuth/session timeout/multi-user; H-PROFILE-1/2/3 tests added |
 | 4.9 | 2025-11-29 | UI-023 DONE: Light Theme Styling Consistency - SATELLITE/SENSOR control panel icons now visible in light theme; equator glow markers use theme-aware colors (darker blue on light maps); apex latitude markers adjust for theme contrast; clock fonts normalized (consistent weight in light theme); apex opacity slider styled like other sliders; system log border highlight matches other borders; H-UI-17 test added |
 | 4.8 | 2025-11-29 | UI-022 Light Theme Polish: Polar plot theme-aware colors; FOV polygon theme-aware colors (darker blue for light theme); clock glow/text override; map time bar background override; log panel buttons override; panel border highlight override (darker gradient); reduced theme toggle switch size (36x18px); H-UI-16 test updated for checkbox |
 | 4.7 | 2025-11-29 | UI-022 Enhanced: Theme toggle now uses styled pill switch with accent blue color; map tiles switch between CartoDB Dark Matter and Positron; tile layer switching on theme change |
