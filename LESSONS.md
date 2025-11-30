@@ -28,6 +28,7 @@ This document captures debugging knowledge, integration patterns, and hard-won i
 | LL-009 | Decouple Event Detection from Display Parameters | Architecture | 2025-11-27 |
 | LL-010 | Virtual Scrolling for Large Lists | Performance | 2025-11-28 |
 | LL-011 | Implementing Lambert Solver for Orbital Transfer Analysis | Analysis | 2025-11-29 |
+| LL-012 | Claude Code Tooling Workarounds | Development | 2025-11-30 |
 
 ---
 
@@ -941,3 +942,120 @@ new deck.PathLayer({
 - `static/modules/test/testRegistry.js` - H-LAM hypothesis tests
 - `static/modules/utils/logger.js` - ANALYSIS category
 - `templates/index.html` - Lambert UI elements and CSS
+
+---
+
+## LL-012: Claude Code Tooling Workarounds
+
+**Date**: 2025-11-30
+**Category**: Development
+**Status**: DOCUMENTED
+
+### Problem
+
+During implementation of the backend logging system (BACK-010), multiple development workflow issues emerged:
+1. Port 8000 occupied by stale Python/uvicorn processes that wouldn't terminate
+2. Edit tool repeatedly failing with "File has been unexpectedly modified" errors
+3. New code not being picked up by running server despite restarts
+
+### Key Observations
+
+> "Port 8000 is still in use even after taskkill"
+> "Edit tool says file modified but I didn't touch it"
+> "Server shows old endpoints, not the new /api/logs"
+
+### Root Causes
+
+**1. Stale Server Processes (Windows)**
+- Python subprocesses (uvicorn workers) survive parent termination
+- `taskkill /F /IM python.exe` doesn't always kill all Python processes
+- Background Bash shells keep processes alive in Claude Code context
+
+**2. Edit Tool File Locking**
+- File watchers (linters, formatters, IDEs) modify files between read and edit
+- Multiple rapid edits in succession can race with watchers
+- Large files with many edit operations accumulate timing issues
+
+**3. Server Code Caching**
+- Python module caching means restarts don't reload if module already imported
+- uvicorn reload mode doesn't always detect all changes
+- Multiple server instances may be running on same or different ports
+
+### Solutions
+
+**Port Conflicts**:
+```bash
+# Windows: Find what's using the port
+netstat -ano | findstr :8000
+
+# Kill specific PID (not just by image name)
+taskkill /F /PID <pid>
+
+# Or test on alternate port
+uvicorn main:app --port 8001
+```
+
+**Edit Tool Workaround - Use Python Script**:
+```bash
+# When Edit tool fails repeatedly, write via Python script
+python -c "
+with open('file.py', 'w') as f:
+    f.write('''
+    <file content here>
+    ''')
+"
+
+# For large files, write in parts then merge
+```
+
+**Server Not Updating**:
+```bash
+# Fresh Python import by using -c inline execution
+python -c "import uvicorn; import main; uvicorn.run(main.app, port=8001)"
+
+# Or full path execution
+../venv/Scripts/python main.py
+```
+
+### Prevention
+
+1. **Kill all Python before testing**: `taskkill /F /IM python.exe` before starting new server
+2. **Use alternate port for testing**: Port 8001 sidesteps occupied 8000
+3. **For Edit failures**: Fall back to Python script writing immediately rather than retrying
+4. **Check for running shells**: Multiple background Bash shells may hold processes open
+5. **Verify endpoint exists**: `curl localhost:8001/api/<endpoint>` before full testing
+
+### Anti-Pattern
+
+```bash
+# DON'T: Repeatedly retry Edit tool hoping it works
+Edit: "old string" -> "new string"  # Failed
+Edit: "old string" -> "new string"  # Failed again
+Edit: "old string" -> "new string"  # Still failing...
+```
+
+### Good Pattern
+
+```bash
+# DO: Switch to Python script after first failure
+python -c "
+with open('file.py', 'r') as f:
+    content = f.read()
+content = content.replace('old', 'new')
+with open('file.py', 'w') as f:
+    f.write(content)
+"
+```
+
+### Real-World Example
+
+During BACK-010 implementation:
+- Edit tool failed 5+ times on main.py
+- Used Python script to write 273 lines of new logging code
+- Port 8000 blocked; tested on 8001 instead
+- Verified /api/logs endpoint worked on 8001
+- User needs to restart terminal to fully clear port 8000
+
+### Key Insight
+
+> When automated tooling fails repeatedly, switch to lower-level workarounds immediately. Retrying the same failing approach wastes time. Python scripts bypass file watcher races; alternate ports bypass process cleanup issues.
