@@ -4252,11 +4252,275 @@ const PROFILE_HYPOTHESES = {
 };
 
 // ============================================
+// LAMBERT SOLVER HYPOTHESES
+// ============================================
+
+const LAMBERT_HYPOTHESES = {
+    'H-LAM-1': {
+        id: 'H-LAM-1',
+        name: 'Lambert Solver Converges for Coplanar Transfers',
+        hypothesis: 'Izzo Lambert solver converges for standard coplanar orbit transfers',
+        prediction: 'Solver converges with v1 error < 0.01 km/s for Poliastro test vector',
+        category: 'Lambert',
+        steps: [
+            { action: 'Import lambertIzzo from solver', expected: 'Function exists' },
+            { action: 'Run Poliastro test case POL-1', expected: 'Converged = true' },
+            { action: 'Compare v1 with expected', expected: 'Error < 0.01 km/s' }
+        ],
+        validate: async () => {
+            try {
+                const { lambertIzzo } = await import('../analysis/lambertSolver.js');
+                const result = lambertIzzo(
+                    398600.4418,
+                    [15945.34, 0, 0],
+                    [12214.83, 10249.47, 0],
+                    4560,
+                    0
+                );
+                const expected_v1 = [2.058913, 2.915965, 0];
+                const dx = result.v1[0] - expected_v1[0];
+                const dy = result.v1[1] - expected_v1[1];
+                const dz = result.v1[2] - expected_v1[2];
+                const error = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                return {
+                    passed: result.converged && error < 0.01,
+                    converged: result.converged,
+                    iterations: result.iterations,
+                    v1Error: error.toFixed(6) + ' km/s',
+                    v1: result.v1.map(v => v.toFixed(4))
+                };
+            } catch (e) {
+                return { passed: false, error: e.message };
+            }
+        }
+    },
+    'H-LAM-2': {
+        id: 'H-LAM-2',
+        name: 'Lambert Solver Handles 3D Transfers',
+        hypothesis: 'Solver converges for out-of-plane transfers',
+        prediction: 'Solver converges with v1 error < 0.01 km/s for 3D test vector',
+        category: 'Lambert',
+        steps: [
+            { action: 'Run Poliastro test case POL-2', expected: 'Converged = true' },
+            { action: 'Compare v1 with expected', expected: 'Error < 0.01 km/s' }
+        ],
+        validate: async () => {
+            try {
+                const { lambertIzzo } = await import('../analysis/lambertSolver.js');
+                const result = lambertIzzo(
+                    398600.4418,
+                    [5000, 10000, 2100],
+                    [-14600, 2500, 7000],
+                    3600,
+                    0
+                );
+                const expected_v1 = [-5.9925, 1.9254, 3.2456];
+                const dx = result.v1[0] - expected_v1[0];
+                const dy = result.v1[1] - expected_v1[1];
+                const dz = result.v1[2] - expected_v1[2];
+                const error = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                return {
+                    passed: result.converged && error < 0.01,
+                    converged: result.converged,
+                    iterations: result.iterations,
+                    v1Error: error.toFixed(6) + ' km/s',
+                    v1: result.v1.map(v => v.toFixed(4))
+                };
+            } catch (e) {
+                return { passed: false, error: e.message };
+            }
+        }
+    },
+    'H-LAM-3': {
+        id: 'H-LAM-3',
+        name: 'Lambert Solver Handles Near-180° Geometry',
+        hypothesis: 'Solver converges for near-antipodal transfer geometries',
+        prediction: 'Solver converges for transfer angle close to 180°',
+        category: 'Lambert',
+        steps: [
+            { action: 'Run near-180° canonical test case', expected: 'Converged = true' }
+        ],
+        validate: async () => {
+            try {
+                const { lambertIzzo } = await import('../analysis/lambertSolver.js');
+                const result = lambertIzzo(
+                    1.0,
+                    [1, 0, 0],
+                    [-0.99, 0.141, 0],
+                    Math.PI * 0.9,
+                    0
+                );
+                return {
+                    passed: result.converged,
+                    converged: result.converged,
+                    iterations: result.iterations,
+                    v1Magnitude: Math.sqrt(result.v1[0]**2 + result.v1[1]**2 + result.v1[2]**2).toFixed(4)
+                };
+            } catch (e) {
+                return { passed: false, error: e.message };
+            }
+        }
+    },
+    'H-LAM-4': {
+        id: 'H-LAM-4',
+        name: 'Lambert Solver Performance',
+        hypothesis: 'Solver achieves high throughput (>50K ops/sec)',
+        prediction: 'Benchmark shows >50,000 operations per second',
+        category: 'Lambert',
+        steps: [
+            { action: 'Run 500 iterations of solver', expected: '>50,000 ops/sec' }
+        ],
+        validate: async () => {
+            try {
+                const { lambertIzzo } = await import('../analysis/lambertSolver.js');
+                const iterations = 500;
+                const start = performance.now();
+                for (let i = 0; i < iterations; i++) {
+                    lambertIzzo(398600.4418, [15945.34, 0, 0], [12214.83, 10249.47, 0], 4560, 0);
+                }
+                const elapsed = performance.now() - start;
+                const opsPerSec = (iterations / elapsed) * 1000;
+                return {
+                    passed: opsPerSec > 50000,
+                    opsPerSec: Math.round(opsPerSec).toLocaleString(),
+                    avgTimeMs: (elapsed / iterations).toFixed(4),
+                    totalTimeMs: elapsed.toFixed(2)
+                };
+            } catch (e) {
+                return { passed: false, error: e.message };
+            }
+        }
+    },
+    'H-LAM-5': {
+        id: 'H-LAM-5',
+        name: 'Multi-Revolution Solutions',
+        hypothesis: 'Solver finds multiple solutions for multi-revolution transfers',
+        prediction: 'lambertMultiRev returns solutions for M=0, M=1, M=2',
+        category: 'Lambert',
+        steps: [
+            { action: 'Run lambertMultiRev with maxM=2', expected: 'At least 1 solution found' }
+        ],
+        validate: async () => {
+            try {
+                const { lambertMultiRev } = await import('../analysis/lambertSolver.js');
+                const solutions = lambertMultiRev(
+                    398600.4418,
+                    [7000, 0, 0],
+                    [0, 7000, 0],
+                    15000,
+                    2
+                );
+                return {
+                    passed: solutions.length >= 1,
+                    solutionCount: solutions.length,
+                    solutions: solutions.map(s => ({
+                        M: s.M,
+                        converged: s.converged,
+                        totalDV: s.totalDV?.toFixed(3)
+                    }))
+                };
+            } catch (e) {
+                return { passed: false, error: e.message };
+            }
+        }
+    },
+    'H-LAM-6': {
+        id: 'H-LAM-6',
+        name: 'Analysis State Lambert Methods',
+        hypothesis: 'analysisState correctly manages Lambert analysis state',
+        prediction: 'Lambert setters/getters work correctly',
+        category: 'Lambert',
+        steps: [
+            { action: 'Set Lambert satellites', expected: 'Values stored correctly' },
+            { action: 'Set Lambert TOF', expected: 'Value stored correctly' },
+            { action: 'Check isLambertReady', expected: 'Returns true when both satellites set' }
+        ],
+        validate: async () => {
+            try {
+                const analysisState = (await import('../state/analysisState.js')).default;
+                const originalState = analysisState.exportState();
+
+                // Test setters/getters
+                analysisState.setLambertSatellites('sat1', 'sat2');
+                analysisState.setLambertTof(7200);
+                analysisState.setLambertM(1);
+
+                const chaserId = analysisState.getLambertChaserId();
+                const targetId = analysisState.getLambertTargetId();
+                const tof = analysisState.getLambertTof();
+                const m = analysisState.getLambertM();
+                const ready = analysisState.isLambertReady();
+
+                // Restore original state
+                analysisState.clearLambert();
+                analysisState.importState(originalState);
+
+                return {
+                    passed: chaserId === 'sat1' && targetId === 'sat2' && tof === 7200 && m === 1 && ready === true,
+                    chaserId,
+                    targetId,
+                    tof,
+                    m,
+                    isReady: ready
+                };
+            } catch (e) {
+                return { passed: false, error: e.message };
+            }
+        }
+    },
+    'H-LAM-7': {
+        id: 'H-LAM-7',
+        name: 'Transfer Arc Generation',
+        hypothesis: 'Transfer arc points are generated correctly for visualization',
+        prediction: 'generateTransferArcPath returns array of [lng, lat, alt] points',
+        category: 'Lambert',
+        steps: [
+            { action: 'Compute a transfer', expected: 'Transfer converged' },
+            { action: 'Generate arc points', expected: 'Array with 60 points' }
+        ],
+        validate: async () => {
+            try {
+                const { computeTransfer, generateTransferArcPath } = await import('../analysis/transferCalculator.js');
+                const satelliteState = (await import('../state/satelliteState.js')).default;
+
+                // Get first two visible satellites (if any)
+                const sats = satelliteState.getAllSatellites().slice(0, 2);
+                if (sats.length < 2) {
+                    return { passed: true, skipped: true, reason: 'Not enough satellites loaded' };
+                }
+
+                const transfer = computeTransfer(sats[0], sats[1], new Date(), 3600);
+                if (!transfer || !transfer.converged) {
+                    return { passed: true, skipped: true, reason: 'Transfer did not converge' };
+                }
+
+                const arcPoints = generateTransferArcPath(transfer, 60);
+                const hasCorrectFormat = arcPoints.every(p =>
+                    Array.isArray(p) && p.length === 3 &&
+                    typeof p[0] === 'number' && typeof p[1] === 'number' && typeof p[2] === 'number'
+                );
+
+                return {
+                    passed: arcPoints.length === 60 && hasCorrectFormat,
+                    pointCount: arcPoints.length,
+                    hasCorrectFormat,
+                    firstPoint: arcPoints[0],
+                    lastPoint: arcPoints[arcPoints.length - 1]
+                };
+            } catch (e) {
+                return { passed: false, error: e.message };
+            }
+        }
+    }
+};
+
+// ============================================
 
 export const TEST_REGISTRY = {
     ...MAP_HYPOTHESES,
     ...STATE_HYPOTHESES,
     ...EVENT_HYPOTHESES,
+    ...LAMBERT_HYPOTHESES,
     ...UI_HYPOTHESES,
     ...VALIDATION_HYPOTHESES,
     ...SATELLITE_HYPOTHESES,

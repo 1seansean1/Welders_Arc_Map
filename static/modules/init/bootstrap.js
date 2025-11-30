@@ -46,6 +46,7 @@ import { initializeSettingsPanel } from '../ui/settingsPanel.js';
 import { initializeMapTimeBar } from '../ui/mapTimeBar.js';
 import { showLoginModal } from '../ui/modals.js';
 import polarPlot from '../ui/polarPlot.js';
+import lambertPanel from '../ui/lambertPanel.js';
 
 // Sensor & Satellite CRUD
 import { initializeSensors, initializeSensorButtons, editSensor } from '../data/sensorCRUD.js';
@@ -203,6 +204,9 @@ function initializeApp() {
     // Initialize polar plot
     initializePolarPlot();
 
+    // Initialize Lambert panel
+    initializeLambertPanel();
+
     // Initialize profile login/logout buttons
     initializeProfileControls();
 
@@ -272,6 +276,38 @@ function initializePolarPlot() {
     });
 
     logger.diagnostic('Polar plot initialized', logger.CATEGORY.UI);
+}
+
+// ============================================
+// LAMBERT PANEL INITIALIZATION
+// ============================================
+
+/**
+ * Initialize Lambert transfer panel and checkbox handler
+ */
+function initializeLambertPanel() {
+    // Initialize the panel UI
+    lambertPanel.initialize();
+
+    // Listen for Lambert events to update map visualization
+    import('../events/eventBus.js').then(({ default: eventBus }) => {
+        eventBus.on('analysis:lambert:computed', ({ results }) => {
+            // Update deck overlay to show transfer arc
+            if (results && results.arcPoints) {
+                updateDeckOverlay();
+            }
+        });
+        eventBus.on('analysis:lambert:cleared', () => {
+            updateDeckOverlay();
+        });
+        eventBus.on('analysis:lambert:enabled', ({ enabled }) => {
+            if (!enabled) {
+                updateDeckOverlay();
+            }
+        });
+    });
+
+    logger.diagnostic('Lambert panel initialized', logger.CATEGORY.UI);
 }
 
 // ============================================

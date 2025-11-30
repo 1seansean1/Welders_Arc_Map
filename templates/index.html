@@ -1655,6 +1655,277 @@
         }
 
         /* ============================================
+           LAMBERT PANEL
+           ============================================ */
+
+        .lambert-panel-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-primary);
+            overflow: auto;
+        }
+
+        .lambert-panel-header {
+            padding: 10px 12px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .lambert-panel-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--accent-orange);
+        }
+
+        .lambert-panel-content {
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .lambert-section {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .lambert-field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .lambert-field label {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .lambert-select {
+            padding: 6px 8px;
+            font-size: 11px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 3px;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        .lambert-select:focus {
+            outline: none;
+            border-color: var(--accent-orange);
+        }
+
+        .lambert-select option {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .lambert-tof-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .lambert-slider {
+            flex: 1;
+            height: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: var(--bg-tertiary);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        .lambert-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--accent-orange);
+            cursor: pointer;
+        }
+
+        .lambert-slider::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--accent-orange);
+            cursor: pointer;
+            border: none;
+        }
+
+        .lambert-input {
+            width: 70px;
+            padding: 4px 6px;
+            font-size: 11px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 3px;
+            color: var(--text-primary);
+            text-align: right;
+        }
+
+        .lambert-input:focus {
+            outline: none;
+            border-color: var(--accent-orange);
+        }
+
+        .lambert-unit {
+            font-size: 10px;
+            color: var(--text-muted);
+            min-width: 12px;
+        }
+
+        .lambert-tof-display {
+            font-size: 10px;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-top: 2px;
+        }
+
+        .lambert-rev-buttons {
+            display: flex;
+            gap: 4px;
+        }
+
+        .lambert-rev-btn {
+            flex: 1;
+            padding: 6px 8px;
+            font-size: 11px;
+            font-weight: 500;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 3px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .lambert-rev-btn:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .lambert-rev-btn.active {
+            background: var(--accent-orange);
+            border-color: var(--accent-orange);
+            color: var(--bg-primary);
+        }
+
+        .lambert-compute-btn {
+            width: 100%;
+            padding: 10px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            background: var(--accent-orange);
+            border: none;
+            border-radius: 4px;
+            color: var(--bg-primary);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .lambert-compute-btn:hover:not(:disabled) {
+            background: #e69500;
+            transform: translateY(-1px);
+        }
+
+        .lambert-compute-btn:disabled {
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
+            cursor: not-allowed;
+        }
+
+        .lambert-results {
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .lambert-results-header {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--accent-orange);
+            margin-bottom: 10px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .lambert-result-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+            font-size: 11px;
+        }
+
+        .lambert-result-label {
+            color: var(--text-muted);
+        }
+
+        .lambert-result-value {
+            color: var(--text-primary);
+            font-family: 'Courier New', Consolas, monospace;
+        }
+
+        .lambert-result-total {
+            margin-top: 6px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border-color);
+            font-weight: 600;
+        }
+
+        .lambert-result-total .lambert-result-label {
+            color: var(--text-primary);
+        }
+
+        .lambert-result-total .lambert-result-value {
+            color: var(--accent-orange);
+            font-size: 12px;
+        }
+
+        .lambert-status {
+            font-size: 10px;
+            padding: 6px 8px;
+            border-radius: 3px;
+            text-align: center;
+        }
+
+        .lambert-status.error {
+            background: rgba(255, 80, 80, 0.15);
+            color: #ff5050;
+            border: 1px solid rgba(255, 80, 80, 0.3);
+        }
+
+        .lambert-status.success {
+            background: rgba(80, 200, 80, 0.15);
+            color: #50c850;
+            border: 1px solid rgba(80, 200, 80, 0.3);
+        }
+
+        .lambert-status.info {
+            background: rgba(100, 150, 255, 0.15);
+            color: #6496ff;
+            border: 1px solid rgba(100, 150, 255, 0.3);
+        }
+
+        /* Light theme overrides */
+        .theme-light .lambert-compute-btn:disabled {
+            background: #e0e0e0;
+            color: #888;
+        }
+
+        .theme-light .lambert-result-total .lambert-result-value {
+            color: #c87800;
+        }
+
+        /* ============================================
            LOG PANEL (Bottom 20% of pane-bottom-left)
            ============================================ */
 
@@ -2912,7 +3183,14 @@
                                     <label for="analysis-polar-plot">Polar Plot</label>
                                 </td>
                             </tr>
-                            <!-- Future analysis tools can be added here -->
+                            <tr data-tool="lambert">
+                                <td class="col-check">
+                                    <input type="checkbox" id="analysis-lambert" class="analysis-checkbox">
+                                </td>
+                                <td class="col-name">
+                                    <label for="analysis-lambert">Lambert Transfer</label>
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                     <p class="helper-text" style="margin-top: 8px; font-size: 10px; color: var(--text-muted);">
@@ -3214,7 +3492,86 @@
         <div id="pane-bottom-left" class="pane">
             <!-- Content area (80%) -->
             <div class="pane-content-area">
-                <div class="coming-soon">Coming Soon 2</div>
+                <!-- Lambert Panel Container (hidden by default) -->
+                <div id="lambert-panel-container" class="lambert-panel-container" style="display: none;">
+                    <div class="lambert-panel-header">
+                        <span class="lambert-panel-title">Lambert Transfer Analysis</span>
+                    </div>
+                    <div class="lambert-panel-content">
+                        <!-- Satellite Selection -->
+                        <div class="lambert-section">
+                            <div class="lambert-field">
+                                <label for="lambert-chaser-select">Chaser</label>
+                                <select id="lambert-chaser-select" class="lambert-select">
+                                    <option value="">-- Select satellite --</option>
+                                </select>
+                            </div>
+                            <div class="lambert-field">
+                                <label for="lambert-target-select">Target</label>
+                                <select id="lambert-target-select" class="lambert-select">
+                                    <option value="">-- Select satellite --</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Transfer Parameters -->
+                        <div class="lambert-section">
+                            <div class="lambert-field">
+                                <label for="lambert-tof-input">Time of Flight</label>
+                                <div class="lambert-tof-row">
+                                    <input type="range" id="lambert-tof-slider" class="lambert-slider" min="600" max="86400" value="3600" step="60">
+                                    <input type="number" id="lambert-tof-input" class="lambert-input" min="60" max="604800" value="3600">
+                                    <span class="lambert-unit">s</span>
+                                </div>
+                                <div class="lambert-tof-display" id="lambert-tof-display">1h 0m</div>
+                            </div>
+                            <div class="lambert-field">
+                                <label>Revolutions (M)</label>
+                                <div class="lambert-rev-buttons">
+                                    <button class="lambert-rev-btn active" data-m="0">0</button>
+                                    <button class="lambert-rev-btn" data-m="1">1</button>
+                                    <button class="lambert-rev-btn" data-m="2">2</button>
+                                    <button class="lambert-rev-btn" data-m="3">3</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Compute Button -->
+                        <div class="lambert-section">
+                            <button id="lambert-compute-btn" class="lambert-compute-btn" disabled>Compute Transfer</button>
+                        </div>
+
+                        <!-- Results Display -->
+                        <div class="lambert-section lambert-results" id="lambert-results" style="display: none;">
+                            <div class="lambert-results-header">Transfer Solution</div>
+                            <div class="lambert-result-row">
+                                <span class="lambert-result-label">Departure ΔV:</span>
+                                <span class="lambert-result-value" id="lambert-departure-dv">--</span>
+                            </div>
+                            <div class="lambert-result-row">
+                                <span class="lambert-result-label">Arrival ΔV:</span>
+                                <span class="lambert-result-value" id="lambert-arrival-dv">--</span>
+                            </div>
+                            <div class="lambert-result-row lambert-result-total">
+                                <span class="lambert-result-label">Total ΔV:</span>
+                                <span class="lambert-result-value" id="lambert-total-dv">--</span>
+                            </div>
+                            <div class="lambert-result-row">
+                                <span class="lambert-result-label">Transfer type:</span>
+                                <span class="lambert-result-value" id="lambert-transfer-type">--</span>
+                            </div>
+                            <div class="lambert-result-row">
+                                <span class="lambert-result-label">Iterations:</span>
+                                <span class="lambert-result-value" id="lambert-iterations">--</span>
+                            </div>
+                        </div>
+
+                        <!-- Status/Error Messages -->
+                        <div class="lambert-status" id="lambert-status"></div>
+                    </div>
+                </div>
+                <!-- Placeholder when Lambert not active -->
+                <div id="lambert-placeholder" class="coming-soon">Coming Soon 2</div>
             </div>
 
             <!-- Log panel (20%) -->

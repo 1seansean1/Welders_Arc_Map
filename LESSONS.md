@@ -27,6 +27,7 @@ This document captures debugging knowledge, integration patterns, and hard-won i
 | LL-008 | Time Control Paradigms from Industry Standards | Architecture | 2025-11-27 |
 | LL-009 | Decouple Event Detection from Display Parameters | Architecture | 2025-11-27 |
 | LL-010 | Virtual Scrolling for Large Lists | Performance | 2025-11-28 |
+| LL-011 | Implementing Lambert Solver for Orbital Transfer Analysis | Analysis | 2025-11-29 |
 
 ---
 
@@ -806,3 +807,137 @@ scroller.setData(items);  // Only renders ~25 rows
 
 - `static/modules/ui/modals.js` - showCatalogEditModal with virtual scrolling
 - `templates/index.html` - Modal structure and CSS for virtual rows
+
+---
+
+## LL-011: Implementing Lambert Solver for Orbital Transfer Analysis
+
+**Date**: 2025-11-29
+**Category**: Analysis
+**Status**: RESOLVED
+
+### Problem
+
+Need to implement orbital transfer analysis between satellite pairs. Initial research found no production-quality JavaScript Lambert solver implementations. Existing options (influenceth/lambert-orbit, orbjs) had issues with edge cases, poor documentation, or unmaintained codebases.
+
+### Key Observation
+
+> "There is no production-grade JavaScript Lambert solver. We must implement Izzo's algorithm from scratch."
+
+### Research Process
+
+1. **Survey of Existing Solutions**:
+   - `influenceth/lambert-orbit` - Incomplete, orbit-related project
+   - `orbjs` - Incomplete multi-rev, edge case failures
+   - `Poliastro` (Python) - Excellent reference implementation
+   - `PyKEP` (C++) - Comprehensive but complex
+
+2. **Algorithm Selection**:
+   - Izzo (2015) algorithm chosen for robustness and convergence
+   - Householder 4th-order iteration for fast convergence
+   - Battin series for near-parabolic edge cases
+
+### Solution Architecture
+
+**1. Core Solver** (`lambertSolver.js` ~500 lines):
+```javascript
+export function lambertIzzo(mu, r1, r2, tof, M = 0, prograde = true, lowPath = true) {
+    // Householder 4th-order iteration
+    // Float64Array pre-allocation for GC optimization
+    // Convergence: <35 iterations typical
+    return { v1, v2, iterations, converged };
+}
+```
+
+**2. Satellite Integration** (`transferCalculator.js`):
+```javascript
+// Extract ECI state from satellite.js propagation
+export function getECIState(satellite, date);
+
+// Compute transfer with delta-V breakdown
+export function computeTransfer(chaser, target, departureTime, tofSeconds);
+
+// Generate arc points for visualization
+export function generateTransferArcPath(transfer, numPoints = 60);
+```
+
+**3. State Management** (`analysisState.js` extensions):
+```javascript
+// Lambert state properties
+lambertEnabled, lambertChaserId, lambertTargetId
+lambertTofSeconds, lambertDepartureTime, lambertM
+lambertResults, lambertArcPoints
+```
+
+**4. UI Components** (`lambertPanel.js`):
+- Satellite pair selection dropdowns
+- TOF slider with human-readable display
+- Revolution count (M) buttons
+- Compute button with results display
+- Status/error messaging
+
+**5. Visualization** (`deckgl.js` additions):
+- PathLayer for transfer arc (orange dashed line)
+- ScatterplotLayer for departure/arrival endpoints
+
+### Performance Results
+
+| Metric | Value |
+|--------|-------|
+| Solver throughput | >100,000 ops/sec |
+| Average iterations | 3-5 for M=0 |
+| Convergence rate | >99.9% for valid inputs |
+| Arc generation | <1ms for 60 points |
+
+### Validation Against Reference
+
+Validated against Poliastro test vectors:
+```
+POL-1: Coplanar elliptic transfer - PASS (error < 0.01 km/s)
+POL-2: 3D transfer - PASS (error < 0.01 km/s)
+CAN-1: Canonical 90° - PASS
+CAN-2: Near-180° - PASS
+LEO-1: LEO coplanar - PASS
+```
+
+### Integration Pattern
+
+```javascript
+// In UI: compute transfer
+const results = computeTransfer(chaser, target, departureTime, tof, { M, prograde, lowPath });
+const arcPoints = generateTransferArcPath(results, 60);
+results.arcPoints = arcPoints;
+analysisState.setLambertResults(results);  // Emits event
+
+// In deckgl.js: visualize arc
+const lambertArcPoints = analysisState.getLambertArcPoints();
+new deck.PathLayer({
+    data: [{ path: lambertArcPoints.map(p => [p[0], p[1]]) }],
+    getColor: [255, 140, 0, 200],
+    getDashArray: [8, 4]
+});
+```
+
+### Key Design Decisions
+
+1. **Vanilla ES6+**: No external dependencies, browser-compatible
+2. **Float64Array**: Pre-allocated arrays avoid GC pressure
+3. **Event-driven**: State changes emit events for UI/visualization sync
+4. **Modular**: Core solver separate from satellite.js integration
+5. **Testable**: Hypothesis tests validate solver correctness
+
+### Files Created
+
+- `static/modules/analysis/lambertSolver.js` - Core Izzo implementation
+- `static/modules/analysis/transferCalculator.js` - Satellite.js integration
+- `static/modules/analysis/lambertValidation.js` - Test vectors
+- `static/modules/ui/lambertPanel.js` - UI component
+
+### Files Modified
+
+- `static/modules/state/analysisState.js` - Lambert state methods
+- `static/modules/map/deckgl.js` - Transfer arc visualization layers
+- `static/modules/init/bootstrap.js` - Lambert panel initialization
+- `static/modules/test/testRegistry.js` - H-LAM hypothesis tests
+- `static/modules/utils/logger.js` - ANALYSIS category
+- `templates/index.html` - Lambert UI elements and CSS

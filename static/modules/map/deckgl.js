@@ -644,6 +644,11 @@ function createLayers() {
     const equatorCrossingData = [];
     const apexTickData = [];
 
+    // Get Lambert transfer arc data if available
+    const lambertArcPoints = analysisState.getLambertArcPoints();
+    const lambertEnabled = analysisState.isLambertEnabled();
+    const lambertResults = analysisState.getLambertResults();
+
     // Watch color definitions (RGB)
     const WATCH_COLORS = {
         grey: [128, 128, 128],
@@ -1148,7 +1153,70 @@ function createLayers() {
         // APEX LATITUDE TICK PULSE LAYERS
         // Multi-layer horizontal pulsing effect at latitude apex points
         // ============================================
-        ...createApexTickPulseLayers(apexTickData, apexTickEnabled, apexTickPulseSpeed, apexTickPulseWidth, apexTickColor, apexTickOpacity, currentTime)
+        ...createApexTickPulseLayers(apexTickData, apexTickEnabled, apexTickPulseSpeed, apexTickPulseWidth, apexTickColor, apexTickOpacity, currentTime),
+
+        // ============================================
+        // LAMBERT TRANSFER ARC LAYER
+        // Shows computed orbital transfer trajectory
+        // ============================================
+        new deck.PathLayer({
+            id: 'lambert-transfer-arc',
+            data: lambertEnabled && lambertArcPoints && lambertArcPoints.length >= 2 ? [{
+                path: lambertArcPoints.map(p => [p[0], p[1]]),  // [lng, lat] pairs
+                name: 'Transfer Arc',
+                totalDV: lambertResults?.totalDV
+            }] : [],
+            visible: lambertEnabled && lambertArcPoints && lambertArcPoints.length >= 2,
+            coordinateSystem: deck.COORDINATE_SYSTEM.LNGLAT,
+            wrapLongitude: true,
+            pickable: true,
+            widthScale: 1,
+            widthMinPixels: 3,
+            widthMaxPixels: 5,
+            getPath: d => d.path,
+            getColor: [255, 140, 0, 200],  // Orange color for transfer arc
+            getWidth: 4,
+            getDashArray: [8, 4],  // Dashed line for visibility
+            updateTriggers: {
+                visible: `${lambertEnabled}-${lambertArcPoints?.length || 0}`,
+                getPath: lambertResults ? `${lambertResults.chaserId}-${lambertResults.targetId}-${lambertResults.tofSeconds}-${lambertResults.M}` : 'none'
+            },
+            onHover: ({object}) => {
+                if (object) {
+                    logger.diagnostic('Lambert transfer arc hover', logger.CATEGORY.ANALYSIS, {
+                        totalDV: object.totalDV?.toFixed(3) + ' km/s'
+                    });
+                }
+            }
+        }),
+
+        // Lambert transfer arc endpoints (departure and arrival)
+        new deck.ScatterplotLayer({
+            id: 'lambert-transfer-endpoints',
+            data: lambertEnabled && lambertArcPoints && lambertArcPoints.length >= 2 ? [
+                { position: [lambertArcPoints[0][0], lambertArcPoints[0][1]], type: 'departure' },
+                { position: [lambertArcPoints[lambertArcPoints.length - 1][0], lambertArcPoints[lambertArcPoints.length - 1][1]], type: 'arrival' }
+            ] : [],
+            visible: lambertEnabled && lambertArcPoints && lambertArcPoints.length >= 2,
+            coordinateSystem: deck.COORDINATE_SYSTEM.LNGLAT,
+            wrapLongitude: true,
+            pickable: true,
+            opacity: 1,
+            stroked: true,
+            filled: true,
+            radiusScale: 1,
+            radiusMinPixels: 6,
+            radiusMaxPixels: 12,
+            getPosition: d => d.position,
+            getRadius: 8000,
+            getFillColor: d => d.type === 'departure' ? [0, 200, 100, 200] : [255, 100, 100, 200],  // Green for departure, red for arrival
+            getLineColor: [255, 255, 255, 255],
+            getLineWidth: 2,
+            updateTriggers: {
+                visible: `${lambertEnabled}-${lambertArcPoints?.length || 0}`,
+                getPosition: lambertResults ? `${lambertResults.chaserId}-${lambertResults.targetId}` : 'none'
+            }
+        })
     ];
 
     const perfEnd = performance.now();

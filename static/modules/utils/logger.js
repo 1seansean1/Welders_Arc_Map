@@ -24,7 +24,9 @@ class UILogger {
             SENSOR: 'SNS',
             PANEL: 'UI',
             SYNC: 'SYNC',
-            DATA: 'DATA'
+            DATA: 'DATA',
+            ANALYSIS: 'ANLY',
+            TEST: 'TEST'
         };
 
         this.logBuffer = []; // Store all logs for download
