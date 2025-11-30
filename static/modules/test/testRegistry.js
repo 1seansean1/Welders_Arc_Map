@@ -1638,7 +1638,7 @@ const UI_HYPOTHESES = {
                 passed: allDefined,
                 tokens: tokens,
                 missingTokens: Object.entries(tokens)
-                    .filter(([k, v]) => \!v || v.length === 0)
+                    .filter(([k, v]) => !v || v.length === 0)
                     .map(([k]) => k)
             };
         }
