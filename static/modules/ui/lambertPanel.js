@@ -25,9 +25,26 @@ import eventBus from '../events/eventBus.js';
 import logger from '../utils/logger.js';
 import analysisState from '../state/analysisState.js';
 import satelliteState from '../state/satelliteState.js';
+import catalogState from '../state/catalogState.js';
 import listState from '../state/listState.js';
 import timeState from '../state/timeState.js';
 import { computeTransfer, generateTransferArcPath } from '../analysis/transferCalculator.js';
+
+/**
+ * Get satellite by ID from either satelliteState or catalogState
+ * @param {number|string} id - Satellite ID
+ * @returns {Object|null} Satellite object or null
+ */
+function getSatelliteFromAnySource(id) {
+    // Try satelliteState first (demo/custom satellites)
+    let sat = satelliteState.getSatelliteById(id);
+    if (sat) return sat;
+
+    // Try catalogState (catalog satellites)
+    const catalogSats = catalogState.getVisibleSatellites();
+    sat = catalogSats.find(s => s.id === id || s.noradId === id);
+    return sat || null;
+}
 
 // DOM element references
 let container = null;
@@ -110,7 +127,9 @@ function setupEventHandlers() {
     // Chaser selection
     if (chaserSelect) {
         chaserSelect.addEventListener('change', () => {
-            const id = chaserSelect.value || null;
+            const rawId = chaserSelect.value;
+            // Convert to number if numeric, otherwise keep as string
+            const id = rawId ? (isNaN(rawId) ? rawId : parseInt(rawId, 10)) : null;
             analysisState.setLambertChaser(id);
             updateComputeButton();
         });
@@ -119,7 +138,9 @@ function setupEventHandlers() {
     // Target selection
     if (targetSelect) {
         targetSelect.addEventListener('change', () => {
-            const id = targetSelect.value || null;
+            const rawId = targetSelect.value;
+            // Convert to number if numeric, otherwise keep as string
+            const id = rawId ? (isNaN(rawId) ? rawId : parseInt(rawId, 10)) : null;
             analysisState.setLambertTarget(id);
             updateComputeButton();
         });
@@ -132,7 +153,10 @@ function setupEventHandlers() {
             tofInput.value = value;
             analysisState.setLambertTof(value);
             updateTofDisplay(value);
+            updateSliderProgress();
         });
+        // Initialize slider progress on load
+        updateSliderProgress();
     }
 
     // TOF input
@@ -145,6 +169,7 @@ function setupEventHandlers() {
             tofSlider.value = Math.min(86400, value);
             analysisState.setLambertTof(value);
             updateTofDisplay(value);
+            updateSliderProgress();
         });
     }
 
@@ -202,6 +227,16 @@ function setupEventListeners() {
         populateSatelliteDropdowns();
     });
 
+    // Catalog visibility changed
+    eventBus.on('catalog:visibility:changed', () => {
+        populateSatelliteDropdowns();
+    });
+
+    // Catalog satellites loaded
+    eventBus.on('catalog:satellites:loaded', () => {
+        populateSatelliteDropdowns();
+    });
+
     // Satellites changed in state
     eventBus.on('analysis:lambert:satellites:changed', ({ chaserId, targetId }) => {
         if (chaserSelect) chaserSelect.value = chaserId || '';
@@ -240,6 +275,7 @@ function updateFromState() {
     if (tofSlider) tofSlider.value = Math.min(86400, tof);
     if (tofInput) tofInput.value = tof;
     updateTofDisplay(tof);
+    updateSliderProgress();
     updateRevButtons(m);
 
     if (chaserSelect) chaserSelect.value = chaserId || '';
@@ -255,16 +291,35 @@ function updateFromState() {
 }
 
 /**
+ * Get consistent satellite ID (uses id if available, else noradId)
+ * @param {Object} sat - Satellite object
+ * @returns {number|string} Satellite identifier
+ */
+function getSatId(sat) {
+    return sat.id !== undefined ? sat.id : sat.noradId;
+}
+
+/**
  * Populate satellite dropdowns with visible satellites
  */
 function populateSatelliteDropdowns() {
     if (!chaserSelect || !targetSelect) return;
 
-    // Get visible satellites from lists
+    // Get visible satellites from user lists
     const visibleIds = listState.getVisibleSatelliteIds();
-    const satellites = visibleIds
+    const listSatellites = visibleIds
         .map(id => satelliteState.getSatelliteById(id))
-        .filter(sat => sat !== null)
+        .filter(sat => sat !== null);
+
+    // Get visible satellites from catalogs
+    const catalogSatellites = catalogState.getVisibleSatellites();
+
+    // Merge and deduplicate using consistent ID (prefer catalog version if duplicate)
+    const satelliteMap = new Map();
+    listSatellites.forEach(sat => satelliteMap.set(getSatId(sat), sat));
+    catalogSatellites.forEach(sat => satelliteMap.set(getSatId(sat), sat));
+
+    const satellites = Array.from(satelliteMap.values())
         .sort((a, b) => a.name.localeCompare(b.name));
 
     // Store current selections
@@ -275,17 +330,20 @@ function populateSatelliteDropdowns() {
     const defaultOption = '<option value="">-- Select satellite --</option>';
 
     const options = satellites.map(sat =>
-        `<option value="${sat.id}">${sat.name}</option>`
+        `<option value="${getSatId(sat)}">${sat.name}</option>`
     ).join('');
 
     chaserSelect.innerHTML = defaultOption + options;
     targetSelect.innerHTML = defaultOption + options;
 
     // Restore selections if still valid
-    if (satellites.some(s => s.id === currentChaser)) {
+    const currentChaserNum = currentChaser ? (isNaN(currentChaser) ? currentChaser : parseInt(currentChaser, 10)) : null;
+    const currentTargetNum = currentTarget ? (isNaN(currentTarget) ? currentTarget : parseInt(currentTarget, 10)) : null;
+
+    if (satellites.some(s => getSatId(s) === currentChaserNum)) {
         chaserSelect.value = currentChaser;
     }
-    if (satellites.some(s => s.id === currentTarget)) {
+    if (satellites.some(s => getSatId(s) === currentTargetNum)) {
         targetSelect.value = currentTarget;
     }
 
@@ -307,6 +365,20 @@ function updateTofDisplay(seconds) {
     } else {
         tofDisplay.textContent = `${minutes}m`;
     }
+}
+
+/**
+ * Update slider progress fill
+ */
+function updateSliderProgress() {
+    if (!tofSlider) return;
+
+    const min = parseInt(tofSlider.min, 10);
+    const max = parseInt(tofSlider.max, 10);
+    const value = parseInt(tofSlider.value, 10);
+    const progress = ((value - min) / (max - min)) * 100;
+
+    tofSlider.style.setProperty('--slider-progress', `${progress}%`);
 }
 
 /**
@@ -349,9 +421,9 @@ async function handleCompute() {
         return;
     }
 
-    // Get satellites
-    const chaser = satelliteState.getSatelliteById(chaserId);
-    const target = satelliteState.getSatelliteById(targetId);
+    // Get satellites (from satelliteState or catalogState)
+    const chaser = getSatelliteFromAnySource(chaserId);
+    const target = getSatelliteFromAnySource(targetId);
 
     if (!chaser || !target) {
         showStatus('Could not find satellite data', 'error');

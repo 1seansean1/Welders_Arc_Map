@@ -1,7 +1,7 @@
 # WA_map Feature Registry
 
 > **Document Type**: FEATURES
-> **Version**: 5.2
+> **Version**: 5.3
 > **Last Updated**: 2025-11-29
 > **Maintainer**: AI Governor System
 
@@ -296,6 +296,9 @@
 | ANALYSIS-012 | Cross-Panel Entity Selection Sync | P1 | M | DONE | SAT-009, ARCH-002 |
 | ANALYSIS-013 | Orange Theme on Sensor Selection | P1 | S | DONE | ANALYSIS-002, SEN-005 |
 | ANALYSIS-014 | Sensor Click Auto-Enables Polar Plot | P2 | XS | DONE | ANALYSIS-001, MAP-003 |
+| ANALYSIS-015 | Lambert Transfer Solver | P1 | L | DONE | ANALYSIS-001, SAT-006, CAT-001 |
+| ANALYSIS-016 | Lambert Panel UI | P1 | M | DONE | ANALYSIS-015, UI-001 |
+| ANALYSIS-017 | Transfer Arc Visualization | P1 | M | DONE | ANALYSIS-015, MAP-003 |
 
 ---
 
@@ -379,6 +382,7 @@
 | 4.8 | 2025-11-29 | UI-022 Light Theme Polish: Polar plot theme-aware colors; FOV polygon theme-aware colors (darker blue for light theme); clock glow/text override; map time bar background override; log panel buttons override; panel border highlight override (darker gradient); reduced theme toggle switch size (36x18px); H-UI-16 test updated for checkbox |
 | 4.7 | 2025-11-29 | UI-022 Enhanced: Theme toggle now uses styled pill switch with accent blue color; map tiles switch between CartoDB Dark Matter and Positron; tile layer switching on theme change |
 | 4.6 | 2025-11-29 | UI-022 DONE: Theme Toggle (Light/Dark Mode) - button in SETTINGS panel to switch between light and dark themes; preference persists in localStorage; H-UI-16 test added |
+| 5.3 | 2025-11-29 | ANALYSIS-015/016/017 DONE: Lambert Transfer Solver - Izzo algorithm for orbital transfer analysis, Lambert panel UI (satellite dropdowns, TOF slider, revolution buttons, compute button), transfer arc visualization, delta-V results display; H-LAM-1 to H-LAM-7 tests added; Fixed catalogState/satelliteState ID lookup for catalog satellites |
 | 4.5 | 2025-11-29 | TEST-017 DONE: Split Download Buttons - replaced single Download button with "Current Run" (minimal pass info, full fail details, no history) and "Full History" (all details + history) |
 | 4.4 | 2025-11-29 | TEST-016 DONE: Failed-Only Test Report - Download button now exports only failed tests (summary still shows full stats) |
 | 4.3 | 2025-11-29 | ANALYSIS-014 DONE: Sensor click auto-enables polar plot - clicking sensor on map auto-enables polar plot and selects that sensor; H-POLAR-11 test added; Fixed testRegistry.js syntax errors |

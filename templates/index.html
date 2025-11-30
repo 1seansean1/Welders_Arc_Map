@@ -1732,31 +1732,44 @@
 
         .lambert-slider {
             flex: 1;
-            height: 4px;
+            height: 8px;
             -webkit-appearance: none;
             appearance: none;
-            background: var(--bg-tertiary);
-            border-radius: 2px;
+            background: linear-gradient(to right, var(--accent-orange) 0%, var(--accent-orange) var(--slider-progress, 0%), var(--bg-tertiary) var(--slider-progress, 0%), var(--bg-tertiary) 100%);
+            border-radius: 4px;
             outline: none;
+            border: 1px solid var(--border-color);
         }
 
         .lambert-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 14px;
-            height: 14px;
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
             background: var(--accent-orange);
             cursor: pointer;
+            border: 3px solid var(--bg-primary);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--accent-orange);
+        }
+
+        .lambert-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 2px 8px rgba(255, 165, 0, 0.5), 0 0 0 2px var(--accent-orange);
         }
 
         .lambert-slider::-moz-range-thumb {
-            width: 14px;
-            height: 14px;
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
             background: var(--accent-orange);
             cursor: pointer;
-            border: none;
+            border: 3px solid var(--bg-primary);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--accent-orange);
+        }
+
+        .lambert-slider::-moz-range-thumb:hover {
+            transform: scale(1.1);
         }
 
         .lambert-input {
@@ -1782,39 +1795,46 @@
         }
 
         .lambert-tof-display {
-            font-size: 10px;
-            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent-cyan);
             text-align: center;
-            margin-top: 2px;
+            margin-top: 6px;
+            padding: 4px 8px;
+            background: rgba(0, 200, 255, 0.1);
+            border-radius: 4px;
         }
 
         .lambert-rev-buttons {
             display: flex;
-            gap: 4px;
+            gap: 6px;
         }
 
         .lambert-rev-btn {
             flex: 1;
-            padding: 6px 8px;
-            font-size: 11px;
-            font-weight: 500;
+            padding: 10px 12px;
+            font-size: 13px;
+            font-weight: 600;
             background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            border-radius: 3px;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
             color: var(--text-secondary);
             cursor: pointer;
             transition: all 0.15s ease;
         }
 
-        .lambert-rev-btn:hover {
+        .lambert-rev-btn:hover:not(.active) {
             background: var(--bg-secondary);
+            border-color: var(--accent-orange);
             color: var(--text-primary);
         }
 
         .lambert-rev-btn.active {
             background: var(--accent-orange);
             border-color: var(--accent-orange);
-            color: var(--bg-primary);
+            color: #000;
+            box-shadow: 0 2px 8px rgba(255, 165, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
         }
 
         .lambert-compute-btn {
@@ -1842,52 +1862,60 @@
         }
 
         .lambert-results {
-            background: var(--bg-secondary);
-            border-radius: 4px;
-            padding: 12px;
-            border: 1px solid var(--border-color);
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, rgba(255, 165, 0, 0.05) 100%);
+            border-radius: 8px;
+            padding: 16px;
+            border: 2px solid var(--accent-orange);
+            box-shadow: 0 4px 12px rgba(255, 165, 0, 0.15);
         }
 
         .lambert-results-header {
-            font-size: 11px;
-            font-weight: 600;
+            font-size: 13px;
+            font-weight: 700;
             color: var(--accent-orange);
-            margin-bottom: 10px;
-            padding-bottom: 6px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
             border-bottom: 1px solid var(--border-color);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .lambert-result-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 4px 0;
-            font-size: 11px;
+            padding: 6px 0;
+            font-size: 12px;
         }
 
         .lambert-result-label {
-            color: var(--text-muted);
+            color: var(--text-secondary);
         }
 
         .lambert-result-value {
             color: var(--text-primary);
             font-family: 'Courier New', Consolas, monospace;
+            font-size: 13px;
+            font-weight: 500;
         }
 
         .lambert-result-total {
-            margin-top: 6px;
-            padding-top: 8px;
-            border-top: 1px solid var(--border-color);
+            margin-top: 10px;
+            padding-top: 12px;
+            border-top: 2px solid var(--accent-orange);
             font-weight: 600;
         }
 
         .lambert-result-total .lambert-result-label {
             color: var(--text-primary);
+            font-size: 13px;
         }
 
         .lambert-result-total .lambert-result-value {
             color: var(--accent-orange);
-            font-size: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            text-shadow: 0 0 10px rgba(255, 165, 0, 0.3);
         }
 
         .lambert-status {
