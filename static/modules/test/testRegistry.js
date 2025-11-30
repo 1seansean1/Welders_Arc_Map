@@ -4182,6 +4182,72 @@ const PROFILE_HYPOTHESES = {
                 buttonText: btn?.textContent || ''
             };
         }
+    },
+    'H-PROFILE-4': {
+        id: 'H-PROFILE-4',
+        name: 'Canvas Size Form Elements Exist',
+        hypothesis: 'If profile defaults modal has Canvas Size section, width/height inputs should exist',
+        prediction: 'Canvas width and height input elements exist in profile defaults modal',
+        category: 'Profile',
+        steps: [
+            { action: 'Check canvas width input exists', expected: 'Input with id profile-default-canvas-width exists' },
+            { action: 'Check canvas height input exists', expected: 'Input with id profile-default-canvas-height exists' }
+        ],
+        validate: async () => {
+            const widthInput = document.getElementById('profile-default-canvas-width');
+            const heightInput = document.getElementById('profile-default-canvas-height');
+            return {
+                passed: widthInput !== null && heightInput !== null,
+                hasWidthInput: widthInput !== null,
+                hasHeightInput: heightInput !== null,
+                widthValue: widthInput?.value || '',
+                heightValue: heightInput?.value || ''
+            };
+        }
+    },
+    'H-PROFILE-5': {
+        id: 'H-PROFILE-5',
+        name: 'Watch List Dropdown Exists',
+        hypothesis: 'If profile defaults modal has Watch List section, dropdown selector should exist',
+        prediction: 'Watch list select element exists in profile defaults modal',
+        category: 'Profile',
+        steps: [
+            { action: 'Check watch list dropdown exists', expected: 'Select with id profile-default-watchlist exists' }
+        ],
+        validate: async () => {
+            const watchlistSelect = document.getElementById('profile-default-watchlist');
+            const hasNoneOption = watchlistSelect?.querySelector('option[value=""]') !== null;
+            return {
+                passed: watchlistSelect !== null && hasNoneOption,
+                hasWatchlistSelect: watchlistSelect !== null,
+                hasNoneOption: hasNoneOption,
+                optionCount: watchlistSelect?.options?.length || 0
+            };
+        }
+    },
+    'H-PROFILE-6': {
+        id: 'H-PROFILE-6',
+        name: 'Settings Panel Slider Widths',
+        hypothesis: 'If settings panel sliders have fixed width, they should not expand to full panel width',
+        prediction: 'Slider elements should have max-width of 80px',
+        category: 'Profile',
+        steps: [
+            { action: 'Check slider has fixed width CSS', expected: 'Computed max-width is 80px' }
+        ],
+        validate: async () => {
+            const slider = document.getElementById('track-tail-slider');
+            if (!slider) return { passed: false, error: 'Slider not found' };
+            const computedStyle = window.getComputedStyle(slider);
+            const maxWidth = computedStyle.maxWidth;
+            const width = computedStyle.width;
+            const passed = maxWidth === '80px' || width === '80px';
+            return {
+                passed: passed,
+                maxWidth: maxWidth,
+                width: width,
+                expectedMaxWidth: '80px'
+            };
+        }
     }
 };
 

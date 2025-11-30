@@ -1481,6 +1481,9 @@ export function showProfileDefaultsModal(currentSettings, onSave) {
     const mapLon = document.getElementById('profile-default-map-lon');
     const mapLat = document.getElementById('profile-default-map-lat');
     const mapZoom = document.getElementById('profile-default-map-zoom');
+    const canvasWidth = document.getElementById('profile-default-canvas-width');
+    const canvasHeight = document.getElementById('profile-default-canvas-height');
+    const watchlistSelect = document.getElementById('profile-default-watchlist');
     const cancelBtn = document.getElementById('profile-defaults-cancel');
     const resetBtn = document.getElementById('profile-defaults-reset');
     const saveBtn = document.getElementById('profile-defaults-save');
@@ -1502,6 +1505,21 @@ export function showProfileDefaultsModal(currentSettings, onSave) {
     if (mapLon) mapLon.value = currentSettings.mapCenter?.[0] ?? 0;
     if (mapLat) mapLat.value = currentSettings.mapCenter?.[1] ?? 0;
     if (mapZoom) mapZoom.value = currentSettings.mapZoom ?? 2;
+    if (canvasWidth) canvasWidth.value = currentSettings.canvasWidth ?? 1920;
+    if (canvasHeight) canvasHeight.value = currentSettings.canvasHeight ?? 1080;
+
+    // Populate watch list dropdown
+    if (watchlistSelect) {
+        watchlistSelect.innerHTML = '<option value="">(None)</option>';
+        const lists = listState.getAllLists();
+        lists.forEach(list => {
+            const option = document.createElement('option');
+            option.value = list.id;
+            option.textContent = list.name;
+            watchlistSelect.appendChild(option);
+        });
+        watchlistSelect.value = currentSettings.activeWatchlistId ?? '';
+    }
 
     // Show modal
     overlay.classList.add('visible');
@@ -1534,6 +1552,9 @@ export function showProfileDefaultsModal(currentSettings, onSave) {
         if (mapLon) mapLon.value = 0;
         if (mapLat) mapLat.value = 0;
         if (mapZoom) mapZoom.value = 2;
+        if (canvasWidth) canvasWidth.value = 1920;
+        if (canvasHeight) canvasHeight.value = 1080;
+        if (watchlistSelect) watchlistSelect.value = '';
     };
 
     const handleSave = async () => {
@@ -1552,7 +1573,10 @@ export function showProfileDefaultsModal(currentSettings, onSave) {
             apexTickColor: apexColor?.value || '#ff6600',
             apexTickOpacity: (parseInt(apexOpacity?.value) || 80) / 100,
             mapCenter: [parseFloat(mapLon?.value) || 0, parseFloat(mapLat?.value) || 0],
-            mapZoom: parseInt(mapZoom?.value) || 2
+            mapZoom: parseInt(mapZoom?.value) || 2,
+            canvasWidth: parseInt(canvasWidth?.value) || 1920,
+            canvasHeight: parseInt(canvasHeight?.value) || 1080,
+            activeWatchlistId: watchlistSelect?.value ? parseInt(watchlistSelect.value) : null
         };
 
         if (onSave) {

@@ -49,10 +49,7 @@ const DEFAULT_SETTINGS = {
     // MAP VIEW
     // ============================================
     mapCenter: [0, 0],      // [lon, lat]
-    mapZoom: 2,
-
-    // ============================================
-    // UI LAYOUT
+    mapZoom: 2,n    canvasWidth: 1920,      // Map canvas width in pixelsn    canvasHeight: 1080,     // Map canvas height in pixelsnn    // ============================================n    // UI LAYOUT
     // ============================================
     panelExpanded: true,
     activeSection: 'satellites', // 'satellites', 'sensors', 'settings', etc.
