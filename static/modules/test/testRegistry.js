@@ -4551,6 +4551,175 @@ const LAMBERT_HYPOTHESES = {
 };
 
 // ============================================
+// LOG HYPOTHESES
+// ============================================
+
+const LOG_HYPOTHESES = {
+    'H-LOG-9': {
+        id: 'H-LOG-9',
+        name: 'Log Throttling Suppresses Repeated Messages',
+        hypothesis: 'If same message is logged multiple times rapidly, only one appears in UI',
+        prediction: 'After 10 rapid identical logs, UI shows 1 entry (others throttled)',
+        category: 'Log',
+        steps: [
+            { action: 'Get logger instance', expected: 'Logger singleton available' },
+            { action: 'Clear logs and throttle cache', expected: 'Clean state' },
+            { action: 'Log identical message 10 times rapidly', expected: 'Only 1 UI entry' }
+        ],
+        validate: async () => {
+            try {
+                const logger = (await import('../utils/logger.js')).default;
+                const initialCount = logger.displayElement ? logger.displayElement.children.length : 0;
+
+                // Clear throttle cache for clean test
+                logger.throttleCache.clear();
+
+                // Log same message 10 times rapidly
+                const testMsg = 'H-LOG-9-throttle-test-' + Date.now();
+                for (let i = 0; i < 10; i++) {
+                    logger.info(testMsg, logger.CATEGORY.TEST);
+                }
+
+                // Count how many appeared in UI
+                const newEntries = (logger.displayElement ? logger.displayElement.children.length : 0) - initialCount;
+
+                // Should be throttled to 1 (first one gets through, rest throttled)
+                return {
+                    passed: newEntries === 1,
+                    newUIEntries: newEntries,
+                    expected: 1,
+                    throttleMs: logger.throttleMs
+                };
+            } catch (e) {
+                return { passed: false, error: e.message };
+            }
+        }
+    },
+    'H-LOG-10': {
+        id: 'H-LOG-10',
+        name: 'Log Level Filter Works',
+        hypothesis: 'If UI min level is set to warning, info messages are hidden from UI',
+        prediction: 'Setting uiMinLevel to warning hides info logs from UI display',
+        category: 'Log',
+        steps: [
+            { action: 'Set UI level to warning', expected: 'Level set successfully' },
+            { action: 'Log info message', expected: 'Not shown in UI' },
+            { action: 'Log warning message', expected: 'Shown in UI' },
+            { action: 'Restore original level', expected: 'Level restored' }
+        ],
+        validate: async () => {
+            try {
+                const logger = (await import('../utils/logger.js')).default;
+                const originalLevel = logger.getUIMinLevel();
+                const initialCount = logger.displayElement ? logger.displayElement.children.length : 0;
+
+                // Set to warning level (hides info)
+                logger.setUIMinLevel('warning');
+                logger.throttleCache.clear();
+
+                // Log info (should be hidden)
+                const infoMsg = 'H-LOG-10-info-' + Date.now();
+                logger.info(infoMsg, logger.CATEGORY.TEST);
+                const afterInfo = logger.displayElement ? logger.displayElement.children.length : 0;
+
+                // Log warning (should show)
+                const warnMsg = 'H-LOG-10-warn-' + Date.now();
+                logger.warning(warnMsg, logger.CATEGORY.TEST);
+                const afterWarn = logger.displayElement ? logger.displayElement.children.length : 0;
+
+                // Restore original level
+                logger.setUIMinLevel(originalLevel);
+
+                const infoShown = afterInfo > initialCount;
+                const warnShown = afterWarn > afterInfo;
+
+                return {
+                    passed: !infoShown && warnShown,
+                    infoHidden: !infoShown,
+                    warnShown: warnShown,
+                    originalLevel,
+                    testLevel: 'warning'
+                };
+            } catch (e) {
+                return { passed: false, error: e.message };
+            }
+        }
+    },
+    'H-LOG-11': {
+        id: 'H-LOG-11',
+        name: 'Full Buffer Stores All Logs',
+        hypothesis: 'Even when UI filters logs, full buffer stores all for download',
+        prediction: 'logBuffer contains all log entries regardless of UI level filter',
+        category: 'Log',
+        steps: [
+            { action: 'Get initial buffer count', expected: 'Count recorded' },
+            { action: 'Set UI level to error only', expected: 'Level set' },
+            { action: 'Log info, warning, error', expected: 'All 3 in buffer' }
+        ],
+        validate: async () => {
+            try {
+                const logger = (await import('../utils/logger.js')).default;
+                const originalLevel = logger.getUIMinLevel();
+                const initialBufferCount = logger.logBuffer.length;
+
+                // Set UI to error only
+                logger.setUIMinLevel('error');
+                logger.throttleCache.clear();
+
+                // Log all levels
+                const ts = Date.now();
+                logger.diagnostic('H-LOG-11-diag-' + ts, logger.CATEGORY.TEST);
+                logger.info('H-LOG-11-info-' + ts, logger.CATEGORY.TEST);
+                logger.warning('H-LOG-11-warn-' + ts, logger.CATEGORY.TEST);
+                logger.error('H-LOG-11-error-' + ts, logger.CATEGORY.TEST);
+
+                const newBufferCount = logger.logBuffer.length;
+                const addedToBuffer = newBufferCount - initialBufferCount;
+
+                // Restore level
+                logger.setUIMinLevel(originalLevel);
+
+                // All 4 should be in buffer (diag, info, warn, error) + the log from setUIMinLevel
+                return {
+                    passed: addedToBuffer >= 4,
+                    bufferEntriesAdded: addedToBuffer,
+                    expected: '>=4',
+                    totalBuffer: newBufferCount
+                };
+            } catch (e) {
+                return { passed: false, error: e.message };
+            }
+        }
+    },
+    'H-LOG-12': {
+        id: 'H-LOG-12',
+        name: 'Log Settings Controls Exist',
+        hypothesis: 'Settings panel has log control elements',
+        prediction: 'Level select, throttle slider, and clear all button exist in DOM',
+        category: 'Log',
+        steps: [
+            { action: 'Check log level select', expected: 'Element exists' },
+            { action: 'Check throttle slider', expected: 'Element exists' },
+            { action: 'Check clear all button', expected: 'Element exists' }
+        ],
+        validate: async () => {
+            const levelSelect = document.getElementById('log-level-select');
+            const throttleSlider = document.getElementById('log-throttle-slider');
+            const clearAllBtn = document.getElementById('log-clear-all-btn');
+            const downloadAllBtn = document.getElementById('log-download-all-btn');
+
+            return {
+                passed: levelSelect !== null && throttleSlider !== null && clearAllBtn !== null && downloadAllBtn !== null,
+                levelSelectExists: levelSelect !== null,
+                throttleSliderExists: throttleSlider !== null,
+                clearAllBtnExists: clearAllBtn !== null,
+                downloadAllBtnExists: downloadAllBtn !== null
+            };
+        }
+    }
+};
+
+// ============================================
 
 export const TEST_REGISTRY = {
     ...MAP_HYPOTHESES,
@@ -4564,7 +4733,8 @@ export const TEST_REGISTRY = {
     ...LIST_HYPOTHESES,
     ...POLAR_HYPOTHESES,
     ...CATALOG_HYPOTHESES,
-    ...PROFILE_HYPOTHESES
+    ...PROFILE_HYPOTHESES,
+    ...LOG_HYPOTHESES
 };
 
 /**

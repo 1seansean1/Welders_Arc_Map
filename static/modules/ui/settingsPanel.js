@@ -28,7 +28,7 @@ export function initializeSettingsPanel() {
     initializeGlowControls();
     initializeApexTickControls();
     initializeProfileDefaultsButton();
-    initializeLogsToggle();
+    initializeLogControls();
     logger.diagnostic('Settings panel initialized', logger.CATEGORY.UI);
 }
 
@@ -419,24 +419,60 @@ function initializeApexTickControls() {
 
 
 /**
- * Initialize logs toggle button
+ * Initialize log controls in Settings panel
+ * - Toggle show/hide
+ * - Log level filter
+ * - Throttle interval slider
+ * - Clear all button
  */
-function initializeLogsToggle() {
+function initializeLogControls() {
     const toggleBtn = document.getElementById('logs-toggle-btn');
     const logsContent = document.getElementById('logs-content-inline');
-    
-    if (!toggleBtn || !logsContent) {
-        logger.diagnostic('Logs toggle elements not found', logger.CATEGORY.UI);
-        return;
+    const levelSelect = document.getElementById('log-level-select');
+    const throttleSlider = document.getElementById('log-throttle-slider');
+    const throttleValue = document.getElementById('log-throttle-value');
+    const clearAllBtn = document.getElementById('log-clear-all-btn');
+
+    // Toggle show/hide
+    if (toggleBtn && logsContent) {
+        toggleBtn.addEventListener('click', () => {
+            const isHidden = logsContent.style.display === 'none';
+            logsContent.style.display = isHidden ? 'block' : 'none';
+            toggleBtn.textContent = isHidden ? 'Hide' : 'Show';
+        });
     }
-    
-    toggleBtn.addEventListener('click', () => {
-        const isHidden = logsContent.style.display === 'none';
-        logsContent.style.display = isHidden ? 'block' : 'none';
-        toggleBtn.textContent = isHidden ? 'Hide' : 'Show';
-    });
-    
-    logger.diagnostic('Logs toggle initialized', logger.CATEGORY.UI);
+
+    // Log level filter
+    if (levelSelect) {
+        // Set initial value from logger
+        levelSelect.value = logger.getUIMinLevel();
+
+        levelSelect.addEventListener('change', (e) => {
+            logger.setUIMinLevel(e.target.value);
+        });
+    }
+
+    // Throttle interval slider
+    if (throttleSlider && throttleValue) {
+        // Set initial value from logger
+        throttleSlider.value = logger.getThrottleMs();
+        throttleValue.textContent = (logger.getThrottleMs() / 1000).toFixed(1) + 's';
+
+        throttleSlider.addEventListener('input', (e) => {
+            const ms = parseInt(e.target.value);
+            throttleValue.textContent = (ms / 1000).toFixed(1) + 's';
+            logger.setThrottleMs(ms);
+        });
+    }
+
+    // Clear all button
+    if (clearAllBtn) {
+        clearAllBtn.addEventListener('click', () => {
+            logger.clearAll();
+        });
+    }
+
+    logger.diagnostic('Log controls initialized', logger.CATEGORY.UI);
 }
 
 // Auto-initialize when module loads

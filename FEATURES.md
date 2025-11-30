@@ -1,7 +1,7 @@
 # WA_map Feature Registry
 
 > **Document Type**: FEATURES
-> **Version**: 5.3
+> **Version**: 5.5
 > **Last Updated**: 2025-11-29
 > **Maintainer**: AI Governor System
 
@@ -217,8 +217,12 @@
 | LOG-006 | Resizable Log Panel | P2 | M | DONE | LOG-001 |
 | LOG-007 | Right-Click Context Menu | P3 | S | DONE | LOG-001 |
 | LOG-008 | Live Log Counter | P2 | XS | DONE | LOG-001 |
-| LOG-009 | Log Level Filtering | P3 | M | IDEA | LOG-001 |
+| LOG-009 | Log Level Filtering | P1 | M | DONE | LOG-001 |
 | LOG-010 | Log Search | P3 | M | IDEA | LOG-001 |
+| LOG-011 | Message Throttling | P1 | M | DONE | LOG-001 |
+| LOG-012 | Two-Tier Storage (UI+Full Buffer) | P1 | M | DONE | LOG-001 |
+| LOG-013 | Download All (Full Buffer) | P1 | S | DONE | LOG-012 |
+| LOG-014 | Log Settings Controls | P2 | S | DONE | LOG-009, LOG-011 |
 
 ### Testing Infrastructure (TEST)
 
@@ -357,18 +361,18 @@
 | SEN | 9 | 8 | 0 | 0 | 1 |
 | TIME | 34 | 34 | 0 | 0 | 0 |
 | UI | 30 | 29 | 0 | 1 | 0 |
-| LOG | 10 | 8 | 0 | 0 | 2 |
+| LOG | 14 | 13 | 0 | 0 | 1 |
 | TEST | 16 | 14 | 0 | 1 | 0 |
 | BACK | 9 | 3 | 0 | 4 | 2 |
 | ARCH | 5 | 5 | 0 | 0 | 0 |
 | LIST | 6 | 6 | 0 | 0 | 0 |
 | ANALYSIS | 14 | 14 | 0 | 0 | 0 |
 | AUTH | 8 | 8 | 0 | 0 | 0 |
-| **TOTAL** | **185** | **171** | **0** | **7** | **6** |
+| **TOTAL** | **189** | **176** | **0** | **7** | **5** |
 
-*Note: MAP-013 REMOVED (superseded by MAP-012+MAP-016), MAP-016 added - net zero change*
+*Note: LOG-009 to LOG-014 added: Message throttling, two-tier storage, download all, settings controls*
 
-**Completion Rate**: 92% (171/185 features complete)
+**Completion Rate**: 93% (176/189 features complete)
 
 ---
 
@@ -376,6 +380,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 5.5 | 2025-11-29 | LOG-009 to LOG-014 DONE: Enhanced Logging System - message throttling (2s default, configurable), two-tier storage (UI filtered, full buffer for download), log level filtering UI in Settings, DL All button for full buffer download, Clear All button; H-LOG-9/10/11/12 tests added |
 | 5.4 | 2025-11-29 | UI-029 DONE: Design System & Style Guide - centralized design tokens CSS file (/static/styles/design-tokens.css), comprehensive style guide markdown (docs/STYLE_GUIDE.md), living HTML component library (/static/style-guide.html), added missing CSS variables (--accent-primary, --accent-orange, --accent-cyan), fixed hardcoded colors; H-UI-18 test added |
 | 5.2 | 2025-11-29 | UI-026/027/028 DONE: Canvas Size in Profile Defaults, Watch List Selector in Defaults, Settings Panel Slider Width Fix (reduced to 80px max-width for better alignment); H-PROFILE-4/5/6 tests added |
 | 5.1 | 2025-11-29 | UI-024/025 DONE: Map Info Display (zoom/size/center coordinates in top-left overlay), Logs moved to Settings panel; H-UI-14/15/16/17 tests updated |

@@ -3411,8 +3411,32 @@
                         <label class="time-label">Logs</label>
                         <button id="logs-toggle-btn" class="sensor-action-btn" style="padding: 4px 12px; font-size: 11px;">Show</button>
                     </div>
-                    <div id="logs-content-inline" style="display: none; margin-top: 8px; max-height: 200px; overflow-y: auto; background: var(--bg-secondary); border-radius: 4px; padding: 8px;">
-                        <p style="color: var(--text-muted); font-size: 11px; margin: 0;">Logs coming soon...</p>
+                    <div id="logs-content-inline" style="display: none; margin-top: 8px; background: var(--bg-secondary); border-radius: 4px; padding: 8px;">
+                        <!-- Log Level Filter -->
+                        <div class="track-duration-control" style="margin-bottom: 8px;">
+                            <span class="track-label">UI Level</span>
+                            <select id="log-level-select" class="sensor-select" style="width: 100px; font-size: 10px; padding: 2px 4px;">
+                                <option value="diagnostic">All (diag+)</option>
+                                <option value="info" selected>Info+</option>
+                                <option value="warning">Warn+</option>
+                                <option value="error">Errors</option>
+                            </select>
+                        </div>
+                        <!-- Throttle Control -->
+                        <div class="track-duration-control" style="margin-bottom: 8px;">
+                            <span class="track-label">Throttle</span>
+                            <input type="range" class="track-slider" id="log-throttle-slider" min="0" max="5000" value="2000" step="100" style="width: 80px;" />
+                            <span class="track-unit" id="log-throttle-value">2.0s</span>
+                        </div>
+                        <!-- Buffer Stats -->
+                        <div class="track-duration-control" style="margin-bottom: 8px;">
+                            <span class="track-label">Buffer</span>
+                            <span class="track-unit" style="font-size: 10px;"><span id="log-buffer-count">0</span> / 5000</span>
+                        </div>
+                        <!-- Clear All Button -->
+                        <div style="margin-top: 8px;">
+                            <button id="log-clear-all-btn" class="sensor-action-btn" style="padding: 4px 12px; font-size: 10px; width: 100%;">Clear All Logs</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -3616,10 +3640,10 @@
                 <div class="log-resize-handle" id="log-resize-handle"></div>
                 <!-- Inline controls (top-left overlay) -->
                 <div class="log-inline-controls">
-                    <button class="log-btn stub" id="log-stub-btn" title="Reserved button (future use)">◌</button>
+                    <button class="log-btn" id="log-download-all-btn" title="Download ALL logs (full buffer)">⇊</button>
                     <button class="log-btn" id="log-clear-btn" title="Clear log display">⊘</button>
-                    <button class="log-btn" id="log-download-btn" title="Download log as .txt file">⬇</button>
-                    <span class="log-text" id="log-text-placeholder">-</span>
+                    <button class="log-btn" id="log-download-btn" title="Download filtered logs">⬇</button>
+                    <span class="log-text" id="log-text-placeholder">UI:</span>
                     <span class="log-text" id="log-count">0</span>
                 </div>
                 <div class="log-display" id="log-display">
@@ -3651,6 +3675,7 @@
     <div class="log-context-menu" id="log-context-menu">
         <div class="log-context-item" id="log-context-clear">⊘ Clear</div>
         <div class="log-context-item" id="log-context-download">⬇ Download</div>
+        <div class="log-context-item" id="log-context-download-all">⇊ DL All</div>
     </div>
 
     <!-- Confirmation Modal -->
