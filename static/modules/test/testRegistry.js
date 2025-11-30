@@ -4716,6 +4716,118 @@ const LOG_HYPOTHESES = {
                 downloadAllBtnExists: downloadAllBtn !== null
             };
         }
+    },
+    'H-LOG-13': {
+        id: 'H-LOG-13',
+        name: 'Backend Logs API Endpoint',
+        hypothesis: 'GET /api/logs returns system logs with profile tracking',
+        prediction: 'API returns logs array with profile_id and username fields',
+        category: 'Log',
+        steps: [
+            { action: 'Fetch /api/logs', expected: 'Returns JSON with logs array' },
+            { action: 'Check log structure', expected: 'Logs have profile_id, username, timestamp' }
+        ],
+        validate: async () => {
+            try {
+                const response = await fetch('/api/logs?limit=10');
+                if (!response.ok) {
+                    return { passed: false, error: 'API endpoint not found or error', status: response.status };
+                }
+                const data = await response.json();
+                const hasLogs = Array.isArray(data.logs);
+                const hasRetention = typeof data.retention_hours === 'number';
+                const hasProfileFields = data.logs.length === 0 || 
+                    (data.logs[0].hasOwnProperty('profile_id') && data.logs[0].hasOwnProperty('username'));
+                
+                return {
+                    passed: hasLogs && hasRetention && hasProfileFields,
+                    hasLogs,
+                    hasRetention,
+                    retentionHours: data.retention_hours,
+                    hasProfileFields,
+                    logCount: data.logs.length,
+                    total: data.total
+                };
+            } catch (e) {
+                return { passed: false, error: e.message };
+            }
+        }
+    },
+    'H-LOG-14': {
+        id: 'H-LOG-14',
+        name: 'Backend Logs 48-Hour Retention',
+        hypothesis: 'System logs are configured for 48-hour retention',
+        prediction: 'API returns retention_hours = 48',
+        category: 'Log',
+        steps: [
+            { action: 'Fetch /api/logs', expected: 'Returns retention_hours field' },
+            { action: 'Check retention value', expected: 'retention_hours === 48' }
+        ],
+        validate: async () => {
+            try {
+                const response = await fetch('/api/logs?limit=1');
+                if (!response.ok) {
+                    return { passed: false, error: 'API endpoint not found', status: response.status };
+                }
+                const data = await response.json();
+                const retentionCorrect = data.retention_hours === 48;
+                
+                return {
+                    passed: retentionCorrect,
+                    retention_hours: data.retention_hours,
+                    expected: 48
+                };
+            } catch (e) {
+                return { passed: false, error: e.message };
+            }
+        }
+    },
+    'H-LOG-15': {
+        id: 'H-LOG-15',
+        name: 'Profile Headers in Requests',
+        hypothesis: 'profileState.getRequestHeaders() includes X-Profile-ID and X-Username',
+        prediction: 'After login, headers contain profile info',
+        category: 'Log',
+        steps: [
+            { action: 'Get request headers from profileState', expected: 'Headers include profile info' }
+        ],
+        validate: async () => {
+            try {
+                const profileState = window.profileState;
+                if (!profileState) {
+                    return { passed: false, error: 'profileState not available' };
+                }
+                
+                const hasMethod = typeof profileState.getRequestHeaders === 'function';
+                if (!hasMethod) {
+                    return { passed: false, error: 'getRequestHeaders method not found' };
+                }
+                
+                const headers = profileState.getRequestHeaders();
+                const isLoggedIn = profileState.isLoggedIn();
+                
+                if (isLoggedIn) {
+                    const hasProfileId = headers.hasOwnProperty('X-Profile-ID');
+                    const hasUsername = headers.hasOwnProperty('X-Username');
+                    return {
+                        passed: hasProfileId && hasUsername,
+                        isLoggedIn,
+                        hasProfileId,
+                        hasUsername,
+                        profileId: headers['X-Profile-ID'],
+                        username: headers['X-Username']
+                    };
+                } else {
+                    return {
+                        passed: true,
+                        skipped: true,
+                        reason: 'Not logged in - headers not required'
+                    };
+                }
+            } catch (e) {
+                return { passed: false, error: e.message };
+            }
+        }
     }
 };
 

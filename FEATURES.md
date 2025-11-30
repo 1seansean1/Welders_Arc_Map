@@ -1,8 +1,8 @@
 # WA_map Feature Registry
 
 > **Document Type**: FEATURES
-> **Version**: 5.5
-> **Last Updated**: 2025-11-29
+> **Version**: 5.6
+> **Last Updated**: 2025-11-30
 > **Maintainer**: AI Governor System
 
 ---
@@ -259,6 +259,7 @@
 | BACK-007 | TLE Fetching Service | P2 | M | PLAN | BACK-001 |
 | BACK-008 | Authentication | P1 | M | WIP | BACK-001, PROFILE-003 |
 | BACK-009 | Rate Limiting | P3 | S | IDEA | BACK-001 |
+| BACK-010 | System Logging with Profile Tracking | P1 | M | DONE | BACK-001, PROFILE-003 |
 
 ### User Profiles (PROFILE)
 
@@ -363,16 +364,16 @@
 | UI | 30 | 29 | 0 | 1 | 0 |
 | LOG | 14 | 13 | 0 | 0 | 1 |
 | TEST | 16 | 14 | 0 | 1 | 0 |
-| BACK | 9 | 3 | 0 | 4 | 2 |
+| BACK | 10 | 4 | 0 | 4 | 2 |
 | ARCH | 5 | 5 | 0 | 0 | 0 |
 | LIST | 6 | 6 | 0 | 0 | 0 |
 | ANALYSIS | 14 | 14 | 0 | 0 | 0 |
 | AUTH | 8 | 8 | 0 | 0 | 0 |
-| **TOTAL** | **189** | **176** | **0** | **7** | **5** |
+| **TOTAL** | **190** | **177** | **0** | **7** | **5** |
 
 *Note: LOG-009 to LOG-014 added: Message throttling, two-tier storage, download all, settings controls*
 
-**Completion Rate**: 93% (176/189 features complete)
+**Completion Rate**: 93% (177/190 features complete)
 
 ---
 
@@ -380,6 +381,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 5.6 | 2025-11-30 | BACK-010 DONE: System Logging with Profile Tracking - backend logging system using structlog, logs all API requests with profile ID/username, 48-hour retention with auto-cleanup, GET/DELETE /api/logs endpoints, frontend headers updated to send X-Profile-ID and X-Username; H-LOG-13/14/15 tests added |
 | 5.5 | 2025-11-29 | LOG-009 to LOG-014 DONE: Enhanced Logging System - message throttling (2s default, configurable), two-tier storage (UI filtered, full buffer for download), log level filtering UI in Settings, DL All button for full buffer download, Clear All button; H-LOG-9/10/11/12 tests added |
 | 5.4 | 2025-11-29 | UI-029 DONE: Design System & Style Guide - centralized design tokens CSS file (/static/styles/design-tokens.css), comprehensive style guide markdown (docs/STYLE_GUIDE.md), living HTML component library (/static/style-guide.html), added missing CSS variables (--accent-primary, --accent-orange, --accent-cyan), fixed hardcoded colors; H-UI-18 test added |
 | 5.2 | 2025-11-29 | UI-026/027/028 DONE: Canvas Size in Profile Defaults, Watch List Selector in Defaults, Settings Panel Slider Width Fix (reduced to 80px max-width for better alignment); H-PROFILE-4/5/6 tests added |

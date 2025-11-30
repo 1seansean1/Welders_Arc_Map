@@ -131,6 +131,32 @@ class ProfileState {
     }
 
     /**
+     * Get headers with profile information for API requests
+     * Used for backend logging to identify which profile made each request
+     * @param {Object} additionalHeaders - Additional headers to include
+     * @returns {Object} Headers object with profile info
+     */
+    getRequestHeaders(additionalHeaders = {}) {
+        const headers = { ...additionalHeaders };
+        if (this._state.currentProfile) {
+            headers['X-Profile-ID'] = String(this._state.currentProfile.id);
+            headers['X-Username'] = this._state.currentProfile.username || 'anonymous';
+        }
+        return headers;
+    }
+
+    /**
+     * Wrapper for fetch that automatically includes profile headers
+     * @param {string} url - URL to fetch
+     * @param {Object} options - Fetch options
+     * @returns {Promise<Response>} Fetch response
+     */
+    async fetchWithProfile(url, options = {}) {
+        const headers = this.getRequestHeaders(options.headers || {});
+        return fetch(url, { ...options, headers });
+    }
+
+    /**
      * Get current profile (read-only copy)
      * @returns {Object|null} Current profile or null if not logged in
      */
@@ -279,7 +305,8 @@ class ProfileState {
     async logout() {
         try {
             await fetch(`${this._apiBase}/api/auth/logout`, {
-                method: 'POST'
+                method: 'POST',
+                headers: this.getRequestHeaders()
             });
         } catch (error) {
             // Ignore logout errors
@@ -309,7 +336,7 @@ class ProfileState {
 
         try {
             // Get list of profiles and use first one
-            const response = await fetch(`${this._apiBase}/api/profiles`);
+            const response = await fetch(`${this._apiBase}/api/profiles`, { headers: this.getRequestHeaders() });
             if (!response.ok) throw new Error('Failed to fetch profiles');
 
             const data = await response.json();
@@ -356,7 +383,7 @@ class ProfileState {
 
         try {
             const profileId = this._state.currentProfile.id;
-            const response = await fetch(`${this._apiBase}/api/profiles/${profileId}/settings`);
+            const response = await fetch(`${this._apiBase}/api/profiles/${profileId}/settings`, { headers: this.getRequestHeaders() });
 
             if (!response.ok) throw new Error('Failed to load settings');
 
@@ -401,7 +428,7 @@ class ProfileState {
             const profileId = this._state.currentProfile.id;
             const response = await fetch(`${this._apiBase}/api/profiles/${profileId}/settings`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: this.getRequestHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ settings: this._state.settings })
             });
 
@@ -450,7 +477,7 @@ class ProfileState {
      */
     async getProfiles() {
         try {
-            const response = await fetch(`${this._apiBase}/api/profiles`);
+            const response = await fetch(`${this._apiBase}/api/profiles`, { headers: this.getRequestHeaders() });
             if (!response.ok) throw new Error('Failed to fetch profiles');
 
             const data = await response.json();
@@ -473,7 +500,7 @@ class ProfileState {
         try {
             const response = await fetch(`${this._apiBase}/api/profiles`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: this.getRequestHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({
                     username,
                     password,
@@ -504,7 +531,8 @@ class ProfileState {
     async deleteProfile(profileId) {
         try {
             const response = await fetch(`${this._apiBase}/api/profiles/${profileId}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: this.getRequestHeaders()
             });
 
             if (!response.ok) throw new Error('Failed to delete profile');
@@ -644,7 +672,7 @@ class ProfileState {
      */
     async getRoles() {
         try {
-            const response = await fetch(`${this._apiBase}/api/roles`);
+            const response = await fetch(`${this._apiBase}/api/roles`, { headers: this.getRequestHeaders() });
             if (!response.ok) throw new Error('Failed to fetch roles');
 
             const data = await response.json();

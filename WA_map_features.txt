@@ -1,0 +1,279 @@
+FEATURE IDENTIFICATION AS PROBLEM SOLVING:
+--[PROBLEM] + [REQUEST] + [SUGGESTED SOLUTION]
+
+
+Check every line of code for O(n) complexity
+What is the expected runtime impact
+Update a report with: app version number, last git commit ID and time, minimum compute/storage required, estimated monthly cloud cost, expected performance (FPS, concurrent users, etc.), tech stack table, description
+Update a system architecture diagram
+
+
+
+
+IN WORK:
+
+
+
+LINED UP:
+
+Implement version control
+--Embed the Polar plot in corner of map
+
+--Ground tracks: please make the ground track TAIL gradient taper off more. 
+
+--Update the "resize grid to fit earth" button so that the map goes to ZOOM level XXX and the canvas is resized to XXX.
+--Enforce same styling on polar plot as in map (satellites are chevrons, satellite track gradient/head/tail, ....i dont like the arrows that are all over the orbit tracks..
+
+
+
+Sensor Control Panel:
+
+
+
+Main Control Panel:
+--Add new Health control panel item
+--Add new Messaging control panel item
+--Add new Launch Site panel item
+
+
+Profile Management:
+--System logs need to specify which profile is logged in and stored for the last 48 hours 
+
+
+
+Catalog:
+--UDL integration
+--SDA TAP Lab integration
+
+
+
+Map:
+--Add sensors via clicking on map
+--display ships AIS
+--display aircraft ADS-B
+--display NOTAMs
+--display 2x satellite nodal crossings
+--Launch nominals and launch profiles
+
+
+
+Polar Plot
+--Add starfield to polar plot
+
+
+
+Messaging:
+
+
+
+Watch Lists:
+
+
+
+Analysis:
+--Update the Analysis control panel to be a table that is styled similarly to the other control panel tables....also need a way to select multiple analysis tools AND have some control over what panel they are assigned to.
+--Gabbard
+--Height v Time
+--Monetgram
+--RIC
+--Mercator heatmap counting of objects/events
+--Lambert Heatmap
+--Porkchop plot
+--AMR vs Mv log log plot
+--Select satellite as "anchor" or "primary" and have default stats/analysis populate...somewhere
+--Vis Mag vs Time
+--Vis Mag vs Solar Phase Angle
+--Vis Mag vs Solar Elevation
+--Track residuals
+--Sensor az, el, range, range-rate sigmas
+--Angular momentum
+
+
+Tests:
+--Include a status for TESTS running/complete in the test control panel. Visually need to know if the tests are running or not and if complete
+--Change "Run All" button to "Run"
+--include a UUID in each run...dont just have a date. 
+
+
+Settings:
+--Include these under the Settings control panel
+----Profile
+----Logs
+----Tests - Add "ablation" and remove "clear"	
+--Require log in when app loads
+--Create a single profile UN: admin, PW: admin
+--Have a setting to turn sensor FIELDS OF VIEW on/off while keeping the sensor donut icon displayed	
+
+
+
+
+
+
+Load them to 
+
+
+Add "sensor select" button, user selects location via name from drop down or search
+Add "star map" 
+Add "celestial occultation" points
+Add "Declutter" button
+Add NORAD, common name to satellite chevron tool tip
+Add day, nautical twilight, civil twilight, astronomical twilight, and night to Real Time data display
+Add SUNLIT (TRUE, FALSE) to Real Time data display
+Add decimal Julian date to clock in top right
+Add orbital elements somewhere
+Add "#targets overhead"
+Add "Detectable" to Real Time Data display - if current Mv is below Minimum Detectable Target (MDT) for the sensor (target is bright enough to see)
+Move the clock from top right to top LEFT
+Signal Quality (SNR): In GNSS/GPS applications, the color or size of the satellite marker often changes to represent signal strength (Signal-to-Noise Ratio).
+Elevation mask for each sensor, cols "Az1, Az2, El". Fill it in with default values. Display the elevation mask on polar plot
+Pass Details, Time WIndow, Sensor, KOZ, Satellite, Pass, Proximity, RIC
+Change "Time Window" to "Forecast Window"
+Add a new analysis table call EO PEZ. 
+
+On-click for NORAD, display Monet Gram
+Designate Primary, Secondary targets
+
+
+Debug color assignment when adding new satellites.
+Debug deg/sec
+Debug lunar arc, disappears when toggling primary/new satellites on or off
+ISS default TLE, select pass from table that has moon above horizon with lunar arc
+add new satellite
+
+In the Pass Table, if more than 1 satellite is above horizon at the same time, then multiple rows are highlighted light green. Please update this so that 1. the satellite/row which rises first OR the row which user has selected will also have a bolded green top and bottom border. By default, have bolded borders applied to satellite which rises first, then if the user selects a different row, move bolded borders to that row instead.
+
+Update Pass Table so by default it scrolls up/down to ensure current pass is displayed as new passes are added/removed from the table by other actions or as time elapses and a new pass becomes active.
+
+It seems like the angular rate being calculated in the real time data display has an error. While I cannot prove where the discrepancy comes from, there are many examples where the Pass Table disagrees with Real Time data display. When I brush through a pass, the real time data display angular rate appears to fluctuate in ways that don't seems accurate.
+
+SENSOR SELECT TABLE
+1. Delete the text "Display Controls"
+2. Move the "Time Window" controls below the polar plot, to the right of "Slider Step".
+3. Remove the "Sensor Location / Keep Out" controls and *replace* those functions with a new table described below.
+4. Move all of the tables up into the empty space we created.
+5. *NEW TABLE* Create a "Sensor Selection" table that is similar to the *Satellite Selection* table.
+---The "Sensor Selection" table should have a green "+" add button to create a new sensor row
+---Upon adding a new sensor, a row should auto appear (expanded) in the table for user to input sensor Name, Lat, Lon, Sun KOZ (SKOZ), Moon KOZ (MKOZ), and Min Detectable Target (MDT). MDT is a value for a sensor indicating the dimmest object the sensor can detect (highest Visual Magnitude). 
+---Include "Save" and "Cancel" buttons to confirm adding new sensor.
+---Once a sensor is added, allow the user to select exactly 1 sensor from the table to populate the polar plot.
+---Allow user to expand the row for each satellite in the table to edit text areas, save, delete, cancel.
+
+Trail 1
+1 99999U 98067A   25321.90043552  .00014804  00000-0  26899-3 0  9995
+2 99999  51.5331 265.4223 0004180  80.0364 278.1099 15.49772275539003
+
+
+Trail 2
+1 88888U 98067A   25321.90043552  .00014804  00000-0  26899-3 0  9995
+2 88888  50.0000 265.5423 0006999  80.0364 278.3099 15.48772275539003
+
+
+Trail 3
+1 77777U 98067A   25321.90043552  .00014804  00000-0  26899-3 0  9995
+2 77777  51.8331 265.4223 0004180  82.5364 278.1099 15.49772275539003
+
+
+Trail 4
+1 66666U 98067A   25321.90043552  .00014804  00000-0  26899-3 0  9995
+2 66666  52.3331 265.4223 0004180  81.1164 278.1099 15.49772275539003
+
+
+
+
+
+
+
+***********
+
+Please render this file as an interactive artifact inline in chat. Copy the file directly to ensure it is not truncated and no bugs are introduced by attempting to recreate it.. Copy the complete file directly using bash since it's too large for a single create_file call:
+
+
+The artifact does not render even after refreshing multiple times.
+
+
+
+Evaluate track quality:
+Confirm sensor calibration tolerance (recency)
+Confirm tracks are <3σ of reported calibration
+Confirm pass geometry (max elevation, SNR, angular rate)
+Confirm sufficient sensor probability of detection (Pd)
+Confirm wind speed at sensor during pass
+
+Check cross-tags: proximity events, ob spike, sensor LOS vector vs catalog
+
+Reject outlier observations, reform tracks
+Evaluate track "ASTAT" value
+Evaluate track integrity, residual slope
+For each subsequent track, iteratively evaluate state-update position position error 
+
+
+
+
+  * Databasing Collection Strategies: ID
+  * Requirement Period:[start,stop]
+  * Collection Priority: Surv, Cust, Char, TWA
+  * Collection Priority: → w_target, Sev weight, preemption/COD
+  * Collection Interval:[start,stop]
+  * Blackout Window: [start,stop]
+  * Collection Periodicity: min/max per Colelction interval, priority accumulation/diminishing return (prevent neglect, favoritism)
+  * Must-collect list: penalty M, hard gate
+  * Earliest/latest (subtasks)
+  * Quality (GSD/cloud/sun elev) → weather/illum gating, p_quality, EVSI
+
+
+  * Cadence (min/max revisit) → spacing, diminishing returns
+  * AOI/NAI geometry → access, look-angle, P_det/P_ID
+  * Phenomenology (mode/bands/ONA/dwell) → Δθ = {ΔP_det, ΔP_trk, ΔP_ID, ΔP_arr, ΔP_hit, ΔSev}
+  * Quality (GSD/cloud/sun elev) → weather/illum gating, p_quality, EVSI
+  * Platform policy (eligible/min elev/duty) → asset set, p_asset
+  * Coverage (area%, mosaic/stereo) → tiling, EVSI sum to goal
+  * Latency/productization (deliver-by/level) → PED delay, latest shift
+  * Cost/preemption → C_task, scheduling weight
+  * Constraints (keep-outs/policy) → geometry mask, p_pass
+  * Acceptance/QA → success test, p_quality
+  * Series (RRULE/auto-retask) → rolling plan, EVSI re-eval
+
+* Waiting logic
+
+  * p_arrival = p_sky·p_geom·p_asset·p_policy·p_QA
+  * EVSI_t(δ) = p_arrival·E[U(Θ+Δθ)−U(Θ)]
+  * ΔCOD(W0,δ) = ∫ c(τ)dτ; +M at must-collect miss
+  * NB_t = EVSI_t − ΔCOD − C_task
+  * NB_p = EVSI_p − ΔCOD
+  * Rule: δ* = argmax{NB_t, NB_p}; if max>0 → wait δ*; else act now
+  * Gates: clip to earliest/latest; cancel if must-collect impossible before LTIOV
+
+* Parameter-lift mapping
+
+  * ΔP_det → logistic(SNR; clouds/sun penalties)
+  * ΔP_trk → info gain from dwell/geometry; ΔΣ → P_trk
+  * ΔP_ID → GSD/band/pol/stereo
+  * ΔP_arr/ΔP_hit → WEZ/timing updates
+  * ΔSev → CCDM indicator hits
+
+* Reservation ledger (Resource Ontology v1)
+
+  * preview → tentative asset/time + PED
+  * commit → NB_t≥0 within commit horizon, pass feasible
+  * release → success/failure/obsolescence/coverage met
+
+* Topics/APIs (examples)
+
+  * ss3.sensor.recommendation.request
+  * ss3.sensor.task.outcome
+  * ss6.response-recommendation.on-orbit
+
+* EVSI/tasking overlay (per requirement)
+
+  * evsi_tags: class = taskable
+  * arrival_model: {p_sky, p_geom, p_asset, p_policy}
+  * expected_lift: {P_det, P_trk, P_ID, P_arr, P_hit, Sev}
+  * task_cost: {asset, PED}
+  * cod: {shape, latest, penalty_M}
+  * must_collect: [ids]
+
+* Planner bindings (UI/Math Card)
+
+  * Decision window: [now, latest]; cold→hot by c(t)
+  * δ candidates: feasible passes with {p_arrival, EVSI, C_task, NB_t}
+  * Health gate: Wilson LCB on realized lifts before commit
