@@ -1,0 +1,301 @@
+/**
+ * WA_map Design Tokens
+ * =====================
+ * Single source of truth for all design values.
+ *
+ * Usage: @import url('/static/styles/design-tokens.css');
+ *
+ * CONVENTIONS:
+ * - All colors MUST use these variables
+ * - No hardcoded hex values in component CSS
+ * - Light theme overrides via [data-theme="light"]
+ *
+ * @version 1.0.0
+ * @updated 2025-11-29
+ */
+
+/* ============================================
+   COLOR TOKENS - Dark Theme (Default)
+   ============================================ */
+
+:root {
+  /* -----------------------------------------
+     BACKGROUNDS
+     -----------------------------------------
+     bg-primary:   Main app background (deepest)
+     bg-secondary: Panels, modals, cards
+     bg-tertiary:  Hover states, selected rows, inputs
+  */
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #1a1a1a;
+  --bg-tertiary: #2a2a2a;
+  --bg-overlay: rgba(10, 10, 10, 0.92);
+  --bg-modal-backdrop: rgba(0, 0, 0, 0.75);
+
+  /* -----------------------------------------
+     TEXT COLORS
+     -----------------------------------------
+     text-primary:   Main content text
+     text-secondary: Labels, descriptions
+     text-muted:     Disabled, hints
+  */
+  --text-primary: #f5f5f5;
+  --text-secondary: #a3a3a3;
+  --text-muted: #666666;
+
+  /* -----------------------------------------
+     BORDERS
+     -----------------------------------------
+     border-color:     Standard borders
+     border-subtle:    Dividers, separators
+     border-input:     Input field borders
+  */
+  --border-color: #333333;
+  --border-subtle: #555555;
+  --border-input: #666666;
+
+  /* -----------------------------------------
+     ACCENT COLORS
+     -----------------------------------------
+     accent-primary:   Primary interactive (buttons, links)
+     accent-blue-grey: Focus states, selections
+     accent-cyan:      Special highlights (Lambert TOF)
+     accent-orange:    Analysis features (Lambert solver)
+     accent-green:     Success, real-time indicators
+     accent-yellow:    Warnings, simulation mode
+     accent-red:       Errors, destructive actions
+  */
+  --accent-primary: #9dd4ff;
+  --accent-blue-grey: #9dd4ff;
+  --accent-cyan: #00c8ff;
+  --accent-orange: #ffa500;
+  --accent-green: #00ff66;
+  --accent-yellow: #ffeb3b;
+  --accent-red: #ff4444;
+
+  /* Semantic aliases for clarity */
+  --color-success: var(--accent-green);
+  --color-warning: var(--accent-yellow);
+  --color-error: var(--accent-red);
+  --color-info: var(--accent-cyan);
+  --color-focus: var(--accent-blue-grey);
+
+  /* -----------------------------------------
+     SHADOWS
+     -----------------------------------------
+     Consistent shadow tokens for elevation
+  */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-accent: 0 4px 12px rgba(157, 212, 255, 0.3);
+  --shadow-text-dark: 0 1px 3px rgba(0, 0, 0, 0.9), 0 0 6px rgba(0, 0, 0, 0.7);
+
+  /* -----------------------------------------
+     SPACING
+     -----------------------------------------
+     Consistent spacing scale (4px base unit)
+  */
+  --space-1: 2px;
+  --space-2: 4px;
+  --space-3: 6px;
+  --space-4: 8px;
+  --space-5: 12px;
+  --space-6: 16px;
+  --space-7: 24px;
+
+  /* Named spacing for common uses */
+  --gap-tight: var(--space-1);
+  --gap-small: var(--space-2);
+  --gap-medium: var(--space-4);
+  --gap-large: var(--space-6);
+  --padding-compact: var(--space-2);
+  --padding-normal: var(--space-4);
+  --padding-modal: var(--space-6);
+
+  /* -----------------------------------------
+     BORDER RADIUS
+     -----------------------------------------
+  */
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+  --radius-xl: 6px;
+  --radius-full: 50%;
+
+  /* -----------------------------------------
+     TYPOGRAPHY
+     -----------------------------------------
+  */
+  --font-mono: 'SF Mono', 'Monaco', 'Inconsolata', 'Consolas', monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Font sizes */
+  --text-xs: 7px;
+  --text-sm: 8px;
+  --text-base: 9px;
+  --text-md: 10px;
+  --text-lg: 11px;
+  --text-xl: 12px;
+  --text-2xl: 13px;
+
+  /* Font weights */
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+
+  /* -----------------------------------------
+     BUTTON SIZING
+     -----------------------------------------
+     Consistent button height tiers
+  */
+  --btn-height-xs: 18px;
+  --btn-height-sm: 20px;
+  --btn-height-md: 22px;
+  --btn-height-lg: 24px;
+  --btn-height-xl: 28px;
+  --btn-height-touch: 44px;  /* iOS minimum touch target */
+
+  /* Button min-widths */
+  --btn-min-width-icon: 18px;
+  --btn-min-width-sm: 20px;
+  --btn-min-width-md: 24px;
+
+  /* -----------------------------------------
+     INPUT SIZING
+     -----------------------------------------
+  */
+  --input-height-sm: 18px;
+  --input-height-md: 20px;
+  --input-height-lg: 24px;
+  --input-height-xl: 28px;
+
+  /* -----------------------------------------
+     PANEL DIMENSIONS
+     -----------------------------------------
+  */
+  --panel-collapsed-width: 42px;
+  --panel-expanded-width: 224px;
+  --mobile-panel-width: 240px;
+
+  /* -----------------------------------------
+     TRANSITIONS
+     -----------------------------------------
+     Standardized timing functions
+  */
+  --transition-none: none;
+  --transition-fast: 0.1s ease;
+  --transition-normal: 0.2s ease;
+  --transition-slow: 0.3s ease;
+  --transition-panel: 0.27s cubic-bezier(0.4, 0.0, 0.2, 1);
+
+  /* -----------------------------------------
+     Z-INDEX SCALE
+     -----------------------------------------
+     Layering hierarchy
+  */
+  --z-base: 1;
+  --z-dropdown: 100;
+  --z-sticky: 500;
+  --z-fixed: 1000;
+  --z-modal-backdrop: 1500;
+  --z-modal: 2000;
+  --z-popover: 2500;
+  --z-tooltip: 3000;
+}
+
+/* ============================================
+   COLOR TOKENS - Light Theme
+   ============================================ */
+
+[data-theme="light"] {
+  /* Backgrounds - inverted */
+  --bg-primary: #f5f5f5;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #e8e8e8;
+  --bg-overlay: rgba(255, 255, 255, 0.95);
+  --bg-modal-backdrop: rgba(0, 0, 0, 0.5);
+
+  /* Text - inverted */
+  --text-primary: #1a1a1a;
+  --text-secondary: #555555;
+  --text-muted: #888888;
+
+  /* Borders - lighter */
+  --border-color: #cccccc;
+  --border-subtle: #dddddd;
+  --border-input: #bbbbbb;
+
+  /* Accents - darker for contrast on light bg */
+  --accent-primary: #0066cc;
+  --accent-blue-grey: #0066cc;
+  --accent-cyan: #0088aa;
+  --accent-orange: #e68a00;
+  --accent-green: #00994d;
+  --accent-yellow: #cc9900;
+  --accent-red: #cc3333;
+
+  /* Shadows - softer */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.2);
+  --shadow-accent: 0 4px 12px rgba(0, 102, 204, 0.2);
+  --shadow-text-dark: 0 1px 2px rgba(255, 255, 255, 0.9), 0 0 4px rgba(255, 255, 255, 0.7);
+}
+
+/* ============================================
+   COMPONENT TOKENS
+   ============================================
+   Pre-composed tokens for common components.
+   Use these for consistency across similar elements.
+*/
+
+:root {
+  /* Button: Primary (filled accent) */
+  --btn-primary-bg: var(--accent-blue-grey);
+  --btn-primary-color: var(--bg-primary);
+  --btn-primary-border: var(--accent-blue-grey);
+  --btn-primary-hover-shadow: var(--shadow-accent);
+
+  /* Button: Secondary (ghost/outline) */
+  --btn-secondary-bg: var(--bg-tertiary);
+  --btn-secondary-color: var(--text-primary);
+  --btn-secondary-border: var(--border-input);
+
+  /* Button: Danger (destructive) */
+  --btn-danger-bg: var(--accent-red);
+  --btn-danger-color: var(--text-primary);
+  --btn-danger-border: var(--accent-red);
+
+  /* Button: Special (analysis/orange) */
+  --btn-special-bg: var(--accent-orange);
+  --btn-special-color: var(--bg-primary);
+  --btn-special-border: var(--accent-orange);
+
+  /* Input fields */
+  --input-bg: var(--bg-primary);
+  --input-border: var(--border-input);
+  --input-focus-border: var(--accent-blue-grey);
+  --input-pending-border: var(--accent-orange);
+  --input-color: var(--text-primary);
+
+  /* Modal */
+  --modal-bg: var(--bg-secondary);
+  --modal-border: var(--border-color);
+  --modal-shadow: var(--shadow-md);
+
+  /* Table */
+  --table-header-bg: var(--bg-secondary);
+  --table-row-hover: var(--bg-tertiary);
+  --table-row-selected: var(--bg-tertiary);
+  --table-border: var(--border-color);
+}
+
+/* Light theme component overrides */
+[data-theme="light"] {
+  --btn-primary-bg: var(--accent-blue-grey);
+  --btn-primary-color: #ffffff;
+  --btn-danger-color: #ffffff;
+  --btn-special-color: #000000;
+}

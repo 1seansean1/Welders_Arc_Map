@@ -1606,6 +1606,42 @@ const UI_HYPOTHESES = {
                 buttonText: toggleBtn?.textContent || ''
             };
         }
+    },
+    'H-UI-18': {
+        id: 'H-UI-18',
+        name: 'Design Tokens CSS Variables',
+        hypothesis: 'If design tokens are properly defined, then CSS variables should be accessible in the DOM',
+        prediction: 'All core design tokens (accent colors, backgrounds, text) are defined and return valid values',
+        category: 'ui',
+        steps: [
+            { action: 'Check --accent-primary variable', expected: 'Returns valid color value' },
+            { action: 'Check --accent-orange variable', expected: 'Returns valid color value' },
+            { action: 'Check --accent-cyan variable', expected: 'Returns valid color value' },
+            { action: 'Verify --bg-primary exists', expected: 'Returns valid color value' }
+        ],
+        validate: async () => {
+            const root = document.documentElement;
+            const style = getComputedStyle(root);
+            
+            const tokens = {
+                accentPrimary: style.getPropertyValue('--accent-primary').trim(),
+                accentOrange: style.getPropertyValue('--accent-orange').trim(),
+                accentCyan: style.getPropertyValue('--accent-cyan').trim(),
+                bgPrimary: style.getPropertyValue('--bg-primary').trim(),
+                bgSecondary: style.getPropertyValue('--bg-secondary').trim(),
+                textPrimary: style.getPropertyValue('--text-primary').trim()
+            };
+            
+            const allDefined = Object.values(tokens).every(v => v && v.length > 0);
+            
+            return {
+                passed: allDefined,
+                tokens: tokens,
+                missingTokens: Object.entries(tokens)
+                    .filter(([k, v]) => \!v || v.length === 0)
+                    .map(([k]) => k)
+            };
+        }
     }
 };
 

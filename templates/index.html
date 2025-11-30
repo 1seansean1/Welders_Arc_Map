@@ -604,7 +604,12 @@
             --text-primary: #f5f5f5;
             --text-secondary: #a3a3a3;
             --text-muted: #666666;
+
+            /* Accent colors - see /static/styles/design-tokens.css */
+            --accent-primary: #9dd4ff;
             --accent-blue-grey: #9dd4ff;
+            --accent-cyan: #00c8ff;
+            --accent-orange: #ffa500;
             --accent-green: #00ff66;
             --accent-yellow: #ffeb3b;
             --accent-red: #ff4444;
@@ -631,7 +636,10 @@
             --text-primary: #1a1a1a;
             --text-secondary: #555555;
             --text-muted: #888888;
+            --accent-primary: #0066cc;
             --accent-blue-grey: #0066cc;
+            --accent-cyan: #0088aa;
+            --accent-orange: #e68a00;
             --accent-green: #00994d;
             --accent-yellow: #cc9900;
             --accent-red: #cc3333;
@@ -1050,7 +1058,7 @@
         }
 
         .time-input.pending {
-            border-color: #ff9800;
+            border-color: var(--accent-orange);
         }
 
         .time-now-btn {
@@ -2530,9 +2538,9 @@
         }
 
         .modal-confirm-btn-delete {
-            background: #aa3333;
+            background: var(--accent-red);
             color: var(--text-primary);
-            border-color: #aa3333;
+            border-color: var(--accent-red);
         }
 
         .modal-confirm-btn-delete:hover {

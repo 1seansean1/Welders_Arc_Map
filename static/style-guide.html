@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WA_map Style Guide</title>
+    <link rel="stylesheet" href="/static/styles/design-tokens.css">
+    <style>
+        /* Page layout */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            padding: var(--space-6);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-7);
+            padding-bottom: var(--space-4);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: var(--font-semibold);
+        }
+
+        .version {
+            font-size: var(--text-md);
+            color: var(--text-muted);
+        }
+
+        /* Theme toggle */
+        .theme-toggle {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+
+        .theme-toggle label {
+            font-size: var(--text-md);
+            color: var(--text-secondary);
+        }
+
+        .theme-switch {
+            position: relative;
+            width: 36px;
+            height: 18px;
+        }
+
+        .theme-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .theme-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--accent-blue-grey);
+            border-radius: 18px;
+            transition: var(--transition-normal);
+        }
+
+        .theme-slider::before {
+            position: absolute;
+            content: "";
+            height: 12px;
+            width: 12px;
+            left: 3px;
+            bottom: 3px;
+            background: var(--bg-primary);
+            border-radius: var(--radius-full);
+            transition: var(--transition-normal);
+        }
+
+        .theme-switch input:checked + .theme-slider::before {
+            transform: translateX(18px);
+        }
+
+        /* Sections */
+        section {
+            margin-bottom: var(--space-7);
+            padding: var(--space-6);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+        }
+
+        h2 {
+            font-size: var(--text-xl);
+            font-weight: var(--font-semibold);
+            margin-bottom: var(--space-5);
+            color: var(--accent-blue-grey);
+        }
+
+        h3 {
+            font-size: var(--text-lg);
+            font-weight: var(--font-medium);
+            margin: var(--space-5) 0 var(--space-3) 0;
+            color: var(--text-secondary);
+        }
+
+        /* Color swatches */
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: var(--space-4);
+        }
+
+        .color-swatch {
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+
+        .swatch-color {
+            height: 60px;
+        }
+
+        .swatch-info {
+            padding: var(--space-3);
+            background: var(--bg-tertiary);
+        }
+
+        .swatch-name {
+            font-size: var(--text-sm);
+            font-weight: var(--font-semibold);
+            font-family: var(--font-mono);
+        }
+
+        .swatch-value {
+            font-size: var(--text-xs);
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+
+        /* Button examples */
+        .button-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-3);
+            align-items: center;
+            margin-bottom: var(--space-4);
+        }
+
+        /* Common button base */
+        .btn {
+            border-radius: var(--radius-md);
+            font-weight: var(--font-semibold);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition-none);
+        }
+
+        .btn:active { transform: scale(0.95); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Button sizes */
+        .btn-sm {
+            height: var(--btn-height-sm);
+            font-size: var(--text-sm);
+            padding: 0 var(--space-3);
+            min-width: var(--btn-min-width-sm);
+        }
+
+        .btn-md {
+            height: var(--btn-height-md);
+            font-size: var(--text-base);
+            padding: 0 var(--space-4);
+            min-width: var(--btn-min-width-md);
+        }
+
+        .btn-lg {
+            height: var(--btn-height-lg);
+            font-size: var(--text-md);
+            padding: 0 var(--space-5);
+        }
+
+        .btn-xl {
+            height: var(--btn-height-xl);
+            font-size: var(--text-md);
+            padding: 0 var(--space-6);
+        }
+
+        /* Button variants */
+        .btn-primary {
+            background: var(--btn-primary-bg);
+            color: var(--btn-primary-color);
+            border: 1px solid var(--btn-primary-border);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-accent);
+        }
+
+        .btn-secondary {
+            background: var(--btn-secondary-bg);
+            color: var(--btn-secondary-color);
+            border: 1px solid var(--btn-secondary-border);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: var(--bg-primary);
+            border-color: var(--accent-blue-grey);
+        }
+
+        .btn-danger {
+            background: var(--btn-danger-bg);
+            color: var(--btn-danger-color);
+            border: 1px solid var(--btn-danger-border);
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            filter: brightness(1.1);
+        }
+
+        .btn-special {
+            background: var(--btn-special-bg);
+            color: var(--btn-special-color);
+            border: 1px solid var(--btn-special-border);
+        }
+
+        .btn-special:hover:not(:disabled) {
+            filter: brightness(0.9);
+            transform: translateY(-1px);
+        }
+
+        /* Input examples */
+        .input-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-4);
+            align-items: flex-end;
+            margin-bottom: var(--space-4);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-2);
+        }
+
+        .form-label {
+            font-size: var(--text-sm);
+            font-weight: var(--font-semibold);
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .input {
+            height: var(--input-height-md);
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: var(--radius-md);
+            color: var(--input-color);
+            font-family: var(--font-mono);
+            font-size: var(--text-sm);
+            padding: 0 var(--space-3);
+        }
+
+        .input:focus {
+            outline: none;
+            border-color: var(--input-focus-border);
+        }
+
+        .input.pending {
+            border-color: var(--input-pending-border);
+        }
+
+        .input-sm { height: var(--input-height-sm); }
+        .input-lg { height: var(--input-height-lg); }
+        .input-xl { height: var(--input-height-xl); }
+
+        .select {
+            height: var(--input-height-md);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-size: var(--text-base);
+            padding: 0 var(--space-3);
+            cursor: pointer;
+        }
+
+        .select:focus {
+            outline: none;
+            border-color: var(--accent-blue-grey);
+        }
+
+        /* Spacing demo */
+        .spacing-demo {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-4);
+        }
+
+        .space-box {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+
+        .space-bar {
+            height: 20px;
+            background: var(--accent-blue-grey);
+            border-radius: var(--radius-sm);
+        }
+
+        .space-label {
+            font-size: var(--text-sm);
+            font-family: var(--font-mono);
+            color: var(--text-secondary);
+            min-width: 80px;
+        }
+
+        /* Typography demo */
+        .type-scale {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-3);
+        }
+
+        .type-row {
+            display: flex;
+            align-items: baseline;
+            gap: var(--space-4);
+        }
+
+        .type-label {
+            min-width: 100px;
+            font-size: var(--text-sm);
+            font-family: var(--font-mono);
+            color: var(--text-muted);
+        }
+
+        .type-sample { color: var(--text-primary); }
+        .type-xs { font-size: var(--text-xs); }
+        .type-sm { font-size: var(--text-sm); }
+        .type-base { font-size: var(--text-base); }
+        .type-md { font-size: var(--text-md); }
+        .type-lg { font-size: var(--text-lg); }
+        .type-xl { font-size: var(--text-xl); }
+        .type-2xl { font-size: var(--text-2xl); }
+
+        /* Shadow demo */
+        .shadow-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: var(--space-5);
+        }
+
+        .shadow-box {
+            height: 80px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--text-sm);
+            font-family: var(--font-mono);
+            color: var(--text-muted);
+        }
+
+        .shadow-sm { box-shadow: var(--shadow-sm); }
+        .shadow-md { box-shadow: var(--shadow-md); }
+        .shadow-lg { box-shadow: var(--shadow-lg); }
+        .shadow-accent { box-shadow: var(--shadow-accent); }
+
+        /* Border radius demo */
+        .radius-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-4);
+        }
+
+        .radius-box {
+            width: 60px;
+            height: 60px;
+            background: var(--accent-blue-grey);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--text-xs);
+            color: var(--bg-primary);
+            font-family: var(--font-mono);
+        }
+
+        .radius-sm { border-radius: var(--radius-sm); }
+        .radius-md { border-radius: var(--radius-md); }
+        .radius-lg { border-radius: var(--radius-lg); }
+        .radius-xl { border-radius: var(--radius-xl); }
+        .radius-full { border-radius: var(--radius-full); }
+
+        /* Modal example */
+        .modal-example {
+            position: relative;
+            background: var(--bg-modal-backdrop);
+            padding: var(--space-7);
+            border-radius: var(--radius-lg);
+            display: flex;
+            justify-content: center;
+        }
+
+        .modal {
+            background: var(--modal-bg);
+            border: 1px solid var(--modal-border);
+            border-radius: var(--radius-lg);
+            padding: var(--padding-modal);
+            box-shadow: var(--shadow-md);
+            min-width: 280px;
+        }
+
+        .modal-title {
+            font-size: var(--text-lg);
+            font-weight: var(--font-semibold);
+            margin-bottom: var(--space-3);
+        }
+
+        .modal-content {
+            font-size: var(--text-base);
+            color: var(--text-secondary);
+            margin-bottom: var(--space-4);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: var(--space-4);
+        }
+
+        .modal-buttons .btn {
+            flex: 1;
+        }
+
+        /* Code block */
+        .code-block {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: var(--space-4);
+            font-family: var(--font-mono);
+            font-size: var(--text-sm);
+            color: var(--text-secondary);
+            overflow-x: auto;
+        }
+
+        /* Status indicators */
+        .status-row {
+            display: flex;
+            gap: var(--space-4);
+            flex-wrap: wrap;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-1) var(--space-3);
+            border-radius: var(--radius-md);
+            font-size: var(--text-sm);
+            font-weight: var(--font-semibold);
+        }
+
+        .status-success {
+            background: color-mix(in srgb, var(--accent-green) 20%, transparent);
+            color: var(--accent-green);
+            border: 1px solid var(--accent-green);
+        }
+
+        .status-warning {
+            background: color-mix(in srgb, var(--accent-yellow) 20%, transparent);
+            color: var(--accent-yellow);
+            border: 1px solid var(--accent-yellow);
+        }
+
+        .status-error {
+            background: color-mix(in srgb, var(--accent-red) 20%, transparent);
+            color: var(--accent-red);
+            border: 1px solid var(--accent-red);
+        }
+
+        .status-info {
+            background: color-mix(in srgb, var(--accent-cyan) 20%, transparent);
+            color: var(--accent-cyan);
+            border: 1px solid var(--accent-cyan);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>WA_map Style Guide</h1>
+                <span class="version">v1.0.0 | Design Tokens Reference</span>
+            </div>
+            <div class="theme-toggle">
+                <label>Dark</label>
+                <label class="theme-switch">
+                    <input type="checkbox" id="theme-toggle">
+                    <span class="theme-slider"></span>
+                </label>
+                <label>Light</label>
+            </div>
+        </header>
+
+        <!-- Colors Section -->
+        <section id="colors">
+            <h2>Colors</h2>
+
+            <h3>Backgrounds</h3>
+            <div class="color-grid">
+                <div class="color-swatch">
+                    <div class="swatch-color" style="background: var(--bg-primary);"></div>
+                    <div class="swatch-info">
+                        <div class="swatch-name">--bg-primary</div>
+                        <div class="swatch-value">#0a0a0a</div>
+                    </div>
+                </div>
+                <div class="color-swatch">
+                    <div class="swatch-color" style="background: var(--bg-secondary);"></div>
+                    <div class="swatch-info">
+                        <div class="swatch-name">--bg-secondary</div>
+                        <div class="swatch-value">#1a1a1a</div>
+                    </div>
+                </div>
+                <div class="color-swatch">
+                    <div class="swatch-color" style="background: var(--bg-tertiary);"></div>
+                    <div class="swatch-info">
+                        <div class="swatch-name">--bg-tertiary</div>
+                        <div class="swatch-value">#2a2a2a</div>
+                    </div>
+                </div>
+            </div>
+
+            <h3>Text</h3>
+            <div class="color-grid">
+                <div class="color-swatch">
+                    <div class="swatch-color" style="background: var(--text-primary);"></div>
+                    <div class="swatch-info">
+                        <div class="swatch-name">--text-primary</div>
+                        <div class="swatch-value">#f5f5f5</div>
+                    </div>
+                </div>
+                <div class="color-swatch">
+                    <div class="swatch-color" style="background: var(--text-secondary);"></div>
+                    <div class="swatch-info">
+                        <div class="swatch-name">--text-secondary</div>
+                        <div class="swatch-value">#a3a3a3</div>
+                    </div>
+                </div>
+                <div class="color-swatch">
+                    <div class="swatch-color" style="background: var(--text-muted);"></div>
+                    <div class="swatch-info">
+                        <div class="swatch-name">--text-muted</div>
+                        <div class="swatch-value">#666666</div>
+                    </div>
+                </div>
+            </div>
+
+            <h3>Accents</h3>
+            <div class="color-grid">
+                <div class="color-swatch">
+                    <div class="swatch-color" style="background: var(--accent-blue-grey);"></div>
+                    <div class="swatch-info">
+                        <div class="swatch-name">--accent-blue-grey</div>
+                        <div class="swatch-value">#9dd4ff</div>
+                    </div>
+                </div>
+                <div class="color-swatch">
+                    <div class="swatch-color" style="background: var(--accent-cyan);"></div>
+                    <div class="swatch-info">
+                        <div class="swatch-name">--accent-cyan</div>
+                        <div class="swatch-value">#00c8ff</div>
+                    </div>
+                </div>
+                <div class="color-swatch">
+                    <div class="swatch-color" style="background: var(--accent-orange);"></div>
+                    <div class="swatch-info">
+                        <div class="swatch-name">--accent-orange</div>
+                        <div class="swatch-value">#ffa500</div>
+                    </div>
+                </div>
+                <div class="color-swatch">
+                    <div class="swatch-color" style="background: var(--accent-green);"></div>
+                    <div class="swatch-info">
+                        <div class="swatch-name">--accent-green</div>
+                        <div class="swatch-value">#00ff66</div>
+                    </div>
+                </div>
+                <div class="color-swatch">
+                    <div class="swatch-color" style="background: var(--accent-yellow);"></div>
+                    <div class="swatch-info">
+                        <div class="swatch-name">--accent-yellow</div>
+                        <div class="swatch-value">#ffeb3b</div>
+                    </div>
+                </div>
+                <div class="color-swatch">
+                    <div class="swatch-color" style="background: var(--accent-red);"></div>
+                    <div class="swatch-info">
+                        <div class="swatch-name">--accent-red</div>
+                        <div class="swatch-value">#ff4444</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Buttons Section -->
+        <section id="buttons">
+            <h2>Buttons</h2>
+
+            <h3>Primary (Filled)</h3>
+            <div class="button-row">
+                <button class="btn btn-primary btn-sm">Small</button>
+                <button class="btn btn-primary btn-md">Medium</button>
+                <button class="btn btn-primary btn-lg">Large</button>
+                <button class="btn btn-primary btn-xl">Extra Large</button>
+                <button class="btn btn-primary btn-lg" disabled>Disabled</button>
+            </div>
+
+            <h3>Secondary (Ghost)</h3>
+            <div class="button-row">
+                <button class="btn btn-secondary btn-sm">Small</button>
+                <button class="btn btn-secondary btn-md">Medium</button>
+                <button class="btn btn-secondary btn-lg">Large</button>
+                <button class="btn btn-secondary btn-xl">Extra Large</button>
+                <button class="btn btn-secondary btn-lg" disabled>Disabled</button>
+            </div>
+
+            <h3>Danger</h3>
+            <div class="button-row">
+                <button class="btn btn-danger btn-sm">Delete</button>
+                <button class="btn btn-danger btn-lg">Remove Item</button>
+                <button class="btn btn-danger btn-lg" disabled>Disabled</button>
+            </div>
+
+            <h3>Special (Orange - Analysis)</h3>
+            <div class="button-row">
+                <button class="btn btn-special btn-sm">Compute</button>
+                <button class="btn btn-special btn-lg">Run Analysis</button>
+                <button class="btn btn-special btn-xl">Execute Lambert Solver</button>
+            </div>
+
+            <h3>Height Reference</h3>
+            <div class="code-block">
+--btn-height-xs: 18px   /* Tiny */
+--btn-height-sm: 20px   /* Compact (nav, time bar) */
+--btn-height-md: 22px   /* Standard navigation */
+--btn-height-lg: 24px   /* Standard actions */
+--btn-height-xl: 28px   /* Primary modal actions */
+--btn-height-touch: 44px /* Mobile touch target */</div>
+        </section>
+
+        <!-- Inputs Section -->
+        <section id="inputs">
+            <h2>Input Fields</h2>
+
+            <h3>Text Inputs</h3>
+            <div class="input-row">
+                <div class="form-group">
+                    <label class="form-label">Small (18px)</label>
+                    <input class="input input-sm" type="text" value="12345.678">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Medium (20px)</label>
+                    <input class="input" type="text" value="2024-11-29">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Large (24px)</label>
+                    <input class="input input-lg" type="text" placeholder="Enter value...">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">XL (28px)</label>
+                    <input class="input input-xl" type="text" placeholder="Modal input">
+                </div>
+            </div>
+
+            <h3>States</h3>
+            <div class="input-row">
+                <div class="form-group">
+                    <label class="form-label">Default</label>
+                    <input class="input" type="text" value="Normal state">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Focused</label>
+                    <input class="input" type="text" value="Click to focus" style="border-color: var(--input-focus-border);">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Pending</label>
+                    <input class="input pending" type="text" value="Unsaved changes">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Disabled</label>
+                    <input class="input" type="text" value="Cannot edit" disabled>
+                </div>
+            </div>
+
+            <h3>Select/Dropdown</h3>
+            <div class="input-row">
+                <div class="form-group">
+                    <label class="form-label">Time Step</label>
+                    <select class="select">
+                        <option>1s</option>
+                        <option>5s</option>
+                        <option>10s</option>
+                        <option>1m</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Revolution</label>
+                    <select class="select">
+                        <option>0 rev</option>
+                        <option>1 rev</option>
+                        <option>2 rev</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- Typography Section -->
+        <section id="typography">
+            <h2>Typography</h2>
+
+            <h3>Font Scale</h3>
+            <div class="type-scale">
+                <div class="type-row">
+                    <span class="type-label">--text-xs (7px)</span>
+                    <span class="type-sample type-xs">Tiny labels and hints</span>
+                </div>
+                <div class="type-row">
+                    <span class="type-label">--text-sm (8px)</span>
+                    <span class="type-sample type-sm">Compact button text, small labels</span>
+                </div>
+                <div class="type-row">
+                    <span class="type-label">--text-base (9px)</span>
+                    <span class="type-sample type-base">Default body text, descriptions</span>
+                </div>
+                <div class="type-row">
+                    <span class="type-label">--text-md (10px)</span>
+                    <span class="type-sample type-md">Input text, select options</span>
+                </div>
+                <div class="type-row">
+                    <span class="type-label">--text-lg (11px)</span>
+                    <span class="type-sample type-lg">Navigation labels, form labels</span>
+                </div>
+                <div class="type-row">
+                    <span class="type-label">--text-xl (12px)</span>
+                    <span class="type-sample type-xl">Section headers, panel titles</span>
+                </div>
+                <div class="type-row">
+                    <span class="type-label">--text-2xl (13px)</span>
+                    <span class="type-sample type-2xl">Modal titles, large headers</span>
+                </div>
+            </div>
+
+            <h3>Font Families</h3>
+            <div class="type-scale">
+                <div class="type-row">
+                    <span class="type-label">--font-sans</span>
+                    <span class="type-sample" style="font-family: var(--font-sans);">System UI for labels and buttons</span>
+                </div>
+                <div class="type-row">
+                    <span class="type-label">--font-mono</span>
+                    <span class="type-sample" style="font-family: var(--font-mono);">Monospace for data: 12345.678</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Spacing Section -->
+        <section id="spacing">
+            <h2>Spacing Scale</h2>
+
+            <div class="spacing-demo">
+                <div class="space-box">
+                    <span class="space-label">--space-1 (2px)</span>
+                    <div class="space-bar" style="width: 20px;"></div>
+                </div>
+                <div class="space-box">
+                    <span class="space-label">--space-2 (4px)</span>
+                    <div class="space-bar" style="width: 40px;"></div>
+                </div>
+                <div class="space-box">
+                    <span class="space-label">--space-3 (6px)</span>
+                    <div class="space-bar" style="width: 60px;"></div>
+                </div>
+                <div class="space-box">
+                    <span class="space-label">--space-4 (8px)</span>
+                    <div class="space-bar" style="width: 80px;"></div>
+                </div>
+                <div class="space-box">
+                    <span class="space-label">--space-5 (12px)</span>
+                    <div class="space-bar" style="width: 120px;"></div>
+                </div>
+                <div class="space-box">
+                    <span class="space-label">--space-6 (16px)</span>
+                    <div class="space-bar" style="width: 160px;"></div>
+                </div>
+                <div class="space-box">
+                    <span class="space-label">--space-7 (24px)</span>
+                    <div class="space-bar" style="width: 240px;"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Shadows Section -->
+        <section id="shadows">
+            <h2>Shadows</h2>
+
+            <div class="shadow-grid">
+                <div class="shadow-box shadow-sm">--shadow-sm</div>
+                <div class="shadow-box shadow-md">--shadow-md</div>
+                <div class="shadow-box shadow-lg">--shadow-lg</div>
+                <div class="shadow-box shadow-accent">--shadow-accent</div>
+            </div>
+        </section>
+
+        <!-- Border Radius Section -->
+        <section id="radius">
+            <h2>Border Radius</h2>
+
+            <div class="radius-grid">
+                <div class="radius-box radius-sm">sm (2px)</div>
+                <div class="radius-box radius-md">md (3px)</div>
+                <div class="radius-box radius-lg">lg (4px)</div>
+                <div class="radius-box radius-xl">xl (6px)</div>
+                <div class="radius-box radius-full">full</div>
+            </div>
+        </section>
+
+        <!-- Status Indicators Section -->
+        <section id="status">
+            <h2>Status Indicators</h2>
+
+            <div class="status-row">
+                <span class="status-badge status-success">Real-time</span>
+                <span class="status-badge status-warning">Simulation</span>
+                <span class="status-badge status-error">Error</span>
+                <span class="status-badge status-info">Info</span>
+            </div>
+        </section>
+
+        <!-- Modal Example Section -->
+        <section id="modal">
+            <h2>Modal Example</h2>
+
+            <div class="modal-example">
+                <div class="modal">
+                    <div class="modal-title">Confirm Action</div>
+                    <div class="modal-content">
+                        Are you sure you want to delete this item? This action cannot be undone.
+                    </div>
+                    <div class="modal-buttons">
+                        <button class="btn btn-secondary btn-xl">Cancel</button>
+                        <button class="btn btn-danger btn-xl">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Theme toggle functionality
+        const toggle = document.getElementById('theme-toggle');
+        toggle.addEventListener('change', () => {
+            document.documentElement.setAttribute(
+                'data-theme',
+                toggle.checked ? 'light' : 'dark'
+            );
+        });
+    </script>
+</body>
+</html>

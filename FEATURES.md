@@ -203,6 +203,7 @@
 | UI-026 | Canvas Size in Profile Defaults | P2 | XS | DONE | UI-009, AUTH-003 |
 | UI-027 | Watch List Selector in Defaults | P2 | XS | DONE | UI-009, AUTH-003, LIST-001 |
 | UI-028 | Settings Panel Slider Width Fix | P2 | XS | DONE | UI-009 |
+| UI-029 | Design System & Style Guide | P2 | M | DONE | UI-009 |
 
 ### Logging System (LOG)
 
@@ -363,11 +364,11 @@
 | LIST | 6 | 6 | 0 | 0 | 0 |
 | ANALYSIS | 14 | 14 | 0 | 0 | 0 |
 | AUTH | 8 | 8 | 0 | 0 | 0 |
-| **TOTAL** | **184** | **170** | **0** | **7** | **6** |
+| **TOTAL** | **185** | **171** | **0** | **7** | **6** |
 
 *Note: MAP-013 REMOVED (superseded by MAP-012+MAP-016), MAP-016 added - net zero change*
 
-**Completion Rate**: 92% (170/184 features complete)
+**Completion Rate**: 92% (171/185 features complete)
 
 ---
 
@@ -375,6 +376,7 @@
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 5.4 | 2025-11-29 | UI-029 DONE: Design System & Style Guide - centralized design tokens CSS file (/static/styles/design-tokens.css), comprehensive style guide markdown (docs/STYLE_GUIDE.md), living HTML component library (/static/style-guide.html), added missing CSS variables (--accent-primary, --accent-orange, --accent-cyan), fixed hardcoded colors; H-UI-18 test added |
 | 5.2 | 2025-11-29 | UI-026/027/028 DONE: Canvas Size in Profile Defaults, Watch List Selector in Defaults, Settings Panel Slider Width Fix (reduced to 80px max-width for better alignment); H-PROFILE-4/5/6 tests added |
 | 5.1 | 2025-11-29 | UI-024/025 DONE: Map Info Display (zoom/size/center coordinates in top-left overlay), Logs moved to Settings panel; H-UI-14/15/16/17 tests updated |
 | 5.0 | 2025-11-29 | AUTH-001 to AUTH-008 DONE: User Login & Profile Defaults - Required login on app load, profile defaults modal in Settings, expanded settings schema (theme, glow, apex tick, map view), settings persistence per user, stubs for Authentik OAuth/session timeout/multi-user; H-PROFILE-1/2/3 tests added |
